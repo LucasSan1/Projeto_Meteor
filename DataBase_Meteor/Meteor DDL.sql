@@ -24,7 +24,8 @@ CREATE TABLE usuarios (
     id     INT AUTO_INCREMENT PRIMARY KEY,
     nome   VARCHAR(100) NOT NULL,
     email  VARCHAR(200) UNIQUE NOT NULL,
-    senha   VARCHAR(200) NOT NULL
+    cargo  ENUM('gerente', 'operador', 'mecanico') NOT NULL DEFAULT "operador",
+    senha   VARCHAR(200) NOT NULL 
 );
 
 CREATE TABLE fornecedores (
