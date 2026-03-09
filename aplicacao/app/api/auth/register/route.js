@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
-import  pool  from "../../lib/connSql";
+import  pool  from "../../../lib/connSql";
 
-import { hashPass } from "../../utils/hash"
+import { hashPass } from "../../../utils/hash"
 
 export async function POST(request) {
   try {
     const body = await request.json();
 
-    const { nome, email, cargo, senha } = body;
+    const { nome, email, cargo } = body;
+    
+    if(!nome || !email || !cargo){
+      return NextResponse.json(
+        { message: "Dados invalidos" },
+        { status: 400 }
+      )
+    }
 
+    const senha = "meteor@2026";
     const senhaCript = await hashPass(senha); 
 
     const [result] = await pool.query(
