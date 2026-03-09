@@ -3,6 +3,7 @@ import  pool  from "../../../lib/connSql";
 
 import { hashPass } from "../../../utils/hash"
 
+// Rota para adicionar novos usuarios
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -16,7 +17,7 @@ export async function POST(request) {
       )
     }
 
-    const senha = "meteor@2026";
+    const senha = process.env.PATTERN_PASS;
     const senhaCript = await hashPass(senha); 
 
     const [result] = await pool.query(

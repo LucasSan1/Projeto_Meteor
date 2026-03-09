@@ -45,6 +45,7 @@ export async function POST(request) {
     }
 }
 
+// Rota para atualizar senha
 export async function PUT(request){
     try{
         const body = await request.json();
@@ -55,6 +56,7 @@ export async function PUT(request){
             [email]
         )
 
+        // Verifica se o usuario existe e retorna msg generica (mensagem correta no console da api)
         if(user.length === 0){
             console.log("usuario não encontrado")
 
