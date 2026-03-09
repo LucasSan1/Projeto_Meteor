@@ -28,6 +28,7 @@ CREATE TABLE usuarios (
     senha   VARCHAR(200) NOT NULL 
 );
 
+
 CREATE TABLE fornecedores (
     pk_fornecedorID     INT NOT NULL,
     nomeFornecedor      VARCHAR(100),
