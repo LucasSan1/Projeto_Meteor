@@ -15,7 +15,7 @@ export async function POST(request) {
             [email]
         )
 
-        // Comparação de senha para evitar User Enumeration Atac
+        // Comparação de senha
         const user = result[0];
         const hash = user ? user.senha : "$2b$10$pt2dUAb.Fx1MfPQ.Y68U/u6SE9e3TDYvCN6WvxANTIwWMAcV0EMRa"
         const validatedPass = await bcrypt.compare(senha, hash);

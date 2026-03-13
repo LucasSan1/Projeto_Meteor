@@ -30,7 +30,7 @@ CREATE TABLE usuarios (
 
 
 CREATE TABLE fornecedores (
-    pk_fornecedorID     INT NOT NULL,
+    pk_fornecedorID     INT NOT NULL AUTO_INCREMENT,
     nomeFornecedor      VARCHAR(100),
     endereco            VARCHAR(300),
     contato             VARCHAR(50),
@@ -40,7 +40,7 @@ CREATE TABLE fornecedores (
 );
 
 CREATE TABLE materiasPrimas (
-    pk_materiaID        INT NOT NULL,
+    pk_materiaID        INT NOT NULL AUTO_INCREMENT,
     descricaoMateria    VARCHAR(300),
     fk_fornecedor       INT NOT NULL,
     quantidadeEstoque   VARCHAR(30),
@@ -51,7 +51,7 @@ CREATE TABLE materiasPrimas (
 );
 
 CREATE TABLE pecas(
-	pk_pecaID		INT NOT NULL,
+	pk_pecaID		INT NOT NULL AUTO_INCREMENT,
     descricaoPeca	VARCHAR(300),
     fk_material		INT NOT NULL,
     peso			VARCHAR(20),
@@ -73,7 +73,7 @@ CREATE TABLE inspecoes (
 );
 
 CREATE TABLE rejeicoes (
-    pk_rejeicaoID       INT NOT NULL,
+    pk_rejeicaoID       INT NOT NULL AUTO_INCREMENT,
     fk_pecaID           INT,
     motivoRejeicao      VARCHAR(300),
     dataRejeicao        DATE,
@@ -84,7 +84,7 @@ CREATE TABLE rejeicoes (
 );
 
 CREATE TABLE aceitacoes (
-    pk_aceitacaoID      INT NOT NULL,
+    pk_aceitacaoID      INT NOT NULL AUTO_INCREMENT,
     fk_pecaID           INT,
     dataAceitacao       DATE,
     destinoPeca         VARCHAR(100),
@@ -95,7 +95,7 @@ CREATE TABLE aceitacoes (
 );
 
 CREATE TABLE ordensProducao (
-    pk_ordemID          INT NOT NULL,
+    pk_ordemID          INT NOT NULL AUTO_INCREMENT,
     fk_pecaID           INT NOT NULL,
     quantidade          INT NOT NULL DEFAULT 1,
     dataInicio          DATE,
@@ -107,7 +107,7 @@ CREATE TABLE ordensProducao (
 );
 
 CREATE TABLE operadores (
-    pk_operadorID       INT NOT NULL,
+    pk_operadorID       INT NOT NULL AUTO_INCREMENT,
     nome        		VARCHAR(100),
     especializacao      VARCHAR(100),
     disponibilidade     ENUM('Disponivel', 'Indisponivel'),
@@ -117,7 +117,7 @@ CREATE TABLE operadores (
 );
 
 CREATE TABLE equipamentos (
-    pk_equipamentoID    INT NOT NULL,
+    pk_equipamentoID    INT NOT NULL AUTO_INCREMENT,
     nomeEquipamento     VARCHAR(100),
     descricao           VARCHAR(300),
     dataAquisicao       DATE,
@@ -127,7 +127,7 @@ CREATE TABLE equipamentos (
 );
 
 CREATE TABLE mecanico(
-	pk_mecanicoID	INT NOT NULL,
+	pk_mecanicoID	INT NOT NULL AUTO_INCREMENT,
     nome			VARCHAR(100),
     telefone		VARCHAR(50),
     
@@ -135,7 +135,7 @@ CREATE TABLE mecanico(
 );
 
 CREATE TABLE historicoManutencao (
-    historicoID      		INT NOT NULL,
+    historicoID      		INT NOT NULL AUTO_INCREMENT,
     fk_equipamentoID    	INT,
     manutencaoRealizada 	VARCHAR(100),
     dataManutencao      	DATE,
@@ -147,7 +147,7 @@ CREATE TABLE historicoManutencao (
 );
 
 CREATE TABLE maquinas (
-    pk_maquinaID        INT NOT NULL,
+    pk_maquinaID        INT NOT NULL AUTO_INCREMENT,
     fk_equipamentoID	INT NOT NULL,
     nomeMaquina         VARCHAR(100),
     descricao           VARCHAR(300),
@@ -159,7 +159,7 @@ CREATE TABLE maquinas (
 );
 
 CREATE TABLE manutencoesProgramadas (
-    pk_manutencaoID     INT NOT NULL,
+    pk_manutencaoID     INT NOT NULL AUTO_INCREMENT,
     fk_equipamentoID    INT NOT NULL,
     fk_maquinaID		INT NOT NULL,
     tipoManutencao      VARCHAR(100),
@@ -173,7 +173,7 @@ CREATE TABLE manutencoesProgramadas (
 );
 
 CREATE TABLE historicoDeProducao(
-	ordemID			INT NOT NULL,
+	ordemID			INT NOT NULL AUTO_INCREMENT,
     operadorID		INT NOT NULL,
     maquinaID		INT NOT NULL,
     dataProducao	DATE,
