@@ -34,7 +34,7 @@ export async function POST(request) {
     console.error(err);
 
     return NextResponse.json(
-      { error: "Erro ao inserir usuário" },
+      { error: "Erro do lado do servidor para registrar usuarios" },
       { status: 500 }
     );
   }

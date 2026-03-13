@@ -10,11 +10,13 @@ export function generateToken(email, cargo){
 // Função para verificar assinatura e tempo do token
 export function isvalid(token){
     try{
-
+        console.log("chegou ", token)
         const payload = jwt.verify(token, secretKey);
+        console.log("pay ", payload)
         return payload
         
     } catch(err){
+        console.log("erro ao validar token: ", err)
         return "Token Invalido!"
     }
 }
