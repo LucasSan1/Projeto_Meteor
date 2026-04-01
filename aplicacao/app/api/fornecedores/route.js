@@ -5,11 +5,10 @@ import { isvalid } from "../../utils/jwt";
 export async function POST(request){
     try{
         const authHeader = request.headers.get("authorization");
-        const token = authHeader.split("")[1];
+        const token = authHeader.replace("Bearer ", "");
 
         const payload = isvalid(token)
 
-        console.log("pay ", payload)
         if(payload.cargo !== "gerente"){
             return NextResponse.json(
                 { message: "Acesso negado" },
@@ -26,6 +25,19 @@ export async function POST(request){
                 { status: 400}
             )
         }
+
+        const aval = avaliacao ? avaliacao : 0
+
+        const [result] = await pool.query(
+            "INSERT INTO fornecedores (nomeFornecedor, endereco, contato, avaliacao) VALUES (?, ?, ?, ?)",
+            [nome, endereco, contato, aval]
+        ) 
+
+        return NextResponse.json({
+            message: "Fornecedor inserido com sucesso!",
+            id: result.insertId
+        });
+
 
 
     } catch(err){

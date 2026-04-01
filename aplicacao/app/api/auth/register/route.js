@@ -12,7 +12,7 @@ export async function POST(request) {
     
     if(!nome || !email || !cargo){
       return NextResponse.json(
-        { message: "Dados invalidos" },
+        { message: "Dados invalidos!" },
         { status: 400 }
       )
     }
@@ -26,7 +26,7 @@ export async function POST(request) {
     );
 
     return NextResponse.json({
-      message: "Usuário inserido com sucesso",
+      message: "Usuário inserido com sucesso!",
       id: result.insertId
     });
 
@@ -34,7 +34,7 @@ export async function POST(request) {
     console.error(err);
 
     return NextResponse.json(
-      { error: "Erro do lado do servidor para registrar usuarios" },
+      { error: "Erro do lado do servidor para registrar usuarios!" },
       { status: 500 }
     );
   }
