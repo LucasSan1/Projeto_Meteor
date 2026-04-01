@@ -74,24 +74,26 @@ CREATE TABLE inspecoes (
 
 CREATE TABLE rejeicoes (
     pk_rejeicaoID       INT NOT NULL AUTO_INCREMENT,
-    fk_pecaID           INT,
+    fk_inspecaoID       INT,
     motivoRejeicao      VARCHAR(300),
     dataRejeicao        DATE,
     acoesCorretivas     VARCHAR(300),
-    
+
     PRIMARY KEY (pk_rejeicaoID),
-    FOREIGN KEY (fk_pecaID) REFERENCES inspecoes(pecaID)
+    FOREIGN KEY (fk_inspecaoID) 
+    REFERENCES inspecoes(pk_inspecaoID)
 );
 
 CREATE TABLE aceitacoes (
     pk_aceitacaoID      INT NOT NULL AUTO_INCREMENT,
-    fk_pecaID           INT,
+    fk_inspecaoID       INT,
     dataAceitacao       DATE,
     destinoPeca         VARCHAR(100),
     observacoes         VARCHAR(300),
-    
+
     PRIMARY KEY (pk_aceitacaoID),
-    FOREIGN KEY (fk_pecaID) REFERENCES inspecoes(pecaID)
+    FOREIGN KEY (fk_inspecaoID) 
+    REFERENCES inspecoes(pk_inspecaoID)
 );
 
 CREATE TABLE ordensProducao (
@@ -134,17 +136,6 @@ CREATE TABLE mecanico(
     PRIMARY KEY (pk_mecanicoID)    
 );
 
-CREATE TABLE historicoManutencao (
-    historicoID      		INT NOT NULL AUTO_INCREMENT,
-    fk_equipamentoID    	INT,
-    manutencaoRealizada 	VARCHAR(100),
-    dataManutencao      	DATE,
-    custos              	DECIMAL(10,5),
-    
-    PRIMARY KEY (historicoID),
-    FOREIGN KEY (fk_equipamentoID) REFERENCES equipamentos(pk_equipamentoID),
-    FOREIGN KEY (historicoID)	   REFERENCES manutencoesProgramadas(pk_manutencaoID)
-);
 
 CREATE TABLE maquinas (
     pk_maquinaID        INT NOT NULL AUTO_INCREMENT,
@@ -170,6 +161,18 @@ CREATE TABLE manutencoesProgramadas (
     FOREIGN KEY (fk_equipamentoID) 	REFERENCES equipamentos(pk_equipamentoID),
     FOREIGN KEY (responsavel) 		REFERENCES mecanico(pk_mecanicoID),
     FOREIGN KEY (fk_maquinaID)		REFERENCES maquinas(pk_maquinaID)
+);
+
+CREATE TABLE historicoManutencao (
+    historicoID      		INT NOT NULL AUTO_INCREMENT,
+    fk_equipamentoID    	INT,
+    manutencaoRealizada 	VARCHAR(100),
+    dataManutencao      	DATE,
+    custos              	DECIMAL(10,5),
+    
+    PRIMARY KEY (historicoID),
+    FOREIGN KEY (fk_equipamentoID) REFERENCES equipamentos(pk_equipamentoID),
+    FOREIGN KEY (historicoID)	   REFERENCES manutencoesProgramadas(pk_manutencaoID)
 );
 
 CREATE TABLE historicoDeProducao(
