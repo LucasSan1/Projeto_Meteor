@@ -31,10 +31,11 @@ CREATE TABLE usuarios (
 
 CREATE TABLE fornecedores (
     pk_fornecedorID     INT NOT NULL AUTO_INCREMENT,
-    nomeFornecedor      VARCHAR(100),
-    endereco            VARCHAR(300),
-    contato             VARCHAR(50),
+    nomeFornecedor      VARCHAR(100) NOT NULL,
+    endereco            VARCHAR(300) NOT NULL,
+    contato             VARCHAR(50) NOT NULL,
     avaliacao           DECIMAL(2,1),
+    fstatus             ENUM('Ativado', 'Desativado') NOT NULL DEFAULT "Ativado",
     
     PRIMARY KEY (pk_fornecedorID)
 );

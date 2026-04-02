@@ -11,11 +11,18 @@ export function generateToken(email, cargo){
 export function isvalid(token){
     try{
         
-        const payload = jwt.verify(token, secretKey);
+        const replacedToken = token.replace("Bearer ", "")
+
+        const payload = jwt.verify(replacedToken, secretKey);
         return payload
         
     } catch(err){
         console.log("erro ao validar token: ", err)
+
+        if(err.name === "TokenExpiredError"){
+            return "Token expirado!"
+        }
+
         return "Token Invalido!"
     }
 }
