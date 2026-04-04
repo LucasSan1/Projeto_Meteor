@@ -1,43 +1,37 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql"
-import { checkAuthPosition } from "../../../utils/authChecker";
+import { checkAuth, checkAuthPosition } from "../../../utils/authChecker"
 
-
-// Função para atualizar cadastro de um fornecedor
-export async function PATCH(request, { params }){
-
+export async function PATCH(request, { params } ) {
     const { id } = await params;
     const body = await request.json();
-    let { nome, endereco, contato, avaliacao, status } = body;
+    let { material, quantidadeEstoque, dataUltimaCompra } = body;
 
-    try{ 
-        checkAuthPosition(request)
+    try{
 
-        // Verifica se o fornecedor existe
+        checkAuth(request);
+
         const [exist] = await pool.query(
-            "SELECT * FROM fornecedores WHERE pk_fornecedorID = ? AND status = 'Ativo'",
+            "SELECT * FROM materiasPrimas WHERE pk_materiaID = ? AND status = 'Ativo'",
             [id]
-        ) 
+        )
 
-        if(exist.length === 0){
+        if(!exist || exist.length === 0 ){
             return NextResponse.json(
-                { message: "Fornecedor não encontrado!" },
+                { message: "Matéria prima não encontrada!" },
                 { status: 404 }
             )
         }
 
-        const fornecedor = exist[0];
+        const mate = exist[0];
 
-        // Se não tiver valor no json seta os valores já existentes no banco
-        nome = nome ?? fornecedor.nomeFornecedor;
-        endereco = endereco ?? fornecedor.endereco;
-        contato = contato ?? fornecedor.contato;
-        avaliacao = avaliacao ?? fornecedor.avaliacao;
-        status = status ?? fornecedor.status
-        
+        material = material ?? mate.materia;
+        quantidadeEstoque = quantidadeEstoque ?? mate.quantidadeEstoque;
+        dataUltimaCompra = dataUltimaCompra ?? mate.dataUltimaCompra
+
         const [result] = await pool.query(
-            "UPDATE fornecedores SET nomeFornecedor = ?, endereco = ?, contato = ?, avaliacao = ?, status = ? WHERE pk_fornecedorID = ?",
-            [nome, endereco, contato, avaliacao, status, id] 
+            "UPDATE materiasPrimas SET materia = ?, quantidadeEstoque = ?, dataUltimaCompra = ? WHERE pk_materiaID = ? AND status = 'Ativo'",
+            [material, quantidadeEstoque, dataUltimaCompra, id] 
         )
 
         if(result.affectedRows === 0 ){
@@ -48,12 +42,13 @@ export async function PATCH(request, { params }){
         }
 
         return NextResponse.json(
-            { message: `Fornecedor ${ nome } atualizado!`},
+            { message: `Matéria prima ${ material } atualizado!`},
             { status: 200 }
         )
 
+
     } catch(err){
-        console.log("Fornecedores PATCH: ", err)
+        console.log("Materia PATCH: ", err)
 
         if(err.status){
             return NextResponse.json(
@@ -70,47 +65,45 @@ export async function PATCH(request, { params }){
     }
 }
 
-// Soft delete no fornecedor
 export async function DELETE(request, { params }) {
- 
     const { id } = await params;
 
     try{
         checkAuthPosition(request)
 
         const [exist] = await pool.query(
-                "SELECT * FROM fornecedores WHERE pk_fornecedorID = ?",
+                "SELECT * FROM materiasPrimas WHERE pk_materiaID = ?",
                 [id]
             ) 
 
         if(exist.length === 0){
             return NextResponse.json(
-                { message: "Fornecedor não encontrado!" },
+                { message: "Materia prima não encontrado!" },
                 { status: 404 }
             )
         }
 
         const [result] = await pool.query(
-            "UPDATE fornecedores SET status = 'Desativado' WHERE pk_fornecedorID = ? AND status = 'Ativo'",
+            "UPDATE materiasPrimas SET status = 'Desativado' WHERE pk_materiaID = ? AND status = 'Ativo'",
             [id] 
         )
 
         if(result.affectedRows > 0 ){
 
             return NextResponse.json(
-                { message: "Fornecedor desativado com sucesso!" },
+                { message: "Materia prima desativado com sucesso!" },
                 { status: 200 }
             )
         } else if(result.affectedRows === 0){
 
             return NextResponse.json(
-                { message: "Fornecedor já desativado!" },
+                { message: "Materia prima já desativado!" },
                 { status: 200 }
             )
         }
      
     } catch(err){
-        console.log("Erro ao deletar fornecedor: ", err)
+        console.log("Erro ao deletar materia prima: ", err)
 
         if(err.status){
             return NextResponse.json(
@@ -126,7 +119,8 @@ export async function DELETE(request, { params }) {
 
     }
 }
-// Função para ativar um fornecedor
+
+
 export async function POST(request, { params }) {
 
      const { id } = await params;
@@ -135,38 +129,38 @@ export async function POST(request, { params }) {
         checkAuthPosition(request)
 
         const [exist] = await pool.query(
-                "SELECT * FROM fornecedores WHERE pk_fornecedorID = ?",
+                "SELECT * FROM materiasPrimas WHERE pk_materiaID= ?",
                 [id]
             ) 
 
         if(exist.length === 0){
             return NextResponse.json(
-                { message: "Fornecedor não encontrado!" },
+                { message: "Matéria prima não encontrado!" },
                 { status: 404 }
             )
         }
 
         const [result] = await pool.query(
-            "UPDATE fornecedores SET status = 'Ativo' WHERE pk_fornecedorID = ? AND status = 'Desativado'",
+            "UPDATE materiasPrimas SET status = 'Ativo' WHERE pk_materiaID = ? AND status = 'Desativado'",
             [id] 
         )
 
         if(result.affectedRows > 0 ){
 
             return NextResponse.json(
-                { message: "Fornecedor ativado com sucesso!" },
+                { message: "Matéria prima ativado com sucesso!" },
                 { status: 200 }
             )
         } else if(result.affectedRows === 0){
 
             return NextResponse.json(
-                { message: "Fornecedor já ativo!" },
+                { message: "Matéria prima já ativo!" },
                 { status: 200 }
             )
         }
      
     } catch(err){
-        console.log("Erro ao ativar fornecedor: ", err)
+        console.log("Erro ao ativar materia prima: ", err)
 
         if(err.status){
             return NextResponse.json(
