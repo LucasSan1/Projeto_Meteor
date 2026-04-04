@@ -20,9 +20,9 @@ export function isvalid(token){
         console.log("erro ao validar token: ", err)
 
         if(err.name === "TokenExpiredError"){
-            return "Token expirado!"
-        }
+            return "TokenExpiredError"
+        } 
 
-        return "Token Invalido!"
+        return "JsonWebTokenError"
     }
 }

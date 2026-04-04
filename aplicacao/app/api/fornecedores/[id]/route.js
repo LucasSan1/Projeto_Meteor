@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql"
-import { checkAuth } from "../../../utils/authChecker";
+import { checkAuthPosition } from "../../../utils/authChecker";
 
 
 // Função para atualizar cadastro de um fornecedor
@@ -11,7 +11,7 @@ export async function PATCH(request, { params }){
     let { nome, endereco, contato, avaliacao } = body;
 
     try{ 
-        checkAuth(request)
+        checkAuthPosition(request)
 
         // Verifica se o fornecedor existe
         const [exist] = await pool.query(
@@ -75,7 +75,7 @@ export async function DELETE(request, { params }) {
     const { id } = await params;
 
     try{
-        checkAuth(request)
+        checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM fornecedores WHERE pk_fornecedorID = ?",
@@ -131,7 +131,7 @@ export async function POST(request, { params }) {
      const { id } = await params;
 
    try{
-        checkAuth(request)
+        checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM fornecedores WHERE pk_fornecedorID = ?",

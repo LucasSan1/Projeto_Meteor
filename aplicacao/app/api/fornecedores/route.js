@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql"
-import { checkAuth } from "../../../utils/authChecker";
+import { checkAuthPosition, checkAuth } from "../../utils/authChecker";
 
 // Função para salvar um novo fornecedor no banco
 export async function POST(request){
     try{
 
-        // Verifica o token
-        checkAuth(request)
+        // Verifica o token com base no cargo
+        checkAuthPosition(request)
 
         // Extrai o json e valida os campos
         const body = await request.json();
@@ -55,16 +55,8 @@ export async function POST(request){
 export async function GET(request){
     try{
 
-        const authHeader = request.headers.get("authorization")
-    
-        const payload = isvalid(authHeader)
-
-        if(payload === "Token expirado!"){
-            return NextResponse.json(
-                { message: "Token expirado, por favor logue novamente!"},
-                { status: 401}
-            )
-        }
+        // Apenas verifica se o token é valido e não expirou, ignorando o cargo
+        checkAuth(request)
 
         const [result] = await pool.query(
             "SELECT * FROM fornecedores WHERE fstatus = 'Ativado' "
@@ -77,6 +69,13 @@ export async function GET(request){
 
     } catch(err){
         console.log("Fornecedores GET: ", err)
+
+        if(err.status){
+            return NextResponse.json(
+                { message: err.message },
+                { status: err.status }
+            )
+        }
 
         return NextResponse.json(
             { message: "Erro do lado do servidor para fornecedores! "},
