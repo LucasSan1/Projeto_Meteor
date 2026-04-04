@@ -16,16 +16,18 @@ DROP TABLE inspecoes;
 DROP TABLE pecas;
 DROP TABLE materiasPrimas;
 DROP TABLE fornecedores;
+DROP TABLE usuarios;
 
 SET FOREIGN_KEY_CHECKS = 0;
 SET FOREIGN_KEY_CHECKS = 1; 
 
 CREATE TABLE usuarios (
-    id     INT AUTO_INCREMENT PRIMARY KEY,
-    nome   VARCHAR(100) NOT NULL,
-    email  VARCHAR(200) UNIQUE NOT NULL,
-    cargo  ENUM('gerente', 'operador', 'mecanico') NOT NULL DEFAULT "operador",
-    senha   VARCHAR(200) NOT NULL 
+    id      INT AUTO_INCREMENT PRIMARY KEY,
+    nome    VARCHAR(100) NOT NULL,
+    email   VARCHAR(200) UNIQUE NOT NULL,
+    cargo   ENUM('gerente', 'operador', 'mecanico') NOT NULL DEFAULT "operador",
+    senha   VARCHAR(200) NOT NULL, 
+    status  ENUM('Ativo', "Desativado") NOT NULL DEFAULT "Ativo"
 );
 
 
@@ -35,17 +37,18 @@ CREATE TABLE fornecedores (
     endereco            VARCHAR(300) NOT NULL,
     contato             VARCHAR(50) NOT NULL,
     avaliacao           DECIMAL(2,1),
-    fstatus             ENUM('Ativado', 'Desativado') NOT NULL DEFAULT "Ativado",
+    status              ENUM('Ativo', 'Desativado') NOT NULL DEFAULT "Ativo",
     
     PRIMARY KEY (pk_fornecedorID)
 );
 
 CREATE TABLE materiasPrimas (
     pk_materiaID        INT NOT NULL AUTO_INCREMENT,
-    descricaoMateria    VARCHAR(300),
+    materia             VARCHAR(300) NOT NULL,
     fk_fornecedor       INT NOT NULL,
-    quantidadeEstoque   VARCHAR(30),
+    quantidadeEstoque   VARCHAR(30) DEFAULT "0",
     dataUltimaCompra    DATE,
+    status              ENUM('Ativo', "Desativado") NOT NULL DEFAULT "Ativo",
     
     PRIMARY KEY (pk_materiaID),
     FOREIGN KEY (fk_fornecedor) REFERENCES fornecedores(pk_fornecedorID)
@@ -53,10 +56,11 @@ CREATE TABLE materiasPrimas (
 
 CREATE TABLE pecas(
 	pk_pecaID		INT NOT NULL AUTO_INCREMENT,
-    descricaoPeca	VARCHAR(300),
+    peca	        VARCHAR(300) NOT NULL,
     fk_material		INT NOT NULL,
     peso			VARCHAR(20),
     Dimensoes		VARCHAR(30),
+    status          ENUM('Ativo', "Desativado") NOT NULL DEFAULT "Ativo",
     
     PRIMARY KEY (pk_pecaID),
     FOREIGN KEY (fk_material) REFERENCES materiasPrimas(pk_materiaID)
@@ -103,7 +107,7 @@ CREATE TABLE ordensProducao (
     quantidade          INT NOT NULL DEFAULT 1,
     dataInicio          DATE,
     dataConclusao       DATE,
-    statusOrdem         ENUM('Em Produção', 'Pronto', 'Pendente'),
+    status              ENUM('Em Produção', 'Pronto', 'Pendente', 'Cancelado') NOT NULL DEFAULT "Pendente",
     
     PRIMARY KEY (pk_ordemID),
     FOREIGN KEY (fk_pecaID) REFERENCES pecas(pk_pecaID)
@@ -115,7 +119,8 @@ CREATE TABLE operadores (
     especializacao      VARCHAR(100),
     disponibilidade     ENUM('Disponivel', 'Indisponivel'),
     historicoProducao   INT,
-    
+    status              ENUM('Ativo', 'Desativado') NOT NULL DEFAULT "Ativo",
+
     PRIMARY KEY (pk_operadorID)
 );
 
@@ -125,14 +130,16 @@ CREATE TABLE equipamentos (
     descricao           VARCHAR(300),
     dataAquisicao       DATE,
     vidaUtilRestante    DATE,
+    status              ENUM('Ativo', 'Desativado') NOT NULL DEFAULT "Ativo",
     
     PRIMARY KEY (pk_equipamentoID)
 );
 
 CREATE TABLE mecanico(
 	pk_mecanicoID	INT NOT NULL AUTO_INCREMENT,
-    nome			VARCHAR(100),
-    telefone		VARCHAR(50),
+    nome			VARCHAR(100) NOT NULL,
+    telefone		VARCHAR(50) NOT NULL,
+    status          ENUM('Ativo', 'Desativado') NOT NULL DEFAULT "Ativo",
     
     PRIMARY KEY (pk_mecanicoID)    
 );
@@ -141,10 +148,11 @@ CREATE TABLE mecanico(
 CREATE TABLE maquinas (
     pk_maquinaID        INT NOT NULL AUTO_INCREMENT,
     fk_equipamentoID	INT NOT NULL,
-    nomeMaquina         VARCHAR(100),
+    nomeMaquina         VARCHAR(100) NOT NULL,
     descricao           VARCHAR(300),
-    capacidadeMaxima    VARCHAR(50),
+    capacidadeMaxima    VARCHAR(50) NOT NULL,
     ultimaManutencao    DATE,
+    status              ENUM('Ativo', 'Desativado') NOT NULL DEFAULT "Ativo",
     
     PRIMARY KEY (pk_maquinaID),
     FOREIGN KEY (fk_equipamentoID) REFERENCES equipamentos(pk_equipamentoID)
@@ -155,8 +163,9 @@ CREATE TABLE manutencoesProgramadas (
     fk_equipamentoID    INT NOT NULL,
     fk_maquinaID		INT NOT NULL,
     tipoManutencao      VARCHAR(100),
-    dataProgramada      DATE,
+    dataProgramada      DATE NOT NULL ,
     responsavel         INT NOT NULL,
+    status              ENUM('Pendente', 'Realizada', 'Cancelada') NOT NULL DEFAULT "Pendente", 
     
     PRIMARY KEY (pk_manutencaoID),
     FOREIGN KEY (fk_equipamentoID) 	REFERENCES equipamentos(pk_equipamentoID),
@@ -168,22 +177,12 @@ CREATE TABLE historicoManutencao (
     historicoID      		INT NOT NULL AUTO_INCREMENT,
     fk_equipamentoID    	INT,
     manutencaoRealizada 	VARCHAR(100),
-    dataManutencao      	DATE,
+    dataManutencao      	DATE NOT NULL,
     custos              	DECIMAL(10,5),
+    observacoes             VARCHAR(200),
     
     PRIMARY KEY (historicoID),
     FOREIGN KEY (fk_equipamentoID) REFERENCES equipamentos(pk_equipamentoID),
     FOREIGN KEY (historicoID)	   REFERENCES manutencoesProgramadas(pk_manutencaoID)
 );
 
-CREATE TABLE historicoDeProducao(
-	ordemID			INT NOT NULL AUTO_INCREMENT,
-    operadorID		INT NOT NULL,
-    maquinaID		INT NOT NULL,
-    dataProducao	DATE,
-    
-    PRIMARY KEY (ordemID),
-    FOREIGN KEY (ordemID) 	 REFERENCES ordensProducao(pk_ordemID),
-    FOREIGN KEY (operadorID) REFERENCES operadores(pk_operadorID),
-    FOREIGN KEY (maquinaID)  REFERENCES maquinas(pk_maquinaID)
-);

@@ -30,7 +30,7 @@ export async function POST(request){
         ) 
 
         return NextResponse.json({
-            message: "Fornecedor inserido com sucesso!",
+            message: "Fornecedor cadastrado com sucesso!",
             id: result.insertId
         });
 
@@ -45,7 +45,7 @@ export async function POST(request){
         }
 
         return NextResponse.json(
-            { message: "Erro do lado do servidor para fornecedores! "},
+            { message: "Erro do servidor! "},
             { status: 500 }
         )
     }
@@ -59,7 +59,7 @@ export async function GET(request){
         checkAuth(request)
 
         const [result] = await pool.query(
-            "SELECT * FROM fornecedores WHERE fstatus = 'Ativado' "
+            "SELECT * FROM fornecedores WHERE status = 'Ativado' "
         )
 
         return NextResponse.json(
@@ -78,7 +78,7 @@ export async function GET(request){
         }
 
         return NextResponse.json(
-            { message: "Erro do lado do servidor para fornecedores! "},
+            { message: "Erro do servidor! "},
             { status: 500 }
         )
 

@@ -8,7 +8,7 @@ export async function PATCH(request, { params }){
 
     const { id } = await params;
     const body = await request.json();
-    let { nome, endereco, contato, avaliacao } = body;
+    let { nome, endereco, contato, avaliacao, status } = body;
 
     try{ 
         checkAuthPosition(request)
@@ -33,10 +33,11 @@ export async function PATCH(request, { params }){
         endereco = endereco ?? fornecedor.endereco;
         contato = contato ?? fornecedor.contato;
         avaliacao = avaliacao ?? fornecedor.avaliacao;
+        status = status ?? fornecedor.status
         
         const [result] = await pool.query(
-            "UPDATE fornecedores SET nomeFornecedor = ?, endereco = ?, contato = ?, avaliacao = ? WHERE pk_fornecedorID = ?",
-            [nome, endereco, contato, avaliacao, id] 
+            "UPDATE fornecedores SET nomeFornecedor = ?, endereco = ?, contato = ?, avaliacao = ?, status = ? WHERE pk_fornecedorID = ?",
+            [nome, endereco, contato, avaliacao, status, id] 
         )
 
         if(result.affectedRows === 0 ){
@@ -90,7 +91,7 @@ export async function DELETE(request, { params }) {
         }
 
         const [result] = await pool.query(
-            "UPDATE fornecedores SET fstatus = 'Desativado' WHERE pk_fornecedorID = ? AND fstatus = 'Ativado'",
+            "UPDATE fornecedores SET fstatus = 'Desativado' WHERE pk_fornecedorID = ? AND status = 'Ativo'",
             [id] 
         )
 
@@ -146,7 +147,7 @@ export async function POST(request, { params }) {
         }
 
         const [result] = await pool.query(
-            "UPDATE fornecedores SET fstatus = 'Ativado' WHERE pk_fornecedorID = ? AND fstatus = 'Desativado'",
+            "UPDATE fornecedores SET fstatus = 'Ativado' WHERE pk_fornecedorID = ? AND status = 'Desativado'",
             [id] 
         )
 
