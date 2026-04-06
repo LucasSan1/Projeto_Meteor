@@ -8,33 +8,38 @@ export default function Home() {
     <div className="
       min-h-screen
       bg-[#F9F7F4]
-      p-6
       flex
       flex-col
-      gap-6
     ">
 
-      {/* HEADER */}
-      <Header />
+    <Header />
 
-
-      {/* CARDS */}
       <div className="
-        grid
-        grid-cols-1
-        sm:grid-cols-2
-        gap-4
+        p-6
+        flex
+        flex-col
+        gap-6
       ">
 
-        <Card
-          title="Ordens em Produção"
-          value={12}
-        />
+      
+        <div className="
+          grid
+          grid-cols-1
+          sm:grid-cols-2
+          gap-4
+        ">
 
-        <Card
-          title="Manutenções Pendentes"
-          value={5}
-        />
+          <Card
+            title="Ordens em Produção"
+            value={12}
+          />
+
+          <Card
+            title="Manutenções Pendentes"
+            value={5}
+          />
+
+        </div>
 
       </div>
 
