@@ -1,15 +1,22 @@
-import Headers from "@/app/(front)/components/Header"
-import Card from "@/app/(front)/components/Card"
-import OrdensRecentes from "@/app/(front)/components/Ordens"
-import ManutencoesProximas from "@/app/(front)/components/ManutencoesProximas"
+import Header from "./components/Header"
+import Card from "./components/Card"
 
 export default function Home() {
 
   return (
 
-    <div className="p-6 flex flex-col gap-6">
+    <div className="
+      min-h-screen
+      bg-[#F9F7F4]
+      p-6
+      flex
+      flex-col
+      gap-6
+    ">
 
-      <Headers />
+      {/* HEADER */}
+      <Header />
+
 
       {/* CARDS */}
       <div className="
@@ -20,7 +27,7 @@ export default function Home() {
       ">
 
         <Card
-          title="Ordens Ativas"
+          title="Ordens em Produção"
           value={12}
         />
 
@@ -28,21 +35,6 @@ export default function Home() {
           title="Manutenções Pendentes"
           value={5}
         />
-
-      </div>
-
-
-      {/* TABELAS */}
-      <div className="
-        grid
-        grid-cols-1
-        lg:grid-cols-2
-        gap-6
-      ">
-
-        <OrdensRecentes />
-
-        <ManutencoesProximas />
 
       </div>
 
