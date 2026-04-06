@@ -1,0 +1,32 @@
+import { apiFetch } from "./api"
+
+// Buscar todas ordens
+export function getOrdens(){
+
+    return apiFetch("/api/osProducao")
+
+}
+
+// Criar nova ordem
+export function createOrdem(data){
+
+    return apiFetch("/api/osProducao", {
+        method: "POST",
+        body: JSON.stringify(data)
+    })
+
+}
+
+// Atualizar status
+export function updateStatusOrdem(
+    id,
+    status
+){
+    return apiFetch(`/api/osProducao/${id}`, {
+        method: "POST",
+        body: JSON.stringify({
+            status
+        })
+    })
+
+}
