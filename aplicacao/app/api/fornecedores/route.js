@@ -59,7 +59,7 @@ export async function GET(request){
         checkAuth(request)
 
         const [result] = await pool.query(
-            "SELECT * FROM fornecedores WHERE status = 'Ativo' "
+            "SELECT * FROM fornecedores"
         )
 
         return NextResponse.json(

@@ -42,7 +42,7 @@ export async function POST(request){
 
     } catch(err){
         console.log("Materia POST : ", err)
-        console.log("post name ", err.sqlState)
+        
         if(err.status){
             return NextResponse.json(
                 { message: err.message },
@@ -63,7 +63,7 @@ export async function GET(request) {
         checkAuth(request)
 
         const [result] = await pool.query(
-            "SELECT * FROM materiasPrimas WHERE status = 'Ativo' "
+            "SELECT * FROM materiasPrimas"
         )
 
         return NextResponse.json(

@@ -115,9 +115,9 @@ CREATE TABLE ordensProducao (
 
 CREATE TABLE operadores (
     pk_operadorID       INT NOT NULL AUTO_INCREMENT,
-    nome        		VARCHAR(100),
+    nome        		VARCHAR(100) NOT NULL,
     especializacao      VARCHAR(100),
-    disponibilidade     ENUM('Disponivel', 'Indisponivel'),
+    disponibilidade     ENUM('Disponivel', 'Indisponivel') NOT NULL DEFAULT "Disponivel",
     historicoProducao   INT,
     status              ENUM('Ativo', 'Desativado') NOT NULL DEFAULT "Ativo",
 

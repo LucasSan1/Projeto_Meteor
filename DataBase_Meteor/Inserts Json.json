@@ -1,0 +1,70 @@
+{
+  "fornecedores": [
+    {
+      "nome": "Yabox",
+      "endereco": "1 Upham Hill",
+      "contato": "849-147-1277",
+      "avaliacao": 1.4
+    },
+    {
+      "nome": "Edgetag",
+      "endereco": "50244 Northwestern Place",
+      "contato": "584-118-6687",
+      "avaliacao": 1.0
+    },
+    {
+      "nome": "Gabtype",
+      "endereco": "40 Banding Drive",
+      "contato": "747-344-1663",
+      "avaliacao": 3.6
+    }
+  ],
+
+  "materiasPrimas": [
+    {
+      "materia": "steal",
+      "fornecedor": 1,
+      "quantidadeEstoque": 9,
+      "dataUltimaCompra": "2026-01-20"
+    },
+    {
+      "materia": "aluminium",
+      "fornecedor": 3,
+      "quantidadeEstoque": 45,
+      "dataUltimaCompra": "2025-12-18"
+    },
+    {
+      "materia": "copper",
+      "fornecedor": 2,
+      "quantidadeEstoque": 15,
+      "dataUltimaCompra": "2026-02-21"
+    },
+    {
+      "materia": "iron",
+      "fornecedor": 3,
+      "quantidadeEstoque": 6,
+      "dataUltimaCompra": "2025-12-16"
+    }
+  ],
+
+  "pecas": [
+    {
+      "peca": "metal connectors",
+      "material": 2,
+      "peso": "5kg",
+      "dimensoes": "10mm"
+    },
+    {
+      "peca": "screws",
+      "material": 3,
+      "peso": "60g",
+      "dimensoes": "10mm"
+    },
+    {
+      "peca": "piston",
+      "material": 2,
+      "peso": "3g",
+      "dimensoes": "60cm"
+    }
+  ]
+}
