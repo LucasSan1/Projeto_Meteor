@@ -72,7 +72,7 @@ export async function GET(request) {
         )
 
     } catch(err){
-        console.log("Materia POST : ", err)
+        console.log("Materia GET : ", err)
 
         if(err.status){
             return NextResponse.json(

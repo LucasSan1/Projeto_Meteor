@@ -66,5 +66,31 @@
       "peso": "3g",
       "dimensoes": "60cm"
     }
+  ],
+   "ordensProducao": [
+    {
+      "pecaID": 1,
+      "quantidade": 24,
+      "dataInicio": "2023-08-24",
+      "dataConclusao": "2024-06-18"
+    },
+    {
+      "pecaID": 2,
+      "quantidade": 18,
+      "dataInicio": "2023-09-19",
+      "dataConclusao": "2023-02-05"
+    },
+    {
+      "pecaID": 3,
+      "quantidade": 48,
+      "dataInicio": "2023-06-18",
+      "dataConclusao": "2023-03-03"
+    },
+    {
+      "pecaID": 1,
+      "quantidade": 34,
+      "dataInicio": "2024-01-04",
+      "dataConclusao": "2024-04-27"
+    }
   ]
 }
