@@ -1,11 +1,14 @@
 import Swal from "sweetalert2"
 
+// Validação de Headers (token de acesso e permissoes)
 export async function apiFetch(
     url,
     options = {}
 ){
 
     const token = localStorage.getItem("token")
+
+    const skipAuth = options.skipAuth || false
 
     try{
 
@@ -29,6 +32,18 @@ export async function apiFetch(
 
             const data = await response.json()
 
+            if(skipAuth){
+
+                // login inválido → só mostra erro
+                await Swal.fire({
+                    icon: "warning",
+                    title: "Credenciais Invalidas",
+                    text: data.message
+                })
+
+                return null
+            }
+
             await Swal.fire({
                 icon: "warning",
                 title: "Sessão inválida",
@@ -36,6 +51,7 @@ export async function apiFetch(
             })
 
             localStorage.removeItem("token")
+            localStorage.removeItem("cargo")
 
             window.location.href = "/login"
 
@@ -50,6 +66,17 @@ export async function apiFetch(
                 icon: "error",
                 title: "Acesso negado",
                 text: data.message
+            })
+
+            return null
+        }
+
+        if(!response.ok){
+
+            await Swal.fire({
+                icon: "error",
+                title: "Erro",
+                text: data.message || "Erro inesperado"
             })
 
             return null
