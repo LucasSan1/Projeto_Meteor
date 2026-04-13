@@ -84,7 +84,7 @@ export default function OrdemServico() {
     setModalStatusOpen(true);
   }
 
-  // CONFIRMAR STATUS
+  // Popup para confirmar mudança de status
   async function confirmarStatus(payload) {
     try {
       const result = await Swal.fire({
@@ -138,7 +138,6 @@ export default function OrdemServico() {
     try {
       const payload = {
         pecaID: Number(data.pecaID),
-
         quantidade: Number(data.quantidade),
       };
 
@@ -173,42 +172,25 @@ export default function OrdemServico() {
   }
 
   // Filtros
-  const emProgresso = ordens.filter((o) => o.status === "Em Produção");
-
   const pendentes = ordens.filter((o) => o.status === "Pendente");
-
+  const emProgresso = ordens.filter((o) => o.status === "Em Produção");
   const prontas = ordens.filter((o) => o.status === "Pronto");
-
   const canceladas = ordens.filter((o) => o.status === "Cancelado");
 
   return (
-    <div
-      className="
-      min-h-screen
-      bg-[#F9F7F4]
-      flex
-      flex-col
-    "
-    >
+    <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
       <Header />
 
-      <div
-        className="
-        p-6
-        flex
-        flex-col
-        gap-8
-      "
-      >
+      <div className="p-6 flex flex-col gap-8">
         <Section
-          title="Ordens em Produção"
-          ordens={emProgresso}
+          title="Ordens Pendentes"
+          ordens={pendentes}
           onStatus={abrirModalStatus}
         />
 
         <Section
-          title="Ordens Pendentes"
-          ordens={pendentes}
+          title="Ordens em Produção"
+          ordens={emProgresso}
           onStatus={abrirModalStatus}
         />
 
@@ -273,72 +255,58 @@ export default function OrdemServico() {
 
 // Componente Sections (basicamente os cards)
 function Section({ title, ordens, onStatus }) {
+  const [open, setOpen] = useState(true);
+
   if (ordens.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-4">
-      <h2
-        className="
-        text-xl
-        font-bold
-        text-[#4E342E]
-      "
-      >
-        {title}
-      </h2>
-
       <div
-        className="
-        flex
-        flex-col
-        gap-4
-      "
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between cursor-pointer select-none"
       >
-        {ordens.map((ordem) => (
-          <Card key={ordem.pk_ordemID} title={`Ordem #${ordem.pk_ordemID}`}>
-            <p className="text-sm text-black">Peça: {ordem.nomePeca}</p>
+        <h2 className="text-xl font-bold text-[#4E342E]">{title}</h2>
 
-            <p className="text-sm text-black">Quantidade: {ordem.quantidade}</p>
-
-            <p className="text-sm text-black">Status: {ordem.status}</p>
-
-            <p className="text-sm text-black">
-              Início: {new Date(ordem.dataInicio).toLocaleDateString("pt-BR")}
-            </p>
-
-            {(ordem.status === "Pronto" || ordem.status === "Cancelado") &&
-              ordem.dataConclusao && (
-                <p className="text-sm text-black">
-                  Conclusão:{" "}
-                  {new Date(ordem.dataConclusao).toLocaleDateString("pt-BR")}
-                </p>
-              )}
-
-            <div
-              className="
-              flex
-              gap-2
-              mt-3
-              flex-wrap
-            "
-            >
-              <button
-                onClick={() => onStatus(ordem)}
-                className="
-                  bg-yellow-500
-                  text-white
-                  px-3
-                  py-1
-                  rounded
-                  hover:bg-yellow-600
-                "
-              >
-                Mudar Status
-              </button>
-            </div>
-          </Card>
-        ))}
+        <span className="text-lg text-black">{open ? "-" : "+"}</span>
       </div>
+
+      {/* CONTEÚDO */}
+      {open && (
+        <div className="flex flex-col gap-4">
+          {ordens.map((ordem) => (
+            <Card key={ordem.pk_ordemID} title={`Ordem #${ordem.pk_ordemID}`}>
+              <p className="text-sm text-black">Peça: {ordem.peca}</p>
+
+              <p className="text-sm text-black">
+                Quantidade: {ordem.quantidade}
+              </p>
+
+              <p className="text-sm text-black">Status: {ordem.status}</p>
+
+              <p className="text-sm text-black">
+                Início: {new Date(ordem.dataInicio).toLocaleDateString("pt-BR")}
+              </p>
+
+              {(ordem.status === "Pronto" || ordem.status === "Cancelado") &&
+                ordem.dataConclusao && (
+                  <p className="text-sm text-black">
+                    Conclusão:{" "}
+                    {new Date(ordem.dataConclusao).toLocaleDateString("pt-BR")}
+                  </p>
+                )}
+
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <button
+                  onClick={() => onStatus(ordem)}
+                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                >
+                  Mudar Status
+                </button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
