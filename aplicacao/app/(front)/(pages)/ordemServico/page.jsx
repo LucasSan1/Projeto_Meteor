@@ -1,68 +1,243 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 
-import { getOrdens } from "../../services/orderService"
+import Header from "../../components/Header";
+import Card from "../../components/Card";
+import ModalEdicao from "../../components/modalEdicao";
+import ModalStatus from "../../components/modalStatus";
 
-export default function OrdemServico(){
+import { getOrdens, updateStatusOrdem } from "../../services/orderService";
 
-    const [ordens, setOrdens] = useState([])
-    const [loading, setLoading] = useState(true)
+export default function OrdemServico() {
+  const [ordens, setOrdens] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+  // MODAL EDIÇÃO
+  const [modalOpen, setModalOpen] = useState(false);
 
-        async function carregar(){
+  const [ordemSelecionada, setOrdemSelecionada] = useState(null);
 
-            const response = await getOrdens()
+  // MODAL STATUS
+  const [modalStatusOpen, setModalStatusOpen] = useState(false);
 
-            if (response){
+  const [ordemStatusSelecionada, setOrdemStatusSelecionada] = useState(null);
 
-                setOrdens(response.data)
+  // STATUS DISPONÍVEIS
+  const statusOptions = ["Pendente", "Em Produção", "Pronto", "Cancelado"];
 
-            }
+  async function carregar() {
+    try {
+      const response = await getOrdens();
 
-            setLoading(false)
-
-        }
-
-        carregar()
-
-    }, [])
-
-    if (loading){
-        return <p>Carregando ordens...</p>
+      if (response) {
+        setOrdens(response.data);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar ordens:", err);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    return(
+  useEffect(() => {
+    carregar();
+  }, []);
 
-        <div>
+  // ABRIR MODAL EDIÇÃO
+  function abrirModal(ordem) {
+    setOrdemSelecionada(ordem);
+    setModalOpen(true);
+  }
 
-            <h1>Ordens de Produção</h1>
+  function fecharModal() {
+    setModalOpen(false);
+    setOrdemSelecionada(null);
+  }
 
-            {ordens.map(ordem => (
+  // ABRIR MODAL STATUS
+  function abrirModalStatus(ordem) {
+    setOrdemStatusSelecionada(ordem);
+    setModalStatusOpen(true);
+  }
 
-                <div key={ordem.pk_ordemID}>
+  // CONFIRMAR STATUS
+  async function confirmarStatus(payload) {
+    try {
+      await updateStatusOrdem(payload.id, payload.status);
 
-                    <p>
-                        Peça: {ordem.fk_pecaID}
-                    </p>
+      setModalStatusOpen(false);
 
-                    <p>
-                        Quantidade: {ordem.quantidade}
-                    </p>
+      await carregar();
+    } catch (err) {
+      console.error("Erro ao atualizar status:", err);
+    }
+  }
 
-                    <p>
-                        Status: {ordem.status}
-                    </p>
+  if (loading) {
+    return <p className="p-6">Carregando ordens...</p>;
+  }
 
-                    <hr/>
+  const emProgresso = ordens.filter((o) => o.status === "Em Produção");
 
-                </div>
+  const pendentes = ordens.filter((o) => o.status === "Pendente");
 
-            ))}
+  const prontas = ordens.filter((o) => o.status === "Pronto");
 
-        </div>
+  const canceladas = ordens.filter((o) => o.status === "Cancelado");
 
-    )
+  return (
+    <div
+      className="
+      min-h-screen
+      bg-[#F9F7F4]
+      flex
+      flex-col
+    "
+    >
+      <Header />
 
+      <div
+        className="
+        p-6
+        flex
+        flex-col
+        gap-8
+      "
+      >
+        <Section
+          title="Ordens em Produção"
+          ordens={emProgresso}
+          onEdit={abrirModal}
+          onStatus={abrirModalStatus}
+        />
+
+        <Section
+          title="Ordens Pendentes"
+          ordens={pendentes}
+          onEdit={abrirModal}
+          onStatus={abrirModalStatus}
+        />
+
+        <Section
+          title="Ordens Prontas"
+          ordens={prontas}
+          onEdit={abrirModal}
+          onStatus={abrirModalStatus}
+        />
+
+        <Section
+          title="Ordens Canceladas"
+          ordens={canceladas}
+          onEdit={abrirModal}
+          onStatus={abrirModalStatus}
+        />
+      </div>
+
+      {/* MODAL EDIÇÃO */}
+      {modalOpen && (
+        <ModalEdicao
+          ordem={ordemSelecionada}
+          onClose={fecharModal}
+          onSuccess={carregar}
+        />
+      )}
+
+      {/* MODAL STATUS */}
+      {modalStatusOpen && (
+        <ModalStatus
+          ordem={ordemStatusSelecionada}
+          statusOptions={statusOptions}
+          onClose={() => setModalStatusOpen(false)}
+          onConfirm={confirmarStatus}
+        />
+      )}
+    </div>
+  );
+}
+
+// COMPONENTE SECTION 
+function Section({ title, ordens, onEdit, onStatus }) {
+  if (ordens.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h2
+        className="
+        text-xl
+        font-bold
+        text-[#4E342E]
+      "
+      >
+        {title}
+      </h2>
+
+      <div
+        className="
+        flex
+        flex-col
+        gap-4
+      "
+      >
+        {ordens.map((ordem) => (
+          <Card key={ordem.pk_ordemID} title={`Ordem #${ordem.pk_ordemID}`}>
+            <p className="text-sm text-black">Peça: {ordem.fk_pecaID}</p>
+
+            <p className="text-sm text-black">Quantidade: {ordem.quantidade}</p>
+
+            <p className="text-sm text-black">Status: {ordem.status}</p>
+
+            <p className="text-sm text-black">
+              Início: {new Date(ordem.dataInicio).toLocaleDateString()}
+            </p>
+
+            {(ordem.status === "Pronto" || ordem.status === "Cancelado") &&
+              ordem.dataConclusao && (
+                <p className="text-sm text-black">
+                  Conclusão:{" "}
+                  {new Date(ordem.dataConclusao).toLocaleDateString()}
+                </p>
+              )}
+
+            <div
+              className="
+              flex
+              gap-2
+              mt-3
+              flex-wrap
+            "
+            >
+              <button
+                onClick={() => onEdit(ordem)}
+                className="
+                  bg-blue-500
+                  text-white
+                  px-3
+                  py-1
+                  rounded
+                  hover:bg-blue-600
+                "
+              >
+                Editar
+              </button>
+
+              <button
+                onClick={() => onStatus(ordem)}
+                className="
+                  bg-yellow-500
+                  text-white
+                  px-3
+                  py-1
+                  rounded
+                  hover:bg-yellow-600
+                "
+              >
+                Mudar Status
+              </button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
 }

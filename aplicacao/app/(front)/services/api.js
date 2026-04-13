@@ -47,7 +47,7 @@ export async function apiFetch(
             await Swal.fire({
                 icon: "warning",
                 title: "Sessão inválida",
-                text: data.message
+                text: data.message || "Acesso negado 401"
             })
 
             localStorage.removeItem("token")
@@ -65,8 +65,8 @@ export async function apiFetch(
             await Swal.fire({
                 icon: "error",
                 title: "Acesso negado",
-                text: data.message
-            })
+                text: data.message || "Acesso Negado 403"
+            }) 
 
             return null
         }

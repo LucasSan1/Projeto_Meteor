@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql"
 import { checkAuth, checkAuthPosition } from "../../../utils/authChecker"
+import { getDataBrasilia } from "../../../utils/getData"
 
 export async function POST(request, { params } ) {
     const { id } = await params;
     const body = await request.json();
     let { status } = body;
+    let datetime = null;
 
     try{
 
@@ -20,9 +22,17 @@ export async function POST(request, { params } ) {
             throw { status: 404, message: "OS não encontrada"}
         }
 
+        if(status === "Pronto" || status === "Cancelado"){
+            datetime = getDataBrasilia() || null
+        } else if (status != "Pronto"){
+             datetime = exist.dataConclusao
+        }
+
+        // Validar fluxo, uma ordem pronta ou cancelada não pode ser alterada depois
+
         const [result] = await pool.query(
-            "UPDATE ordensProducao SET status = ? WHERE pk_ordemID = ?",
-            [status, id] 
+            "UPDATE ordensProducao SET status = ?, dataConclusao = ? WHERE pk_ordemID = ?",
+            [status, datetime, id] 
         )
 
         if(result.affectedRows === 0 ){
