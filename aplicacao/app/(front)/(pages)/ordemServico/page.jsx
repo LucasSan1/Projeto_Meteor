@@ -172,10 +172,21 @@ export default function OrdemServico() {
   }
 
   // Filtros
-  const pendentes = ordens.filter((o) => o.status === "Pendente");
-  const emProgresso = ordens.filter((o) => o.status === "Em Produção");
-  const prontas = ordens.filter((o) => o.status === "Pronto");
-  const canceladas = ordens.filter((o) => o.status === "Cancelado");
+  const pendentes = ordens
+    .filter((o) => o.status === "Pendente")
+    .sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio));
+
+  const emProgresso = ordens
+    .filter((o) => o.status === "Em Produção")
+    .sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio));
+
+  const prontas = ordens
+    .filter((o) => o.status === "Pronto")
+    .sort((a, b) => new Date(b.dataConclusao) - new Date(a.dataConclusao));
+
+  const canceladas = ordens
+    .filter((o) => o.status === "Cancelado")
+    .sort((a, b) => new Date(b.dataConclusao) - new Date(a.dataConclusao));
 
   return (
     <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
@@ -265,7 +276,7 @@ function Section({ title, ordens, onStatus }) {
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between cursor-pointer select-none"
       >
-        <h2 className="text-xl font-bold text-[#4E342E]">{title}</h2>
+        <h2 className="text-xl font-bold text-[#4E342E]">{title} ({ordens.length}) </h2>
 
         <span className="text-lg text-black">{open ? "-" : "+"}</span>
       </div>
