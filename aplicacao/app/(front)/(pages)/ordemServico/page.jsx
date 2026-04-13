@@ -6,16 +6,18 @@ import Header from "../../components/Header";
 import Card from "../../components/Card";
 import ModalStatus from "../../components/modalStatus";
 import ModalIncluir from "../../components/modalIncluir";
+import Swal from "sweetalert2";
 
 import {
   getOrdens,
   updateStatusOrdem,
-  createOrdem
+  createOrdem,
+  getPecas,
 } from "../../services/orderService";
 
 export default function OrdemServico() {
-
   const [ordens, setOrdens] = useState([]);
+  const [pecas, setPecas] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // MODAL STATUS
@@ -25,167 +27,161 @@ export default function OrdemServico() {
   // MODAL INCLUIR
   const [modalAddOpen, setModalAddOpen] = useState(false);
 
-  // STATUS DISPONÍVEIS
-  const statusOptions = [
-    "Pendente",
-    "Em Produção",
-    "Pronto",
-    "Cancelado"
-  ];
+  // Status disponiveis para o select
+  const statusOptions = ["Pendente", "Em Produção", "Pronto", "Cancelado"];
 
-  // CAMPOS DA ORDEM
+  // Campos da modal de novas ordens
   const ordemFields = [
-
     {
       name: "pecaID",
-      label: "ID da Peça",
-      type: "number"
+      label: "Peça",
+      type: "select",
+      options: pecas,
     },
 
     {
       name: "quantidade",
       label: "Quantidade",
-      type: "number"
+      type: "number",
     },
-
-    {
-      name: "dataInicio",
-      label: "Data de Início",
-      type: "date"
-    },
-
-    {
-      name: "dataConclusao",
-      label: "Data de Conclusão",
-      type: "date"
-    }
-
   ];
 
   async function carregar() {
-
     try {
+      const [ordensRes, pecasRes] = await Promise.all([
+        getOrdens(),
+        getPecas(),
+      ]);
 
-      const response = await getOrdens();
-
-      if (response) {
-        setOrdens(response.data);
+      // ordens
+      if (ordensRes) {
+        setOrdens(ordensRes.data);
       }
 
+      // Select de peças
+      if (pecasRes) {
+        const options = pecasRes.data.map((p) => ({
+          value: p.pk_pecaID,
+          label: p.peca,
+        }));
+
+        setPecas(options);
+      }
     } catch (err) {
-
-      console.error("Erro ao carregar ordens:", err);
-
+      console.error("Erro ao carregar dados:", err);
     } finally {
-
       setLoading(false);
-
     }
-
   }
 
   useEffect(() => {
-
     carregar();
-
   }, []);
 
   // ABRIR MODAL STATUS
   function abrirModalStatus(ordem) {
-
     setOrdemStatusSelecionada(ordem);
     setModalStatusOpen(true);
-
   }
 
   // CONFIRMAR STATUS
   async function confirmarStatus(payload) {
-
     try {
+      const result = await Swal.fire({
+        title: "Confirmar alteração?",
+        text: `Deseja mudar o status para "${payload.status}"?`,
+        icon: "question",
 
-      await updateStatusOrdem(
-        payload.id,
-        payload.status
-      );
+        showCancelButton: true,
 
+        confirmButtonText: "Sim, alterar",
+        cancelButtonText: "Cancelar",
+
+        confirmButtonColor: "#eab308",
+        cancelButtonColor: "#6b7280",
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      await updateStatusOrdem(payload.id, payload.status);
+
+      // Fecha modal
       setModalStatusOpen(false);
 
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+
+        icon: "success",
+        title: "Status atualizado!",
+
+        showConfirmButton: false,
+        timer: 2000,
+      });
+
       await carregar();
-
     } catch (err) {
+      console.error("Erro ao atualizar status:", err);
 
-      console.error(
-        "Erro ao atualizar status:",
-        err
-      );
-
+      Swal.fire({
+        icon: "error",
+        title: "Erro ao atualizar status",
+        text: "Não foi possível alterar o status.",
+      });
     }
-
   }
 
-  // CRIAR NOVA ORDEM
+  // Função para criar nova ordem
   async function handleCreateOrdem(data) {
-
     try {
-
       const payload = {
+        pecaID: Number(data.pecaID),
 
-        ...data,
-
-        dataConclusao:
-          data.dataConclusao || null
-
+        quantidade: Number(data.quantidade),
       };
 
       await createOrdem(payload);
 
       setModalAddOpen(false);
 
+      await Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Ordem criada com sucesso!",
+        showConfirmButton: false,
+        timer: 2500,
+      });
+
       await carregar();
-
     } catch (err) {
+      console.error("Erro ao criar ordem:", err);
 
-      console.error(
-        "Erro ao criar ordem:",
-        err
-      );
-
+      Swal.fire({
+        icon: "error",
+        title: "Erro ao criar ordem",
+        text: "Não foi possível cadastrar a ordem.",
+        confirmButtonColor: "#dc2626",
+      });
     }
-
   }
 
   if (loading) {
-
-    return (
-      <p className="p-6">
-        Carregando ordens...
-      </p>
-    );
-
+    return <p className="p-6">Carregando ordens...</p>;
   }
 
-  const emProgresso =
-    ordens.filter(
-      (o) => o.status === "Em Produção"
-    );
+  // Filtros
+  const emProgresso = ordens.filter((o) => o.status === "Em Produção");
 
-  const pendentes =
-    ordens.filter(
-      (o) => o.status === "Pendente"
-    );
+  const pendentes = ordens.filter((o) => o.status === "Pendente");
 
-  const prontas =
-    ordens.filter(
-      (o) => o.status === "Pronto"
-    );
+  const prontas = ordens.filter((o) => o.status === "Pronto");
 
-  const canceladas =
-    ordens.filter(
-      (o) => o.status === "Cancelado"
-    );
+  const canceladas = ordens.filter((o) => o.status === "Cancelado");
 
   return (
-
     <div
       className="
       min-h-screen
@@ -194,7 +190,6 @@ export default function OrdemServico() {
       flex-col
     "
     >
-
       <Header />
 
       <div
@@ -205,7 +200,6 @@ export default function OrdemServico() {
         gap-8
       "
       >
-
         <Section
           title="Ordens em Produção"
           ordens={emProgresso}
@@ -229,14 +223,10 @@ export default function OrdemServico() {
           ordens={canceladas}
           onStatus={abrirModalStatus}
         />
-
       </div>
 
-      {/* BOTÃO FLUTUANTE */}
       <button
-        onClick={() =>
-          setModalAddOpen(true)
-        }
+        onClick={() => setModalAddOpen(true)}
         className="
           fixed
           bottom-6
@@ -258,54 +248,35 @@ export default function OrdemServico() {
         +
       </button>
 
-      {/* MODAL STATUS */}
+      {/* RENDER MODAL STATUS */}
       {modalStatusOpen && (
-
         <ModalStatus
           ordem={ordemStatusSelecionada}
           statusOptions={statusOptions}
-          onClose={() =>
-            setModalStatusOpen(false)
-          }
+          onClose={() => setModalStatusOpen(false)}
           onConfirm={confirmarStatus}
         />
-
       )}
 
-      {/* MODAL INCLUIR */}
+      {/* RENDER MODAL INCLUIR */}
       {modalAddOpen && (
-
         <ModalIncluir
           title="Nova Ordem de Produção"
           fields={ordemFields}
           onSubmit={handleCreateOrdem}
-          onClose={() =>
-            setModalAddOpen(false)
-          }
+          onClose={() => setModalAddOpen(false)}
         />
-
       )}
-
     </div>
-
   );
-
 }
 
-// COMPONENTE SECTION
-function Section({
-  title,
-  ordens,
-  onStatus
-}) {
-
-  if (ordens.length === 0)
-    return null;
+// Componente Sections (basicamente os cards)
+function Section({ title, ordens, onStatus }) {
+  if (ordens.length === 0) return null;
 
   return (
-
     <div className="flex flex-col gap-4">
-
       <h2
         className="
         text-xl
@@ -323,47 +294,24 @@ function Section({
         gap-4
       "
       >
-
         {ordens.map((ordem) => (
+          <Card key={ordem.pk_ordemID} title={`Ordem #${ordem.pk_ordemID}`}>
+            <p className="text-sm text-black">Peça: {ordem.nomePeca}</p>
 
-          <Card
-            key={ordem.pk_ordemID}
-            title={`Ordem #${ordem.pk_ordemID}`}
-          >
+            <p className="text-sm text-black">Quantidade: {ordem.quantidade}</p>
 
-            <p className="text-sm text-black">
-              Peça: {ordem.fk_pecaID}
-            </p>
+            <p className="text-sm text-black">Status: {ordem.status}</p>
 
             <p className="text-sm text-black">
-              Quantidade: {ordem.quantidade}
+              Início: {new Date(ordem.dataInicio).toLocaleDateString("pt-BR")}
             </p>
 
-            <p className="text-sm text-black">
-              Status: {ordem.status}
-            </p>
-
-            <p className="text-sm text-black">
-              Início:{" "}
-              {new Date(
-                ordem.dataInicio
-              ).toLocaleDateString("pt-BR")}
-            </p>
-
-            {(ordem.status === "Pronto" ||
-              ordem.status === "Cancelado") &&
+            {(ordem.status === "Pronto" || ordem.status === "Cancelado") &&
               ordem.dataConclusao && (
-
                 <p className="text-sm text-black">
-
                   Conclusão:{" "}
-
-                  {new Date(
-                    ordem.dataConclusao
-                  ).toLocaleDateString("pt-BR")}
-
+                  {new Date(ordem.dataConclusao).toLocaleDateString("pt-BR")}
                 </p>
-
               )}
 
             <div
@@ -374,11 +322,8 @@ function Section({
               flex-wrap
             "
             >
-
               <button
-                onClick={() =>
-                  onStatus(ordem)
-                }
+                onClick={() => onStatus(ordem)}
                 className="
                   bg-yellow-500
                   text-white
@@ -390,17 +335,10 @@ function Section({
               >
                 Mudar Status
               </button>
-
             </div>
-
           </Card>
-
         ))}
-
       </div>
-
     </div>
-
   );
-
 }

@@ -17,6 +17,12 @@ export function createOrdem(data){
 
 }
 
+export function getPecas() {
+
+  return apiFetch("/api/pecas");
+
+}
+
 // Atualizar status
 export function updateStatusOrdem(
     id,
