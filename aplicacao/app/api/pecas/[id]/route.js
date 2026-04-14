@@ -19,6 +19,13 @@ export async function PATCH(request, { params } ) {
            throw { status: 404, message: "Peça não encontrada ou inativa!" }
         }
 
+        const part = exist[0]
+
+        peca = peca && peca.trim() !== "" ? peca : part.peca;
+        material = material === "" ? part.fk_material : material;
+        peso = peso && peso.trim() !== "" ? peso : part.peso;
+        dimensoes = dimensoes && dimensoes.trim() !== "" ? dimensoes : part.Dimensoes;
+
         const [mat] = await pool.query(
             "SELECT pk_materiaID FROM materiasPrimas WHERE pk_materiaID = ? AND status = 'Ativo'",
             [material]
@@ -26,14 +33,7 @@ export async function PATCH(request, { params } ) {
 
         if(!mat || mat.length === 0){
             throw { status: 404, message: "Material inválido!" }
-        }
-
-        const part = exist[0]
-
-        peca = peca ?? part.peca;
-        material = material ?? part.fk_material;
-        peso = peso ?? part.peso;
-        dimensoes = dimensoes ?? part.dimensoes
+        } 
 
         const [result] = await pool.query(
             "UPDATE pecas SET peca = ?, fk_material = ?, peso = ?, Dimensoes = ? WHERE pk_pecaID = ? AND status = 'Ativo'",
