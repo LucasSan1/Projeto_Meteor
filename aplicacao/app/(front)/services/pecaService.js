@@ -7,6 +7,12 @@ export function getPecas(){
 
 }
 
+export function getMaterial() {
+
+  return apiFetch("/api/materiaPrima");
+
+}
+
 // POST peça
 export function createPeca(data){
 
