@@ -11,7 +11,7 @@ export async function POST(request) {
         const { email, senha } = body;
 
         const [result]  = await pool.query(
-            "SELECT email, senha, cargo FROM usuarios WHERE email = ?",
+            "SELECT email, senha, nome, cargo FROM usuarios WHERE email = ?",
             [email]
         )
 
@@ -31,7 +31,7 @@ export async function POST(request) {
         const token = generateToken(user.email, user.cargo)
 
         return NextResponse.json(
-            { token: token, cargo: user.cargo },
+            { token: token, cargo: user.cargo, usuario: user.nome },
             { status: 200}
         )
         

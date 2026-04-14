@@ -29,11 +29,11 @@ export async function PATCH(request, { params }){
         const fornecedor = exist[0];
 
         // Se não tiver valor no json seta os valores já existentes no banco
-        nome = nome ?? fornecedor.nomeFornecedor;
-        endereco = endereco ?? fornecedor.endereco;
-        contato = contato ?? fornecedor.contato;
-        avaliacao = avaliacao ?? fornecedor.avaliacao;
-        status = status ?? fornecedor.status
+        nome = nome && nome.trim() !== "" ? nome : fornecedor.nomeFornecedor;
+        endereco = endereco && endereco.trm() !== "" ? endereco : fornecedor.endereco;
+        contato = contato && contato.trim() !== "" ? contato : fornecedor.contato;
+        avaliacao = avaliacao && avaliacao.trim() !== "" ? avaliacao : fornecedor.avaliacao;
+        status = status && status.trim() !== ""  ? status : fornecedor.status
         
         const [result] = await pool.query(
             "UPDATE fornecedores SET nomeFornecedor = ?, endereco = ?, contato = ?, avaliacao = ?, status = ? WHERE pk_fornecedorID = ?",

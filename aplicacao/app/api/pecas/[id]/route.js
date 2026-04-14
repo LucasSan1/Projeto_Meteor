@@ -22,7 +22,7 @@ export async function PATCH(request, { params } ) {
         const part = exist[0]
 
         peca = peca && peca.trim() !== "" ? peca : part.peca;
-        material = material === "" ? part.fk_material : material;
+        material = material !== "" ? part.fk_material : material;
         peso = peso && peso.trim() !== "" ? peso : part.peso;
         dimensoes = dimensoes && dimensoes.trim() !== "" ? dimensoes : part.Dimensoes;
 
