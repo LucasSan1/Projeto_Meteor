@@ -1,0 +1,390 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import Header from "../../components/Header";
+import Card from "../../components/Card";
+import ModalIncluir from "../../components/modalIncluir";
+
+import Swal from "sweetalert2";
+
+import {
+  getPecas,
+  createPeca,
+  deletePeca,
+  activatePeca,
+  getMaterial,
+  updatePeca,
+} from "../../services/pecaService";
+
+export default function Pecas() {
+  const [pecas, setPecas] = useState([]);
+  const [material, setMaterial] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingPeca, setEditingPeca] = useState(null);
+
+  // MODAL INCLUIR
+  const [modalAddOpen, setModalAddOpen] = useState(false);
+
+  // Campos modal
+  const pecaFields = [
+    {
+      name: "peca",
+      label: "Nome da Peça",
+      type: "text",
+    },
+    {
+      name: "material",
+      label: "Material",
+      type: "select",
+      options: [
+      { value: "", label: "Selecione um material" },
+      ...material,
+    ],
+    },
+    {
+      name: "peso",
+      label: "Peso",
+      type: "text",
+    },
+    {
+      name: "dimensoes",
+      label: "Dimensões",
+      type: "text",
+    },
+  ];
+
+  async function carregar() {
+    try {
+      const [pecasRes, materialRes] = await Promise.all([
+        getPecas(),
+        getMaterial(),
+      ]);
+
+      // Peças
+      if (pecasRes) {
+        setPecas(pecasRes.data);
+      }
+
+      // Select de peças
+      if (materialRes) {
+        const options = materialRes.data.map((m) => ({
+          value: m.pk_materiaID,
+          label: m.materia,
+        }));
+
+        setMaterial(options);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar peças:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    carregar();
+  }, []);
+
+  // Função para criar novas peças
+  async function handleCreatePeca(data) {
+    try {
+      await createPeca(data);
+
+      setModalAddOpen(false);
+
+      await Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Peça criada com sucesso!",
+        showConfirmButton: false,
+        timer: 2500,
+      });
+
+      await carregar();
+    } catch (err) {
+      console.error("Erro ao criar peça:", err);
+
+      Swal.fire({
+        icon: "error",
+        title: "Erro ao criar peça",
+        text: "Não foi possível cadastrar a peça.",
+      });
+    }
+  }
+
+  // Função para desativar peças
+  async function handleDeletePeca(peca) {
+    const result = await Swal.fire({
+      title: "Desativar peça?",
+      text: `Deseja desativar "${peca.peca}"?`,
+      icon: "warning",
+
+      showCancelButton: true,
+
+      confirmButtonText: "Sim, desativar",
+      cancelButtonText: "Cancelar",
+
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await deletePeca(peca.pk_pecaID);
+
+      await carregar();
+
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Peça desativada!",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+    } catch (err) {
+      console.error("Erro ao desativar peça:", err);
+
+      Swal.fire({
+        icon: "error",
+        title: "Erro",
+        text: "Não foi possível desativar a peça.",
+      });
+    }
+  }
+
+  // Função para ativar peça
+  async function handleActivatePeca(peca) {
+    try {
+      await activatePeca(peca.pk_pecaID);
+
+      await carregar();
+
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Peça ativada!",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+    } catch (err) {
+      console.error("Erro ao ativar peça:", err);
+
+      Swal.fire({
+        icon: "error",
+        title: "Erro",
+        text: "Não foi possível ativar a peça.",
+      });
+    }
+  }
+
+  // Função para atualizar cadastro de peça
+  async function handleUpdatePeca(data) {
+    try {
+      await updatePeca(editingPeca.pk_pecaID, data);
+
+      setEditingPeca(null);
+      setModalAddOpen(false);
+
+      await Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Peça atualizada!",
+        showConfirmButton: false,
+        timer: 2500,
+      });
+
+      await carregar();
+    } catch (err) {
+      console.error("Erro ao atualizar peça:", err);
+
+      Swal.fire({
+        icon: "error",
+        title: "Erro ao atualizar peça",
+        text: "Não foi possível atualizar a peça.",
+      });
+    }
+  }
+
+  // Função para abrir a modal de edição
+  function abrirEdicao(peca) {
+    setEditingPeca({
+      ...peca,
+      material: peca.fk_material,
+    });
+
+    setModalAddOpen(true);
+  }
+
+  if (loading) {
+    return <p className="p-6">Carregando peças...</p>;
+  }
+
+  const ativas = pecas.filter((p) => p.status === "Ativo");
+
+  const Desativadas = pecas.filter((p) => p.status === "Desativado");
+
+  return (
+    <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
+      <Header />
+
+      <div className="p-6 flex flex-col gap-8">
+        <Section
+          title="Peças Ativas"
+          pecas={ativas}
+          tipo="ativas"
+          onDelete={handleDeletePeca}
+          onActivate={handleActivatePeca}
+          onEdit={abrirEdicao}
+        />
+
+        <Section
+          title="Peças Desativadas"
+          pecas={Desativadas}
+          tipo="Desativadas"
+          onDelete={handleDeletePeca}
+          onActivate={handleActivatePeca}
+          onEdit={abrirEdicao}
+        />
+      </div>
+
+      <button
+        onClick={() => setModalAddOpen(true)}
+        className="
+          fixed
+          bottom-6
+          right-6
+          w-14
+          h-14
+          bg-green-600
+          text-white
+          text-2xl
+          rounded-full
+          shadow-lg
+          hover:bg-green-700
+          flex
+          items-center
+          justify-center
+          z-50
+        "
+      >
+        +
+      </button>
+
+      {modalAddOpen && (
+        <ModalIncluir
+          title={editingPeca ? "Editar Peça" : "Nova Peça"}
+          fields={pecaFields}
+          initialData={editingPeca}
+          onSubmit={editingPeca ? handleUpdatePeca : handleCreatePeca}
+          onClose={() => {
+            setModalAddOpen(false);
+            setEditingPeca(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Sections (basicamente a parte de ativas e Desativadas e os cards)
+function Section({ title, pecas, tipo, onDelete, onActivate, onEdit }) {
+  const [open, setOpen] = useState(true);
+
+  if (pecas.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between cursor-pointer select-none"
+      >
+        <h2 className="text-xl font-bold text-[#4E342E]">
+          {title} ({pecas.length})
+        </h2>
+
+        <span className="text-lg text-black">{open ? "-" : "+"}</span>
+      </div>
+
+      {/* CONTEÚDO */}
+      {open && (
+        <div className="flex flex-col gap-4">
+          {pecas.map((peca) => (
+            <Card key={peca.pk_pecaID} title={peca.peca}>
+              <p className="text-sm text-black">Material ID: {peca.material}</p>
+
+              {peca.peso && (
+                <p className="text-sm text-black">Peso: {peca.peso}</p>
+              )}
+
+              {peca.Dimensoes && (
+                <p className="text-sm text-black">
+                  Dimensões: {peca.Dimensoes}
+                </p>
+              )}
+
+              {/* STATUS */}
+              <p className="text-sm text-black">Status: {peca.status}</p>
+
+              {/* BOTÕES */}
+              <div className="flex gap-2 mt-3 flex-wrap">
+                {tipo === "ativas" && (
+                  <>
+                    <button
+                      onClick={() => onEdit(peca)}
+                      className="
+          bg-yellow-500
+          text-white
+          px-3
+          py-1
+          rounded
+          hover:bg-yellow-600
+        "
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      onClick={() => onDelete(peca)}
+                      className="
+          bg-red-500
+          text-white
+          px-3
+          py-1
+          rounded
+          hover:bg-red-600
+        "
+                    >
+                      Desativar
+                    </button>
+                  </>
+                )}
+
+                {tipo === "Desativadas" && (
+                  <button
+                    onClick={() => onActivate(peca)}
+                    className="
+        bg-green-600
+        text-white
+        px-3
+        py-1
+        rounded
+        hover:bg-green-700
+      "
+                  >
+                    Reativar
+                  </button>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
