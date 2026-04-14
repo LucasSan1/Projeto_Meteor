@@ -79,10 +79,10 @@ export default function HamburgerMenu() {
           </Link>
 
           <Link
-            href="/"
+            href="/fornecedores"
             className="text-white hover:text-[#C69214] transition"
           >
-         
+            Fornecedores
           </Link>
         </div>
       )}

@@ -39,8 +39,8 @@ export default function Login() {
     if (!response) return;
 
     localStorage.setItem("token", response.token);
-
     localStorage.setItem("cargo", response.cargo);
+    localStorage.setItem("usuario", response.usuario);
 
     Swal.fire({
       icon: "success",
