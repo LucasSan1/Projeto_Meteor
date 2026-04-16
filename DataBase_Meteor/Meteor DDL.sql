@@ -101,16 +101,20 @@ CREATE TABLE aceitacoes (
     REFERENCES inspecoes(pk_inspecaoID)
 );
 
+
+
 CREATE TABLE ordensProducao (
     pk_ordemID          INT NOT NULL AUTO_INCREMENT,
     fk_pecaID           INT NOT NULL,
     quantidade          INT NOT NULL DEFAULT 1,
     dataInicio          DATE,
     dataConclusao       DATE,
+    fk_responsavel      INT,
     status              ENUM('Em Produção', 'Pronto', 'Pendente', 'Cancelado') NOT NULL DEFAULT "Pendente",
     
     PRIMARY KEY (pk_ordemID),
-    FOREIGN KEY (fk_pecaID) REFERENCES pecas(pk_pecaID)
+    FOREIGN KEY (fk_pecaID) REFERENCES pecas(pk_pecaID),
+    FOREIGN KEY (fk_responsavel) REFERENCES usuarios(id);
 );
 
 CREATE TABLE operadores (
@@ -118,7 +122,6 @@ CREATE TABLE operadores (
     nome        		VARCHAR(100) NOT NULL,
     especializacao      VARCHAR(100),
     disponibilidade     ENUM('Disponivel', 'Indisponivel') NOT NULL DEFAULT "Disponivel",
-    historicoProducao   INT,
     status              ENUM('Ativo', 'Desativado') NOT NULL DEFAULT "Ativo",
 
     PRIMARY KEY (pk_operadorID)
@@ -186,3 +189,16 @@ CREATE TABLE historicoManutencao (
     FOREIGN KEY (historicoID)	   REFERENCES manutencoesProgramadas(pk_manutencaoID)
 );
 
+CREATE TABLE historicoOrdens (
+    pk_historicoID INT NOT NULL AUTO_INCREMENT,
+    fk_ordemID INT NOT NULL,
+    fk_usuarioID INT NOT NULL,
+    statusAnterior VARCHAR(50),
+    statusNovo VARCHAR(50),
+    dataAlteracao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    observacao VARCHAR(300),
+
+    PRIMARY KEY (pk_historicoID),
+    FOREIGN KEY (fk_ordemID) REFERENCES ordensProducao(pk_ordemID),
+    FOREIGN KEY (fk_usuarioID) REFERENCES usuarios(id)
+);
