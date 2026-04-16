@@ -84,6 +84,13 @@ export default function HamburgerMenu() {
           >
             Fornecedores
           </Link>
+
+          <Link
+            href="/operadores"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Operadores
+          </Link>
         </div>
       )}
     </>

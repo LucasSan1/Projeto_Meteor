@@ -337,28 +337,14 @@ function Section({ title, pecas, tipo, onDelete, onActivate, onEdit }) {
                   <>
                     <button
                       onClick={() => onEdit(peca)}
-                      className="
-          bg-yellow-500
-          text-white
-          px-3
-          py-1
-          rounded
-          hover:bg-yellow-600
-        "
+                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                     >
                       Editar
                     </button>
 
                     <button
                       onClick={() => onDelete(peca)}
-                      className="
-          bg-red-500
-          text-white
-          px-3
-          py-1
-          rounded
-          hover:bg-red-600
-        "
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                     >
                       Desativar
                     </button>
@@ -368,14 +354,7 @@ function Section({ title, pecas, tipo, onDelete, onActivate, onEdit }) {
                 {tipo === "Desativadas" && (
                   <button
                     onClick={() => onActivate(peca)}
-                    className="
-        bg-green-600
-        text-white
-        px-3
-        py-1
-        rounded
-        hover:bg-green-700
-      "
+                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
                   >
                     Reativar
                   </button>
