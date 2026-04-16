@@ -47,7 +47,7 @@ export async function GET(request) {
         checkAuthPosition(request)
 
         const [result] = await pool.query(
-            "SELECT * FROM operadores"
+            "SELECT * FROM operadores ORDER BY pk_operadorID DESC"
         );
 
         return NextResponse.json({ data: result }, { status: 200 })
