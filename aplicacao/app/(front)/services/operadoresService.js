@@ -34,3 +34,9 @@ export function activateOperador(id){
     })
 
 }
+
+export function changeAvailability(id){
+    return apiFetch(`/api/operadores/${id}`, {
+        method: "PUT"
+    })
+}

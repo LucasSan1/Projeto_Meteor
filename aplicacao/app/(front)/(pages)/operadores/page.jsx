@@ -14,6 +14,7 @@ import {
   createOperator,
   deleteOperador,
   activateOperador,
+  changeAvailability,
 } from "../../services/operadoresService";
 
 export default function Operadores() {
@@ -176,6 +177,50 @@ export default function Operadores() {
     }
   }
 
+  // Alterar disponibilidade
+  async function handleToggleDisponibilidade(id) {
+    const result = await Swal.fire({
+      title: "Alterar disponibilidade?",
+      text: "Deseja alternar a disponibilidade deste operador?",
+      icon: "question",
+
+      showCancelButton: true,
+
+      confirmButtonText: "Sim, alterar",
+      cancelButtonText: "Cancelar",
+
+      confirmButtonColor: "#f59e0b",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await changeAvailability(id);
+
+      await Swal.fire({
+        toast: true,
+        position: "top-end",
+
+        icon: "success",
+        title: "Disponibilidade alterada!",
+
+        showConfirmButton: false,
+        timer: 2000,
+      });
+
+      await carregar();
+    } catch (err) {
+      console.error("Erro ao alterar disponibilidade:", err);
+
+      Swal.fire({
+        icon: "error",
+        title: "Erro ao alterar disponibilidade",
+        text: "Não foi possível alterar a disponibilidade.",
+      });
+    }
+  }
+
   // Filtros
   const operadoresAtivos = operadores.filter((op) => op.status === "Ativo");
   const operadoresInativos = operadores.filter((op) => op.status === "Desativado");
@@ -210,13 +255,26 @@ export default function Operadores() {
                   Especialização: {op.especializacao}
                 </p>
 
-                <p className="text-sm text-black">Status: {op.status}</p>
-
                 <p className="text-sm text-black">
-                  Disponibilidade: {op.disponibilidade}
+                  Disponibilidade:{" "}
+                  <span
+                    className={
+                      op.disponibilidade === "Disponivel"
+                        ? "text-green-600"
+                        : "text-yellow-600"
+                    }
+                  >
+                    {op.disponibilidade}
+                  </span>
                 </p>
 
                 <div className="flex gap-2 mt-3">
+                  <button onClick={() => handleToggleDisponibilidade(op.pk_operadorID)}
+                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                  >
+                    Alternar Disponibilidade
+                  </button>
+
                   <button
                     onClick={() => handleDeactivate(op.pk_operadorID)}
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"

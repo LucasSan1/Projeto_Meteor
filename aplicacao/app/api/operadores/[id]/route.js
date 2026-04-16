@@ -57,7 +57,7 @@ export async function DELETE(request, { params } ) {
 
 export async function POST(request, { params }) {
 
-     const { id } = await params;
+    const { id } = await params;
 
    try{
         checkAuthPosition(request)
@@ -106,4 +106,61 @@ export async function POST(request, { params }) {
         )
 
     }
+}
+
+export async function PUT(request, { params }) {
+
+    const { id } = await params;
+
+    try {
+
+        checkAuthPosition(request);
+
+        const [result] = await pool.query(
+            `
+            UPDATE operadores
+            SET disponibilidade =
+                CASE
+                    WHEN disponibilidade = 'Disponivel'
+                        THEN 'Indisponivel'
+                    WHEN disponibilidade = 'Indisponivel'
+                        THEN 'Disponivel'
+                END
+            WHERE pk_operadorID = ?
+            AND status = 'Ativo'
+            `,
+            [id]
+        );
+
+        if (result.affectedRows === 0) {
+
+            throw {
+                status: 404,
+                message: "Operador não encontrado ou inativo!"
+            };
+
+        }
+
+        return NextResponse.json(
+            { message: "Disponibilidade alterada com sucesso!" },
+            { status: 200 }
+        );
+
+    } catch (err) {
+        console.log("Erro ao alterar disponibilidade do operador:", err);
+
+        if (err.status) {
+            return NextResponse.json(
+                { message: err.message },
+                { status: err.status }
+            );
+        }
+
+        return NextResponse.json(
+            { message: "Erro do servidor!" },
+            { status: 500 }
+        );
+
+    }
+
 }
