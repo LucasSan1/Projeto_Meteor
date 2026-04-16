@@ -286,7 +286,7 @@ function Section({ title, ordens, onStatus }) {
         <div className="flex flex-col gap-4">
           {ordens.map((ordem) => (
             <Card key={ordem.pk_ordemID} title={`Ordem #${ordem.pk_ordemID}`}>
-              <p className="text-sm text-black">Peça: {ordem.peca}</p>
+              <p className="text-sm text-black">Peça: {ordem.nomePeca}</p>
 
               <p className="text-sm text-black">
                 Quantidade: {ordem.quantidade}

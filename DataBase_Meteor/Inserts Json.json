@@ -17,6 +17,18 @@
       "endereco": "40 Banding Drive",
       "contato": "747-344-1663",
       "avaliacao": 3.6
+    },
+    {
+      "nome": "Tagcat",
+      "endereco": "02950 Union Park",
+      "contato": "250-937-7782",
+      "avaliacao": 5.7
+    },
+    {
+      "nome": "Gabspot",
+      "endereco": "14 Meadow Vale Junction",
+      "contato": "169-179-5978",
+      "avaliacao": "4.7"
     }
   ],
 
@@ -65,6 +77,12 @@
       "material": 2,
       "peso": "3g",
       "dimensoes": "60cm"
+    },
+    {
+      "peca": "gear",
+      "material": 2,
+      "peso": "30g",
+      "dimensoes": "40cm"
     }
   ],
    "ordensProducao": [
