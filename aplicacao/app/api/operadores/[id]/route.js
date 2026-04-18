@@ -164,3 +164,58 @@ export async function PUT(request, { params }) {
     }
 
 }
+
+export async function PATCH(request, { params } ) {
+    const {id} = await params;
+    const body = await request.json();
+    const { nome, especializacao } = body;
+
+    try{
+
+        if(!nome.trim() || !especializacao.trim()){
+            throw { status: 400, message: "Preencha todos os campos!"}
+        }
+
+        const [exist] = await pool.query(
+            "SELECT * FROM operadores WHERE pk_operadorID = ?",
+            [id]
+        )
+
+        if(!exist || exist.length === 0){
+            throw { status: 404, message: "Operador não encontrado!"}
+        }
+
+        const [result] = await pool.query(
+            "UPDATE operadores SET nome = ?, especializacao = ? WHERE pk_operadorID = ?",
+            [nome, especializacao, id]
+        )
+
+        if(result.affectedRows === 0){
+            return NextResponse.json(
+                { message: "Não foi possivel atualizar o cadastro!"},
+                { status: 400 } 
+            )
+        }
+
+        return NextResponse.json(
+            { message: "Operador atualizado!"},
+            { status: 200}
+        )
+
+    } catch (err) {
+        console.log("Erro ao atualizar cadastro de operador:", err);
+
+        if (err.status) {
+            return NextResponse.json(
+                { message: err.message },
+                { status: err.status }
+            );
+        }
+
+        return NextResponse.json(
+            { message: "Erro do servidor!" },
+            { status: 500 }
+        );
+
+    }
+}
