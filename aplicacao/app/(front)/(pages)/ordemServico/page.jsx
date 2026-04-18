@@ -6,6 +6,9 @@ import Header from "../../components/Header";
 import Card from "../../components/Card";
 import ModalStatus from "../../components/modalStatus";
 import ModalIncluir from "../../components/modalIncluir";
+import ModalDesativados from "../../components/modalDesativados";
+import { formatData } from "../../../utils/formatData";
+
 import Swal from "sweetalert2";
 
 import {
@@ -20,17 +23,18 @@ export default function OrdemServico() {
   const [pecas, setPecas] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // MODAL STATUS
+  // MODAIS
   const [modalStatusOpen, setModalStatusOpen] = useState(false);
   const [ordemStatusSelecionada, setOrdemStatusSelecionada] = useState(null);
 
-  // MODAL INCLUIR
   const [modalAddOpen, setModalAddOpen] = useState(false);
+  const [showProntas, setShowProntas] = useState(false);
+  const [showCanceladas, setShowCanceladas] = useState(false);
 
-  // Status disponiveis para o select
+  // Status disponíveis
   const statusOptions = ["Pendente", "Em Produção", "Pronto", "Cancelado"];
 
-  // Campos da modal de novas ordens
+  // Campos modal ordem
   const ordemFields = [
     {
       name: "pecaID",
@@ -38,7 +42,6 @@ export default function OrdemServico() {
       type: "select",
       options: pecas,
     },
-
     {
       name: "quantidade",
       label: "Quantidade",
@@ -53,12 +56,10 @@ export default function OrdemServico() {
         getPecas(),
       ]);
 
-      // ordens
       if (ordensRes) {
         setOrdens(ordensRes.data);
       }
 
-      // Select de peças
       if (pecasRes) {
         const options = pecasRes.data.map((p) => ({
           value: p.pk_pecaID,
@@ -78,13 +79,11 @@ export default function OrdemServico() {
     carregar();
   }, []);
 
-  // ABRIR MODAL STATUS
   function abrirModalStatus(ordem) {
     setOrdemStatusSelecionada(ordem);
     setModalStatusOpen(true);
   }
 
-  // Popup para confirmar mudança de status
   async function confirmarStatus(payload) {
     try {
       const result = await Swal.fire({
@@ -101,13 +100,10 @@ export default function OrdemServico() {
         cancelButtonColor: "#6b7280",
       });
 
-      if (!result.isConfirmed) {
-        return;
-      }
+      if (!result.isConfirmed) return;
 
       await updateStatusOrdem(payload.id, payload.status);
 
-      // Fecha modal
       setModalStatusOpen(false);
 
       Swal.fire({
@@ -133,7 +129,6 @@ export default function OrdemServico() {
     }
   }
 
-  // Função para criar nova ordem
   async function handleCreateOrdem(data) {
     try {
       const payload = {
@@ -148,8 +143,10 @@ export default function OrdemServico() {
       await Swal.fire({
         toast: true,
         position: "top-end",
+
         icon: "success",
         title: "Ordem criada com sucesso!",
+
         showConfirmButton: false,
         timer: 2500,
       });
@@ -162,7 +159,6 @@ export default function OrdemServico() {
         icon: "error",
         title: "Erro ao criar ordem",
         text: "Não foi possível cadastrar a ordem.",
-        confirmButtonColor: "#dc2626",
       });
     }
   }
@@ -171,19 +167,16 @@ export default function OrdemServico() {
     return <p className="p-6">Carregando ordens...</p>;
   }
 
-  // Filtros
+  // FILTROS
   const pendentes = ordens
     .filter((o) => o.status === "Pendente")
     .sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio));
-
   const emProgresso = ordens
     .filter((o) => o.status === "Em Produção")
     .sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio));
-
   const prontas = ordens
     .filter((o) => o.status === "Pronto")
     .sort((a, b) => new Date(b.dataConclusao) - new Date(a.dataConclusao));
-
   const canceladas = ordens
     .filter((o) => o.status === "Cancelado")
     .sort((a, b) => new Date(b.dataConclusao) - new Date(a.dataConclusao));
@@ -192,29 +185,35 @@ export default function OrdemServico() {
     <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
       <Header />
 
-      <div className="p-6 flex flex-col gap-8">
+      <div className="p-6 flex flex-col gap-6">
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => setShowProntas(true)}
+            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Ver Prontas
+          </button>
+
+          <button
+            onClick={() => setShowCanceladas(true)}
+            className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+          >
+            Ver Canceladas
+          </button>
+        </div>
+
         <Section
           title="Ordens Pendentes"
           ordens={pendentes}
           onStatus={abrirModalStatus}
+          allowStatusChange={true}
         />
 
         <Section
           title="Ordens em Produção"
           ordens={emProgresso}
           onStatus={abrirModalStatus}
-        />
-
-        <Section
-          title="Ordens Prontas"
-          ordens={prontas}
-          onStatus={abrirModalStatus}
-        />
-
-        <Section
-          title="Ordens Canceladas"
-          ordens={canceladas}
-          onStatus={abrirModalStatus}
+          allowStatusChange={true}
         />
       </div>
 
@@ -241,7 +240,6 @@ export default function OrdemServico() {
         +
       </button>
 
-      {/* RENDER MODAL STATUS */}
       {modalStatusOpen && (
         <ModalStatus
           ordem={ordemStatusSelecionada}
@@ -251,7 +249,6 @@ export default function OrdemServico() {
         />
       )}
 
-      {/* RENDER MODAL INCLUIR */}
       {modalAddOpen && (
         <ModalIncluir
           title="Nova Ordem de Produção"
@@ -260,12 +257,74 @@ export default function OrdemServico() {
           onClose={() => setModalAddOpen(false)}
         />
       )}
+
+      {showProntas && (
+        <ModalDesativados
+          title="Ordens Prontas"
+          items={prontas}
+          displayFields={[
+            {
+              label: "Peça",
+              value: "nomePeca",
+            },
+            {
+              label: "Quantidade",
+              value: "quantidade",
+            },
+            {
+              label: "Início",
+              value: "dataInicio",
+              type: "date",
+            },
+            {
+              label: "Conclusão",
+              value: "dataConclusao",
+              type: "date",
+            },
+          ]}
+          showActivateButton={false}
+          idField="pk_ordemID"
+          onActivate={() => {}}
+          onClose={() => setShowProntas(false)}
+        />
+      )}
+
+      {showCanceladas && (
+        <ModalDesativados
+          title="Ordens Canceladas"
+          items={canceladas}
+          displayFields={[
+            {
+              label: "Peça",
+              value: "nomePeca",
+            },
+            {
+              label: "Quantidade",
+              value: "quantidade",
+            },
+            {
+              label: "Início",
+              value: "dataInicio",
+              type: "date",
+            },
+            {
+              label: "Conclusão",
+              value: "dataConclusao",
+              type: "date",
+            },
+          ]}
+          showActivateButton={false}
+          idField="pk_ordemID"
+          onActivate={() => {}}
+          onClose={() => setShowCanceladas(false)}
+        />
+      )}
     </div>
   );
 }
 
-// Componente Sections (basicamente os cards)
-function Section({ title, ordens, onStatus }) {
+// SECTION
+function Section({ title, ordens, onStatus, allowStatusChange }) {
   const [open, setOpen] = useState(true);
 
   if (ordens.length === 0) return null;
@@ -276,12 +335,13 @@ function Section({ title, ordens, onStatus }) {
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between cursor-pointer select-none"
       >
-        <h2 className="text-xl font-bold text-[#4E342E]">{title} ({ordens.length}) </h2>
+        <h2 className="text-xl font-bold text-[#4E342E]">
+          {title} ({ordens.length})
+        </h2>
 
         <span className="text-lg text-black">{open ? "-" : "+"}</span>
       </div>
 
-      {/* CONTEÚDO */}
       {open && (
         <div className="flex flex-col gap-4">
           {ordens.map((ordem) => (
@@ -295,24 +355,18 @@ function Section({ title, ordens, onStatus }) {
               <p className="text-sm text-black">Status: {ordem.status}</p>
 
               <p className="text-sm text-black">
-                Início: {new Date(ordem.dataInicio).toLocaleDateString("pt-BR")}
+                Início: {formatData(ordem.dataInicio)}
               </p>
 
-              {(ordem.status === "Pronto" || ordem.status === "Cancelado") &&
-                ordem.dataConclusao && (
-                  <p className="text-sm text-black">
-                    Conclusão:{" "}
-                    {new Date(ordem.dataConclusao).toLocaleDateString("pt-BR")}
-                  </p>
-                )}
-
               <div className="flex gap-2 mt-3 flex-wrap">
-                <button
-                  onClick={() => onStatus(ordem)}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                >
-                  Mudar Status
-                </button>
+                {allowStatusChange && (
+                  <button
+                    onClick={() => onStatus(ordem)}
+                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                  >
+                    Mudar Status
+                  </button>
+                )}
               </div>
             </Card>
           ))}

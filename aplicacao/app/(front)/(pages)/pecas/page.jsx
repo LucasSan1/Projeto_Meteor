@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Header from "../../components/Header";
 import Card from "../../components/Card";
 import ModalIncluir from "../../components/modalIncluir";
+import ModalDesativados from "../../components/modalDesativados";
 
 import Swal from "sweetalert2";
 
@@ -23,8 +24,9 @@ export default function Pecas() {
   const [loading, setLoading] = useState(true);
   const [editingPeca, setEditingPeca] = useState(null);
 
-  // MODAL INCLUIR
+  // MODAIS
   const [modalAddOpen, setModalAddOpen] = useState(false);
+  const [showDesativadas, setShowDesativadas] = useState(false);
 
   // Campos modal
   const pecaFields = [
@@ -37,10 +39,7 @@ export default function Pecas() {
       name: "material",
       label: "Material",
       type: "select",
-      options: [
-      { value: "", label: "Selecione um material" },
-      ...material,
-    ],
+      options: [{ value: "", label: "Selecione um material" }, ...material],
     },
     {
       name: "peso",
@@ -61,12 +60,10 @@ export default function Pecas() {
         getMaterial(),
       ]);
 
-      // Peças
       if (pecasRes) {
         setPecas(pecasRes.data);
       }
 
-      // Select de peças
       if (materialRes) {
         const options = materialRes.data.map((m) => ({
           value: m.pk_materiaID,
@@ -86,7 +83,7 @@ export default function Pecas() {
     carregar();
   }, []);
 
-  // Função para criar novas peças
+  // Criar nova peça
   async function handleCreatePeca(data) {
     try {
       await createPeca(data);
@@ -114,7 +111,7 @@ export default function Pecas() {
     }
   }
 
-  // Função para desativar peças
+  // Desativar peça
   async function handleDeletePeca(peca) {
     const result = await Swal.fire({
       title: "Desativar peça?",
@@ -156,10 +153,10 @@ export default function Pecas() {
     }
   }
 
-  // Função para ativar peça
-  async function handleActivatePeca(peca) {
+  // Ativar peça
+  async function handleActivatePeca(id) {
     try {
-      await activatePeca(peca.pk_pecaID);
+      await activatePeca(id);
 
       await carregar();
 
@@ -182,7 +179,7 @@ export default function Pecas() {
     }
   }
 
-  // Função para atualizar cadastro de peça
+  // Atualizar Peça
   async function handleUpdatePeca(data) {
     try {
       await updatePeca(editingPeca.pk_pecaID, data);
@@ -211,7 +208,6 @@ export default function Pecas() {
     }
   }
 
-  // Função para abrir a modal de edição
   function abrirEdicao(peca) {
     setEditingPeca({
       ...peca,
@@ -225,30 +221,28 @@ export default function Pecas() {
     return <p className="p-6">Carregando peças...</p>;
   }
 
+  // FILTROS
   const ativas = pecas.filter((p) => p.status === "Ativo");
-
-  const Desativadas = pecas.filter((p) => p.status === "Desativado");
+  const desativadas = pecas.filter((p) => p.status === "Desativado");
 
   return (
     <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
       <Header />
 
-      <div className="p-6 flex flex-col gap-8">
+      <div className="p-6 flex flex-col gap-6">
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowDesativadas(true)}
+            className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+          >
+            Ver Desativadas
+          </button>
+        </div>
+
         <Section
           title="Peças Ativas"
           pecas={ativas}
-          tipo="ativas"
           onDelete={handleDeletePeca}
-          onActivate={handleActivatePeca}
-          onEdit={abrirEdicao}
-        />
-
-        <Section
-          title="Peças Desativadas"
-          pecas={Desativadas}
-          tipo="Desativadas"
-          onDelete={handleDeletePeca}
-          onActivate={handleActivatePeca}
           onEdit={abrirEdicao}
         />
       </div>
@@ -288,12 +282,40 @@ export default function Pecas() {
           }}
         />
       )}
+
+      {showDesativadas && (
+        <ModalDesativados
+          title="Peças Desativadas"
+          items={desativadas}
+          idField="pk_pecaID"
+          displayFields={[
+            {
+              label: "Peça",
+              value: "peca",
+            },
+            {
+              label: "Material",
+              value: "material",
+            },
+            {
+              label: "Peso",
+              value: "peso",
+            },
+            {
+              label: "Dimensões",
+              value: "Dimensoes",
+            },
+          ]}
+          onActivate={handleActivatePeca}
+          onClose={() => setShowDesativadas(false)}
+        />
+      )}
     </div>
   );
 }
 
-// Sections (basicamente a parte de ativas e Desativadas e os cards)
-function Section({ title, pecas, tipo, onDelete, onActivate, onEdit }) {
+// SECTION
+function Section({ title, pecas, onDelete, onEdit }) {
   const [open, setOpen] = useState(true);
 
   if (pecas.length === 0) return null;
@@ -311,12 +333,11 @@ function Section({ title, pecas, tipo, onDelete, onActivate, onEdit }) {
         <span className="text-lg text-black">{open ? "-" : "+"}</span>
       </div>
 
-      {/* CONTEÚDO */}
       {open && (
         <div className="flex flex-col gap-4">
           {pecas.map((peca) => (
             <Card key={peca.pk_pecaID} title={peca.peca}>
-              <p className="text-sm text-black">Material ID: {peca.material}</p>
+              <p className="text-sm text-black">Material: {peca.material}</p>
 
               {peca.peso && (
                 <p className="text-sm text-black">Peso: {peca.peso}</p>
@@ -328,37 +349,22 @@ function Section({ title, pecas, tipo, onDelete, onActivate, onEdit }) {
                 </p>
               )}
 
-              {/* STATUS */}
               <p className="text-sm text-black">Status: {peca.status}</p>
 
-              {/* BOTÕES */}
               <div className="flex gap-2 mt-3 flex-wrap">
-                {tipo === "ativas" && (
-                  <>
-                    <button
-                      onClick={() => onEdit(peca)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                    >
-                      Editar
-                    </button>
+                <button
+                  onClick={() => onEdit(peca)}
+                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                >
+                  Editar
+                </button>
 
-                    <button
-                      onClick={() => onDelete(peca)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                    >
-                      Desativar
-                    </button>
-                  </>
-                )}
-
-                {tipo === "Desativadas" && (
-                  <button
-                    onClick={() => onActivate(peca)}
-                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                  >
-                    Reativar
-                  </button>
-                )}
+                <button
+                  onClick={() => onDelete(peca)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                >
+                  Desativar
+                </button>
               </div>
             </Card>
           ))}

@@ -5,10 +5,17 @@ import { useEffect, useState } from "react";
 import Header from "../../components/Header";
 import Card from "../../components/Card";
 import ModalIncluir from "../../components/modalIncluir";
+import ModalDesativados from "../../components/modalDesativados";
 
 import Swal from "sweetalert2";
 
-import { getFornecedores, createFornecedor, updateFornecedor, deleteFornecedor, activateFornecedor } from "../../services/fornecedoresServices";
+import {
+  getFornecedores,
+  createFornecedor,
+  updateFornecedor,
+  deleteFornecedor,
+  activateFornecedor,
+} from "../../services/fornecedoresServices";
 
 export default function Fornecedores() {
   const [fornecedores, setFornecedores] = useState([]);
@@ -17,6 +24,7 @@ export default function Fornecedores() {
   // MODAIS
   const [modalAddOpen, setModalAddOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
+  const [showDesativados, setShowDesativados] = useState(false);
 
   const [fornecedorSelecionado, setFornecedorSelecionado] = useState(null);
 
@@ -185,27 +193,29 @@ export default function Fornecedores() {
   }
 
   // Filtros
-  const ativos = fornecedores.filter((f) => f.status === "Ativo");
-  const desativados = fornecedores.filter((f) => f.status === "Desativado");
+  const fornecedoresAtivos = fornecedores.filter((f) => f.status === "Ativo");
+  const fornecedoresInativos = fornecedores.filter(
+    (f) => f.status === "Desativado",
+  );
 
   return (
     <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
       <Header />
 
       <div className="p-6 flex flex-col gap-8">
-        <Section
-          title="Fornecedores Ativos"
-          fornecedores={ativos}
-          tipo="ativos"
-          onDelete={handleDeleteFornecedor}
-          onActivate={handleActivateFornecedor}
-          onEdit={openEditModal}
-        />
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowDesativados(true)}
+            className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+          >
+            Mostrar desativados
+          </button>
+        </div>
 
         <Section
-          title="Fornecedores Desativados"
-          fornecedores={desativados}
-          tipo="desativados"
+          title="Fornecedores"
+          fornecedores={fornecedoresAtivos}
+          tipo="ativos"
           onDelete={handleDeleteFornecedor}
           onActivate={handleActivateFornecedor}
           onEdit={openEditModal}
@@ -258,11 +268,39 @@ export default function Fornecedores() {
           onClose={() => setModalEditOpen(false)}
         />
       )}
+
+      {showDesativados && (
+        <ModalDesativados
+          title="Fornecedores Desativados"
+          items={fornecedoresInativos}
+          displayFields={[
+            {
+              label: "Fornecedor",
+              value: "nomeFornecedor"
+            }, 
+            {
+              label: "Endereço",
+              value: "endereco"
+            },
+            {
+              label: "Contato",
+              value: "contato"
+            }
+          ]}
+          idField="pk_fornecedorID"
+          onActivate={(id) =>
+            handleActivateFornecedor(
+              fornecedores.find((f) => f.pk_fornecedorID === id),
+            )
+          }
+          onClose={() => setShowDesativados(false)}
+        />
+      )}
     </div>
   );
 }
 
-function Section({ title, fornecedores, tipo, onDelete, onActivate, onEdit }) {
+function Section({ title, fornecedores, onDelete, onActivate, onEdit }) {
   const [open, setOpen] = useState(true);
 
   if (fornecedores.length === 0) return null;
@@ -276,8 +314,6 @@ function Section({ title, fornecedores, tipo, onDelete, onActivate, onEdit }) {
         <h2 className="text-xl font-bold text-[#4E342E]">
           {title} ({fornecedores.length})
         </h2>
-
-        <span className="text-lg text-black">{open ? "-" : "+"}</span>
       </div>
 
       {open && (
@@ -302,32 +338,19 @@ function Section({ title, fornecedores, tipo, onDelete, onActivate, onEdit }) {
               <p className="text-sm text-black">Status: {fornecedor.status}</p>
 
               <div className="flex gap-2 mt-3 flex-wrap">
-                {tipo === "ativos" && (
-                  <>
-                    <button
-                      onClick={() => onEdit(fornecedor)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                    >
-                      Editar
-                    </button>
+                <button
+                  onClick={() => onEdit(fornecedor)}
+                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                >
+                  Editar
+                </button>
 
-                    <button
-                      onClick={() => onDelete(fornecedor)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                    >
-                      Desativar
-                    </button>
-                  </>
-                )}
-
-                {tipo === "desativados" && (
-                  <button
-                    onClick={() => onActivate(fornecedor)}
-                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                  >
-                    Reativar
-                  </button>
-                )}
+                <button
+                  onClick={() => onDelete(fornecedor)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                >
+                  Desativar
+                </button>
               </div>
             </Card>
           ))}

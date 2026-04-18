@@ -371,7 +371,16 @@ export default function Operadores() {
         <ModalDesativados
           title="Operadores Desativados"
           items={operadoresInativos}
-          displayFields={["nome", "especializacao"]}
+          displayFields={[
+            {
+              label: "Nome",
+              value: "nome" 
+            },
+            {
+              label: "Especialização",
+              value: "especializacao" 
+            }
+          ]}
           idField="pk_operadorID"
           onActivate={handleActivate}
           onClose={() => setShowDesativados(false)}
