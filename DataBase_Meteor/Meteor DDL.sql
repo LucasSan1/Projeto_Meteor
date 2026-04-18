@@ -132,7 +132,7 @@ CREATE TABLE equipamentos (
     nomeEquipamento     VARCHAR(100),
     descricao           VARCHAR(300),
     dataAquisicao       DATE,
-    vidaUtilRestante    DATE,
+    vidaUtilRestante    INT,
     status              ENUM('Ativo', 'Desativado') NOT NULL DEFAULT "Ativo",
     
     PRIMARY KEY (pk_equipamentoID)
