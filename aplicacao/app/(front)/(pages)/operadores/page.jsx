@@ -12,9 +12,10 @@ import Swal from "sweetalert2";
 import {
   getOperators,
   createOperator,
-  deleteOperador,
-  activateOperador,
+  deleteOperator,
+  activateOperator,
   changeAvailability,
+  updateOperator
 } from "../../services/operadoresService";
 
 export default function Operadores() {
@@ -23,6 +24,9 @@ export default function Operadores() {
 
   const [modalAddOpen, setModalAddOpen] = useState(false);
   const [showDesativados, setShowDesativados] = useState(false);
+  const [modalEditOpen, setModalEditOpen] = useState(false);
+
+  const [operadorSelecionado, setOperadorSelecionado]= useState(null)
 
   // Campos modal
   const fieldsOperador = [
@@ -37,6 +41,7 @@ export default function Operadores() {
       type: "text",
     },
   ];
+
 
   async function carregar() {
     try {
@@ -110,7 +115,7 @@ export default function Operadores() {
 
     if (!result.isConfirmed) return;
     try {
-      await deleteOperador(id);
+      await deleteOperator(id);
       await carregar();
 
       await Swal.fire({
@@ -133,6 +138,7 @@ export default function Operadores() {
       });
     }
   }
+
   // Ativa o operador
   async function handleActivate(id) {
     const result = await Swal.fire({
@@ -152,7 +158,7 @@ export default function Operadores() {
     if (!result.isConfirmed) return;
 
     try {
-      await activateOperador(id);
+      await activateOperator(id);
 
       await Swal.fire({
         toast: true,
@@ -221,6 +227,40 @@ export default function Operadores() {
     }
   }
 
+  async function handleEditOperator(data){
+     try {
+        await updateOperator(
+          operadorSelecionado.pk_operadorID,
+          data
+        );
+
+        setModalEditOpen(false);
+        setOperadorSelecionado(null);
+
+        await Swal.fire({
+          toast: true,
+          position: "top-end",
+
+          icon: "success",
+          title: "Operador atualizado!",
+
+          showConfirmButton: false,
+          timer: 2500,
+        });
+
+        await carregar();
+      } catch (err) {
+        console.error("Erro ao editar operador:", err);
+
+        Swal.fire({
+          icon: "error",
+          title: "Erro ao atualizar operador",
+          text: "Não foi possível atualizar o operador.",
+        });
+      }
+    }
+
+
   // Filtros
   const operadoresAtivos = operadores.filter((op) => op.status === "Ativo");
   const operadoresInativos = operadores.filter((op) => op.status === "Desativado");
@@ -269,6 +309,13 @@ export default function Operadores() {
                 </p>
 
                 <div className="flex gap-2 mt-3">
+                  <button onClick={() => {setOperadorSelecionado(op); 
+                                          setModalEditOpen(true) }}
+                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                  >
+                    Editar
+                  </button>
+
                   <button onClick={() => handleToggleDisponibilidade(op.pk_operadorID)}
                     className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                   >
@@ -330,6 +377,19 @@ export default function Operadores() {
           onClose={() => setShowDesativados(false)}
         />
       )}
+
+      {modalEditOpen && operadorSelecionado && (
+      <ModalIncluir
+        title="Editar Operador"
+        fields={fieldsOperador}
+        onSubmit={handleEditOperator}
+        onClose={() => {
+          setModalEditOpen(false);
+          setOperadorSelecionado(null);
+        }}
+        initialData={operadorSelecionado}
+      />
+    )}
     </div>
   );
 }

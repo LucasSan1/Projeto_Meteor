@@ -7,20 +7,23 @@ export default function ModalIncluir({
   fields = [],
   onSubmit,
   onClose,
+  initialData = null,
 }) {
   const [formData, setFormData] = useState({});
 
   // Inicializa campos automaticamente
-  useEffect(() => {
-    const initialData = {};
+   useEffect(() => {
+    const data = {};
 
     fields.forEach((field) => {
-      initialData[field.name] = "";
+      // Se tiver initialData, usa ela
+      // Senão, deixa vazio
+      data[field.name] = initialData?.[field.name] || "";
     });
 
-    setFormData(initialData);
-  }, [fields]);
-
+    setFormData(data);
+  }, [fields, initialData]);
+  
   function handleChange(name, value) {
     setFormData((prev) => ({
       ...prev,
