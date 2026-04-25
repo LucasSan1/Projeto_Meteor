@@ -47,7 +47,7 @@ export default function Pecas() {
       type: "text",
     },
     {
-      name: "dimensoes",
+      name: "Dimensoes",
       label: "Dimensões",
       type: "text",
     },

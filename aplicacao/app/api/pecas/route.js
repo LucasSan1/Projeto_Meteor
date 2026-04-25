@@ -4,7 +4,7 @@ import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
 
 export async function POST(request) {
   const body = await request.json();
-  const { peca, material, peso, dimensoes } = body;
+  const { peca, material, peso, Dimensoes } = body;
 
   try {
     checkAuthPosition(request);
@@ -20,7 +20,7 @@ export async function POST(request) {
 
     const [result] = await pool.query(
       "INSERT INTO pecas (peca, fk_material, peso, Dimensoes) VALUES (?,?,?,?)",
-      [peca, material, peso, dimensoes],
+      [peca, material, peso, Dimensoes],
     );
 
     return NextResponse.json({
