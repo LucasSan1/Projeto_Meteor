@@ -498,7 +498,7 @@ insert into operadores (pk_operadorID, nome, especializacao, disponibilidade, hi
 
 -- INSERTS de equipamentos
 
-insert into equipamentos (pk_equipamentoID, nomeEquipamento, descricao, dataAquisicao, vidaUtilRestante) values (1, 'lathe', 'Used for machining', '2022-11-24', '2023-10-05');
+insert into equipamentos (pk_equipamentoID, nomeEquipamento, descricao, dataAquisicao, vidaUtilRestante) values (1, 'oil', 'Used for machining', '2022-11-24', '2023-10-05');
 insert into equipamentos (pk_equipamentoID, nomeEquipamento, descricao, dataAquisicao, vidaUtilRestante) values (2, 'Rectify', 'rectify surfaces', '2023-10-12', '2022-11-06');
 insert into equipamentos (pk_equipamentoID, nomeEquipamento, descricao, dataAquisicao, vidaUtilRestante) values (3, 'screwdriver', 'to screw', '2023-08-25', '2023-09-06');
 insert into equipamentos (pk_equipamentoID, nomeEquipamento, descricao, dataAquisicao, vidaUtilRestante) values (4, 'pliers', 'cut', '2023-02-17', '2023-03-31');
