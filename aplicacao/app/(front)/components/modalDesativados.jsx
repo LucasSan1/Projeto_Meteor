@@ -1,6 +1,6 @@
 "use client";
 
-import { formatData } from "../../utils/formatData";
+import { formatData } from "../../utils/Datetime";
 
 export default function ModalDesativados({
   title = "Registros Desativados",

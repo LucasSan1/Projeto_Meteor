@@ -85,7 +85,7 @@ export default function ModalIncluir({
             {/* SELECT */}
             {field.type === "select" ? (
               <select
-                value={formData[field.name]}
+                value={formData[field.name] || ""}
                 onChange={(e) => handleChange(field.name, e.target.value)}
                 className="
                   border

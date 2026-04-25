@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
-import { getDataBrasilia } from "../../utils/getData";
+import { getDataBrasilia } from "../../utils/Datetime";
 
 export async function POST(request) {
   const body = await request.json();

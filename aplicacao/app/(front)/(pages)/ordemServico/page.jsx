@@ -7,7 +7,7 @@ import Card from "../../components/Card";
 import ModalStatus from "../../components/modalStatus";
 import ModalIncluir from "../../components/modalIncluir";
 import ModalDesativados from "../../components/modalDesativados";
-import { formatData } from "../../../utils/formatData";
+import { formatData } from "../../../utils/Datetime";
 
 import Swal from "sweetalert2";
 
