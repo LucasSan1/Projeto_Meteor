@@ -40,7 +40,7 @@ export function deleteFornecedor(id){
 export function activateFornecedor(id){
 
     return apiFetch(`/api/fornecedores/${id}`, {
-        method: "POST"
+        method: "PUT"
     })
 
 }

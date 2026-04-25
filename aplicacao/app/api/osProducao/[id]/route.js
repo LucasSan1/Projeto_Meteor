@@ -3,7 +3,7 @@ import pool from "../../../lib/connSql"
 import { checkAuth, checkAuthPosition } from "../../../utils/authChecker"
 import { getDataBrasilia } from "../../../utils/getData"
 
-export async function POST(request, { params } ) {
+export async function PUT(request, { params } ) {
     const { id } = await params;
     const body = await request.json();
     let { status } = body;

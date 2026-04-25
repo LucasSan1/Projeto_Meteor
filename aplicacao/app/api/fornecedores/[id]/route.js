@@ -127,7 +127,7 @@ export async function DELETE(request, { params }) {
     }
 }
 // Função para ativar um fornecedor
-export async function POST(request, { params }) {
+export async function PUT(request, { params }) {
 
      const { id } = await params;
 

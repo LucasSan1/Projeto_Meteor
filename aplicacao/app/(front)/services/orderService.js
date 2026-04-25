@@ -29,7 +29,7 @@ export function updateStatusOrdem(
     status
 ){
     return apiFetch(`/api/osProducao/${id}`, {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify({
             status
         })

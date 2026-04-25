@@ -46,7 +46,7 @@ export function deletePeca(id){
 export function activatePeca(id){
 
     return apiFetch(`/api/pecas/${id}`, {
-        method: "POST"
+        method: "PUT"
     })
 
 }
