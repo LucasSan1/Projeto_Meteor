@@ -1,7 +1,7 @@
 import { apiFetch } from "./api"
 
 // GET fornecedores
-export function getFornecedores(){
+export function getFornecedore(){
 
     return apiFetch("/api/fornecedores")
 

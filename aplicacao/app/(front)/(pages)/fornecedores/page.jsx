@@ -10,12 +10,12 @@ import ModalDesativados from "../../components/modalDesativados";
 import Swal from "sweetalert2";
 
 import {
-  getFornecedores,
+  getFornecedore,
   createFornecedor,
   updateFornecedor,
   deleteFornecedor,
   activateFornecedor,
-} from "../../services/fornecedoresServices";
+} from "../../services/fornecedoreServices";
 
 export default function Fornecedores() {
   const [fornecedores, setFornecedores] = useState([]);
@@ -54,7 +54,7 @@ export default function Fornecedores() {
 
   async function carregar() {
     try {
-      const res = await getFornecedores();
+      const res = await getFornecedore();
 
       if (res) {
         setFornecedores(res.data);

@@ -11,15 +11,14 @@ import { formatData } from "../../../utils/Datetime";
 import Swal from "sweetalert2";
 
 import {
-  getEquipamentos,
-  createEquipamentos,
-  updateEquipamentos,
+  getEquipamento,
+  createEquipamento,
+  updateEquipamento,
   deleteEquipamento,
   activateEquipamento,
-} from "../../services/equipamentosService";
+} from "../../services/equipamentoService";
 
 export default function Equipamentos() {
-
   const [equipamentos, setEquipamentos] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,15 +54,12 @@ export default function Equipamentos() {
 
   async function carregar() {
     try {
-
-      const response = await getEquipamentos();
+      const response = await getEquipamento();
 
       if (response) {
         setEquipamentos(response.data);
       }
-
     } catch (err) {
-
       console.error("Erro ao carregar equipamentos:", err);
 
       Swal.fire({
@@ -71,7 +67,6 @@ export default function Equipamentos() {
         title: "Erro",
         text: "Erro ao carregar equipamentos",
       });
-
     } finally {
       setLoading(false);
     }
@@ -83,10 +78,8 @@ export default function Equipamentos() {
 
   // Criar Equipamento
   async function handleCreateEquipamento(data) {
-
     try {
-
-      await createEquipamentos(data);
+      await createEquipamento(data);
 
       setModalAddOpen(false);
 
@@ -102,9 +95,7 @@ export default function Equipamentos() {
       });
 
       await carregar();
-
     } catch (err) {
-
       console.error("Erro ao criar equipamento:", err);
 
       Swal.fire({
@@ -112,13 +103,11 @@ export default function Equipamentos() {
         title: "Erro ao criar equipamento",
         text: "Não foi possível cadastrar o equipamento.",
       });
-
     }
   }
 
   // Desativar
   async function handleDeactivate(id) {
-
     const result = await Swal.fire({
       title: "Desativar equipamento?",
       text: "Deseja realmente desativar este equipamento?",
@@ -136,7 +125,6 @@ export default function Equipamentos() {
     if (!result.isConfirmed) return;
 
     try {
-
       await deleteEquipamento(id);
 
       await carregar();
@@ -151,9 +139,7 @@ export default function Equipamentos() {
         showConfirmButton: false,
         timer: 2000,
       });
-
     } catch (err) {
-
       console.error("Erro ao desativar equipamento:", err);
 
       Swal.fire({
@@ -161,13 +147,11 @@ export default function Equipamentos() {
         title: "Erro ao desativar",
         text: "Não foi possível desativar o equipamento.",
       });
-
     }
   }
 
   // Ativar
   async function handleActivate(id) {
-
     const result = await Swal.fire({
       title: "Ativar equipamento?",
       text: "Deseja reativar este equipamento?",
@@ -185,7 +169,6 @@ export default function Equipamentos() {
     if (!result.isConfirmed) return;
 
     try {
-
       await activateEquipamento(id);
 
       await Swal.fire({
@@ -200,9 +183,7 @@ export default function Equipamentos() {
       });
 
       await carregar();
-
     } catch (err) {
-
       console.error("Erro ao ativar equipamento:", err);
 
       Swal.fire({
@@ -210,19 +191,13 @@ export default function Equipamentos() {
         title: "Erro ao ativar",
         text: "Não foi possível ativar o equipamento.",
       });
-
     }
   }
 
   // Editar
   async function handleEditEquipamento(data) {
-
     try {
-
-      await updateEquipamentos(
-        equipamentoSelecionado.pk_equipamentoID,
-        data
-      );
+      await updateEquipamento(equipamentoSelecionado.pk_equipamentoID, data);
 
       setModalEditOpen(false);
       setEquipamentoSelecionado(null);
@@ -239,9 +214,7 @@ export default function Equipamentos() {
       });
 
       await carregar();
-
     } catch (err) {
-
       console.error("Erro ao editar equipamento:", err);
 
       Swal.fire({
@@ -249,57 +222,42 @@ export default function Equipamentos() {
         title: "Erro ao atualizar equipamento",
         text: "Não foi possível atualizar o equipamento.",
       });
-
     }
   }
 
   // Filtros
-  const equipamentosAtivos =
-    equipamentos.filter((e) => e.status === "Ativo");
+  const equipamentosAtivos = equipamentos.filter((e) => e.status === "Ativo");
 
-  const equipamentosInativos =
-    equipamentos.filter((e) => e.status === "Desativado");
+  const equipamentosInativos = equipamentos.filter(
+    (e) => e.status === "Desativado",
+  );
 
   if (loading) {
     return <p className="p-6">Carregando equipamentos...</p>;
   }
 
   return (
-
     <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
-
       <Header />
 
       <div className="p-6 flex flex-col gap-6">
-
         <div className="flex justify-end">
-
           <button
             onClick={() => setShowDesativados(true)}
             className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
           >
             Mostrar desativados
           </button>
-
         </div>
 
         {equipamentosAtivos.length === 0 ? (
-
           <p className="text-gray-500 text-center">
             Nenhum equipamento ativo encontrado
           </p>
-
         ) : (
-
           <div className="flex flex-col gap-4">
-
             {equipamentosAtivos.map((equip) => (
-
-              <Card
-                key={equip.pk_equipamentoID}
-                title={equip.nomeEquipamento}
-              >
-
+              <Card key={equip.pk_equipamentoID} title={equip.nomeEquipamento}>
                 <p className="text-sm text-black">
                   Descrição: {equip.descricao}
                 </p>
@@ -313,7 +271,6 @@ export default function Equipamentos() {
                 </p>
 
                 <div className="flex gap-2 mt-3">
-
                   <button
                     onClick={() => {
                       setEquipamentoSelecionado(equip);
@@ -325,24 +282,16 @@ export default function Equipamentos() {
                   </button>
 
                   <button
-                    onClick={() =>
-                      handleDeactivate(equip.pk_equipamentoID)
-                    }
+                    onClick={() => handleDeactivate(equip.pk_equipamentoID)}
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                   >
                     Desativar
                   </button>
-
                 </div>
-
               </Card>
-
             ))}
-
           </div>
-
         )}
-
       </div>
 
       <button
@@ -369,18 +318,15 @@ export default function Equipamentos() {
       </button>
 
       {modalAddOpen && (
-
         <ModalIncluir
           title="Novo Equipamento"
           fields={fieldsEquipamento}
           onSubmit={handleCreateEquipamento}
           onClose={() => setModalAddOpen(false)}
         />
-
       )}
 
       {modalEditOpen && equipamentoSelecionado && (
-
         <ModalIncluir
           title="Editar Equipamento"
           fields={fieldsEquipamento}
@@ -389,18 +335,16 @@ export default function Equipamentos() {
             setModalEditOpen(false);
             setEquipamentoSelecionado(null);
           }}
-         initialData={{
+          initialData={{
             nome: equipamentoSelecionado?.nomeEquipamento || "",
             descricao: equipamentoSelecionado?.descricao || "",
             dataAquisicao: equipamentoSelecionado?.dataAquisicao || "",
             vidaUtil: equipamentoSelecionado?.vidaUtilRestante || "",
-            }}
+          }}
         />
-
       )}
 
       {showDesativados && (
-
         <ModalDesativados
           title="Equipamentos Desativados"
           items={equipamentosInativos}
@@ -418,11 +362,7 @@ export default function Equipamentos() {
           onActivate={handleActivate}
           onClose={() => setShowDesativados(false)}
         />
-
       )}
-
     </div>
-
   );
-
 }

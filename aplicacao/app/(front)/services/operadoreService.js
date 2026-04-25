@@ -1,7 +1,7 @@
 import { apiFetch } from "./api"
 
 // Buscar todos os operadores
-export function getOperators(){
+export function getOperator(){
 
     return apiFetch("/api/operadores")
 

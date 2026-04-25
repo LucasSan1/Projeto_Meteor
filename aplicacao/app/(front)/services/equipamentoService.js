@@ -1,14 +1,14 @@
 import { apiFetch } from "./api"
 
 // GET equipamento
-export function getEquipamentos(){
+export function getEquipamento(){
 
     return apiFetch("/api/equipamentos")
 
 }
 
 // POST equipamneot
-export function createEquipamentos(data){
+export function createEquipamento(data){
 
     return apiFetch("/api/equipamentos", {
         method: "POST",
@@ -18,7 +18,7 @@ export function createEquipamentos(data){
 }
 
 // PATCH equipamento
-export function updateEquipamentos(id, data){
+export function updateEquipamento(id, data){
 
     return apiFetch(`/api/equipamentos/${id}`, {
         method: "PATCH",

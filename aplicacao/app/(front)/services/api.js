@@ -1,100 +1,89 @@
-import Swal from "sweetalert2"
+import Swal from "sweetalert2";
 
-// Validação de Headers (token de acesso e permissoes)
-export async function apiFetch(
-    url,
-    options = {}
-){
+export async function apiFetch(url, options = {}) {
+  const token = localStorage.getItem("token");
 
-    const token = localStorage.getItem("token")
+  const skipAuth = options.skipAuth || false;
 
-    const skipAuth = options.skipAuth || false
+  try {
+    const response = await fetch(url, {
+      ...options,
 
-    try{
+      headers: {
+        "Content-Type": "application/json",
 
-        const response = await fetch(url, {
+        ...(token &&
+          !skipAuth && {
+            Authorization: `Bearer ${token}`,
+          }),
 
-            ...options,
+        ...(options.headers || {}),
+      },
+    });
 
-            headers: {
-                "Content-Type": "application/json",
+    let data = null;
 
-                Authorization: token
-                    ? `Bearer ${token}`
-                    : "",
-
-                ...(options.headers || {})
-            }
-
-        })
-
-        if(response.status === 401){
-
-            const data = await response.json()
-
-            if(skipAuth){
-
-                // login inválido → só mostra erro
-                await Swal.fire({
-                    icon: "warning",
-                    title: "Credenciais Invalidas",
-                    text: data.message
-                })
-
-                return null
-            }
-
-            await Swal.fire({
-                icon: "warning",
-                title: "Sessão inválida",
-                text: data.message || "Acesso negado 401"
-            })
-
-            localStorage.removeItem("token")
-            localStorage.removeItem("cargo")
-
-            window.location.href = "/login"
-
-            return null
-        }
-
-        if(response.status === 403){
-
-            const data = await response.json()
-
-            await Swal.fire({
-                icon: "error",
-                title: "Acesso negado",
-                text: data.message || "Acesso Negado 403"
-            }) 
-
-            return null
-        }
-
-        if(!response.ok){
-
-            await Swal.fire({
-                icon: "error",
-                title: "Erro",
-                text: data.message || "Erro inesperado"
-            })
-
-            return null
-        }
-
-        return await response.json()
-
-    } catch(err){
-
-        console.error("Erro API:", err)
-
-        await Swal.fire({
-            icon: "error",
-            title: "Erro",
-            text: "Erro ao conectar com servidor."
-        })
-
-        return null
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
     }
 
+    if (response.status === 401) {
+      if (skipAuth) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Credenciais inválidas",
+          text: data?.message || "Usuário ou senha incorretos.",
+        });
+
+        return null;
+      }
+
+      await Swal.fire({
+        icon: "warning",
+        title: "Sessão expirada",
+        text: data?.message || "Faça login novamente.",
+      });
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("cargo");
+
+      window.location.href = "/login";
+
+      return null;
+    }
+
+    if (response.status === 403) {
+      await Swal.fire({
+        icon: "error",
+        title: "Acesso negado",
+        text: data?.message || "Você não tem permissão para esta ação.",
+      });
+
+      return null;
+    }
+
+    if (!response.ok) {
+      await Swal.fire({
+        icon: "error",
+        title: "Erro",
+        text: data?.message || "Erro inesperado no servidor.",
+      });
+
+      return null;
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Erro API:", err);
+
+    await Swal.fire({
+      icon: "error",
+      title: "Erro de conexão",
+      text: "Não foi possível conectar ao servidor.",
+    });
+
+    return null;
+  }
 }

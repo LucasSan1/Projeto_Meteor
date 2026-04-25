@@ -10,13 +10,13 @@ import ModalDesativados from "../../components/modalDesativados";
 import Swal from "sweetalert2";
 
 import {
-  getOperators,
+  getOperator,
   createOperator,
   deleteOperator,
   activateOperator,
   changeAvailability,
   updateOperator
-} from "../../services/operadoresService";
+} from "../../services/operadoreService";
 
 export default function Operadores() {
   const [operadores, setOperadores] = useState([]);
@@ -45,7 +45,7 @@ export default function Operadores() {
 
   async function carregar() {
     try {
-      const response = await getOperators();
+      const response = await getOperator();
 
       if (response) {
         setOperadores(response.data);
