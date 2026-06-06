@@ -99,6 +99,13 @@ export default function HamburgerMenu() {
             Equipamentos
           </Link>
 
+          <Link
+            href="/maquinas"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Maquinas
+          </Link>
+
         </div>
       )}
     </>
