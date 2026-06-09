@@ -354,7 +354,7 @@ function Section({ title, pecas, onDelete, onEdit }) {
               <div className="flex gap-2 mt-3 flex-wrap">
                 <button
                   onClick={() => onEdit(peca)}
-                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-yellow-600"
                 >
                   Editar
                 </button>
