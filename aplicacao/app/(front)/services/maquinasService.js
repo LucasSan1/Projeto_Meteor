@@ -17,9 +17,15 @@ export function getEquipamento(){
 // POST fornecedores
 export function createMaquina(data){
 
-    return apiFetch("/api/Maquinas", {
+    return apiFetch("/api/maquinas", {
         method: "POST",
         body: JSON.stringify(data)
     })
 
+}
+
+export function deleteMaquina(id){
+    return apiFetch(`/api/maquinas/${id}`, {
+        method: "PUT"
+    })
 }

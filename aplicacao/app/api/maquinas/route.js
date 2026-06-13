@@ -4,18 +4,18 @@ import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
 
 export async function POST(request){
     const body = await request.json();
-    const { equipamento, nomeMaquina, descricao, capacidade, ultimaManutencao } = body;
+    const { equipamento, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao } = body;
 
     try{
         checkAuthPosition(request)
 
-        if(!equipamento?.trim() || !nomeMaquina?.trim() || !capacidade?.trim()){
+        if(!equipamento?.trim() || !nomeMaquina?.trim() || !capacidadeMaxima?.trim()){
             throw { status: 400, message: "Preencha os campos equipamento, nome e capacidade!" }
         }
 
         const [result] = await pool.query(
             "INSERT INTO maquinas (fk_equipamentoID, nomeMaquina, descricao, capacidadeMaxima) VALUES (?, ?, ?, ?) ",
-            [equipamento, nomeMaquina, descricao, capacidade, ultimaManutencao],
+            [equipamento, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao],
         )
 
         return NextResponse.json({

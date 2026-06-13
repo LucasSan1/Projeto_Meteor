@@ -9,7 +9,7 @@ import ModalDesativados from "../../components/modalDesativados";
 
 import Swal from "sweetalert2";
 
-import { getMaquina, createMaquina, getEquipamento } from "../../services/maquinasService";
+import { getMaquina, createMaquina, getEquipamento, deleteMaquina } from "../../services/maquinasService";
 
 import { formatData } from "../../../utils/Datetime";
 
@@ -46,7 +46,7 @@ export default function Maquinas() {
       type: "date",
     },
     {
-      name: "fk_equipamentoID",
+      name: "equipamento",
       label: "Equipamento",
       type: "select",
       options: [{ values: "", label: "Selecione um equipamento", }, ...equipamentos, ]
@@ -117,10 +117,54 @@ export default function Maquinas() {
   async function handleEditMaquina(data) {}
 
   // IMPLEMENTAR DEPOIS
-  async function handleDeleteMaquina(maquina) {}
+  async function handleDeleteMaquina(maquina) {
+     const result = await Swal.fire({
+          title: "Alterar status?",
+          text: "Deseja alternar o status desta maquina?",
+          icon: "question",
+    
+          showCancelButton: true,
+    
+          confirmButtonText: "Sim, alterar",
+          cancelButtonText: "Cancelar",
+    
+          confirmButtonColor: "#f59e0b",
+          cancelButtonColor: "#6b7280",
+        });
+    
+        if (!result.isConfirmed) return;
+    
+        try {
+          await deleteMaquina(maquina.pk_maquinaID);
+    
+          await Swal.fire({
+            toast: true,
+            position: "top-end",
+    
+            icon: "success",
+            title: "Status alterado!",
+    
+            showConfirmButton: false,
+            timer: 2000,
+          });
+    
+          await carregar();
+        } catch (err) {
+          console.error("Erro ao alterar status: ", err);
+    
+          Swal.fire({
+            icon: "error",
+            title: "Erro ao alterar status",
+            text: "Não foi possível alterar o status da maquina.",
+          });
+        }
+
+  }
 
   // IMPLEMENTAR DEPOIS
-  async function handleActivateMaquina(id) {}
+  async function handleActivateMaquina(id) {
+
+  }
 
   function openEditModal(maquina) {
     setMaquinaSelecionada(maquina);
@@ -228,7 +272,7 @@ export default function Maquinas() {
             },
           ]}
           idField="pk_maquinaID"
-          onActivate={handleActivateMaquina}
+          onActivate={handleDeleteMaquina}
           onClose={() => setShowDesativados(false)}
         />
       )}
