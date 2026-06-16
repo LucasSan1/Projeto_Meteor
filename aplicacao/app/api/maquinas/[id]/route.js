@@ -68,6 +68,7 @@ export async function PUT(request, { params }) {
 
     const { id } = await params;
 
+    console.log("Das ", id)
     try {
 
         checkAuthPosition(request);

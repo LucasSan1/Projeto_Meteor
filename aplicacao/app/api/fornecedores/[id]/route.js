@@ -30,7 +30,7 @@ export async function PATCH(request, { params }){
 
         // Se não tiver valor no json seta os valores já existentes no banco
         nome = nome && nome.trim() !== "" ? nome : fornecedor.nomeFornecedor;
-        endereco = endereco && endereco.trm() !== "" ? endereco : fornecedor.endereco;
+        endereco = endereco && endereco.trim() !== "" ? endereco : fornecedor.endereco;
         contato = contato && contato.trim() !== "" ? contato : fornecedor.contato;
         avaliacao = avaliacao && avaliacao.trim() !== "" ? avaliacao : fornecedor.avaliacao;
         status = status && status.trim() !== ""  ? status : fornecedor.status

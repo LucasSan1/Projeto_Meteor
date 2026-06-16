@@ -104,7 +104,7 @@ export default function ModalIncluir({
             ) : (
               <input
                 type={field.type || "text"}
-                value={formData[field.name]}
+                value={formData[field.name] || "" }
                 onChange={(e) => handleChange(field.name, e.target.value)}
                 className="
                   border
