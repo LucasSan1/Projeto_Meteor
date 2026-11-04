@@ -33,3 +33,32 @@ export function formatData(data) {
       }
     );
 }
+
+// Mesma ideia da formatData, mas com hora junto pra logs e históricos
+export function formatDataHora(data) {
+    if (!data) return "-";
+
+    return new Date(data).toLocaleString(
+      "pt-BR",
+      {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
+}
+
+// Converte o valor que vem do MySQL/input pro formato aceito no datetime-local
+export function paraInputDatetime(data) {
+    if (!data) return "";
+
+    const date = new Date(data);
+
+    if (Number.isNaN(date.getTime())) return "";
+
+    const pad = (n) => String(n).padStart(2, "0");
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
