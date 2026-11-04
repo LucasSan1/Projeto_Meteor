@@ -36,3 +36,13 @@ export function updateStatusOrdem(
     })
 
 }
+
+// Editar os dados planejados (só enquanto a ordem está Pendente)
+export function updateOrdem(id, data){
+
+    return apiFetch(`/api/osProducao/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data)
+    })
+
+}

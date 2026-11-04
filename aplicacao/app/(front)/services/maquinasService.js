@@ -29,3 +29,11 @@ export function deleteMaquina(id){
         method: "PUT"
     })
 }
+
+// PATCH maquina (edição dos dados cadastrais)
+export function updateMaquina(id, data){
+    return apiFetch(`/api/maquinas/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data)
+    })
+}
