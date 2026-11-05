@@ -49,6 +49,7 @@ export default function HamburgerMenu() {
           flex
           flex-col
           gap-4
+          overflow-y-auto
         "
         >
           <button
@@ -64,19 +65,27 @@ export default function HamburgerMenu() {
             Home
           </Link>
 
+          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
+            Pessoas
+          </span>
+
           <Link
-            href="/ordemServico"
+            href="/usuarios"
             className="text-white hover:text-[#C69214] transition"
           >
-            Ordens de Serviço
+            Usuários
           </Link>
 
           <Link
-            href="/pecas"
+            href="/profissionais"
             className="text-white hover:text-[#C69214] transition"
           >
-            Peças
+            Profissionais
           </Link>
+
+          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
+            Cadastros
+          </span>
 
           <Link
             href="/fornecedores"
@@ -86,10 +95,17 @@ export default function HamburgerMenu() {
           </Link>
 
           <Link
-            href="/operadores"
+            href="/materiasPrimas"
             className="text-white hover:text-[#C69214] transition"
           >
-            Operadores
+            Matérias-primas
+          </Link>
+
+          <Link
+            href="/pecas"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Peças
           </Link>
 
           <Link
@@ -103,7 +119,82 @@ export default function HamburgerMenu() {
             href="/maquinas"
             className="text-white hover:text-[#C69214] transition"
           >
-            Maquinas
+            Máquinas
+          </Link>
+
+          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
+            Produção
+          </span>
+
+          <Link
+            href="/ordemServico"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Ordens de Produção
+          </Link>
+
+          <Link
+            href="/ordemMateriais"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Materiais por Ordem
+          </Link>
+
+          <Link
+            href="/inspecoes"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Inspeções
+          </Link>
+
+          <Link
+            href="/rejeicoes"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Rejeições
+          </Link>
+
+          <Link
+            href="/movimentacoesEstoque"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Movimentações de Estoque
+          </Link>
+
+          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
+            Manutenção
+          </span>
+
+          <Link
+            href="/manutencoesProgramadas"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Manutenções
+          </Link>
+
+          <Link
+            href="/historicoManutencao"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Histórico de Manutenção
+          </Link>
+
+          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
+            Consultas
+          </span>
+
+          <Link
+            href="/historicoOrdens"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Histórico de Ordens
+          </Link>
+
+          <Link
+            href="/auditoria"
+            className="text-white hover:text-[#C69214] transition"
+          >
+            Auditoria
           </Link>
 
         </div>
