@@ -1,0 +1,75 @@
+"use client";
+
+import { useState } from "react";
+
+import Card from "./Card";
+import { formatData, formatDataHora } from "../../utils/Datetime";
+
+// Lista genérica pra telas somente leitura (históricos, auditoria, vínculos)
+// Mantém o visual de cards do resto do sistema sem repetir a mesma seção 4x
+export default function ListaRegistros({
+  title = "Registros",
+  items = [],
+  fields = [],
+  idField = "id",
+  getTitle,
+  emptyMessage = "Nenhum registro encontrado",
+}) {
+  const [open, setOpen] = useState(true);
+
+  function formatarValor(item, field) {
+    let valor = item[field.value];
+
+    if (field.type === "date") {
+      valor = formatData(valor);
+    } else if (field.type === "datetime") {
+      valor = formatDataHora(valor);
+    } else if (field.type === "json") {
+      valor = valor ? JSON.stringify(valor) : "-";
+    } else if (field.type === "boolean") {
+      valor = valor ? "Sim" : "Não";
+    }
+
+    return valor === null || valor === undefined || valor === "" ? "-" : valor;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between cursor-pointer select-none"
+      >
+        <h2 className="text-xl font-bold text-[#4E342E]">
+          {title} ({items.length})
+        </h2>
+
+        <span className="text-lg text-black">{open ? "-" : "+"}</span>
+      </div>
+
+      {open && (
+        <div className="flex flex-col gap-4">
+          {items.length === 0 && (
+            <p className="text-gray-500 text-center">{emptyMessage}</p>
+          )}
+
+          {items.map((item, index) => (
+            <Card
+              key={item[idField] ?? index}
+              title={
+                getTitle
+                  ? getTitle(item)
+                  : `${title} #${item[idField] ?? index + 1}`
+              }
+            >
+              {fields.map((field) => (
+                <p key={field.value} className="text-sm text-black">
+                  {field.label}: {formatarValor(item, field)}
+                </p>
+              ))}
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
