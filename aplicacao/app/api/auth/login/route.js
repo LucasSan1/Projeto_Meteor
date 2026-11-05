@@ -11,7 +11,7 @@ export async function POST(request) {
         const { email, senha } = body;
 
         const [result]  = await pool.query(
-            "SELECT email, senha, nome, cargo FROM usuarios WHERE email = ?",
+            "SELECT email, senha, nome, cargo, status FROM usuarios WHERE email = ?",
             [email]
         )
 
@@ -20,8 +20,8 @@ export async function POST(request) {
         const hash = user ? user.senha : "$2b$10$pt2dUAb.Fx1MfPQ.Y68U/u6SE9e3TDYvCN6WvxANTIwWMAcV0EMRa"
         const validatedPass = await bcrypt.compare(senha, hash);
 
-        // Validacao de email vazio e senha correta
-        if(!user || !validatedPass) {
+        // Validacao de email, senha e status (usuário desativado não entra)
+        if(!user || !validatedPass || user.status !== "Ativo") {
              return NextResponse.json(
                 { message: "Usuario ou senha invalidos!" },
                 { status: 401 }

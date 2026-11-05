@@ -4,23 +4,18 @@ import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
 
 export async function POST(request) {
   const body = await request.json();
-  const { peca, material, peso, Dimensoes } = body;
+  const { peca, peso, dimensoes } = body;
 
   try {
     checkAuthPosition(request);
 
-    const [exist] = await pool.query(
-      "SELECT * FROM materiasPrimas WHERE pk_materiaID = ? AND status = 'Ativo'",
-      [material],
-    );
-
-    if (!exist || exist.length === 0) {
-      throw { status: 404, message: "Material não existente ou inativo!" };
+    if (!peca?.trim()) {
+      throw { status: 400, message: "O nome da peça é obrigatório!" };
     }
 
     const [result] = await pool.query(
-      "INSERT INTO pecas (peca, fk_material, peso, Dimensoes) VALUES (?,?,?,?)",
-      [peca, material, peso, Dimensoes],
+      "INSERT INTO pecas (peca, peso, dimensoes) VALUES (?,?,?)",
+      [peca, peso, dimensoes],
     );
 
     return NextResponse.json({
@@ -49,20 +44,14 @@ export async function GET(request) {
     checkAuth(request);
 
     const [result] = await pool.query(`
-        SELECT 
+        SELECT
             p.pk_pecaID,
             p.peca,
-            p.fk_material,
             p.peso,
-            p.Dimensoes,
-            p.status,
-
-            m.materia AS material
-
+            p.dimensoes,
+            p.status
         FROM pecas p
-
-        INNER JOIN materiasPrimas m
-            ON p.fk_material = m.pk_materiaID
+        ORDER BY p.peca
     `);
 
     return NextResponse.json({ data: result }, { status: 200 });

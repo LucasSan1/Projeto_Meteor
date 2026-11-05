@@ -9,13 +9,24 @@ export async function POST(request){
     try{
         checkAuthPosition(request)
 
-        if(!equipamento?.trim() || !nomeMaquina?.trim() || !capacidadeMaxima?.trim()){
+        const equipamentoId = equipamento ? String(equipamento).trim() : "";
+
+        if(!equipamentoId || !nomeMaquina?.trim() || !capacidadeMaxima?.trim()){
             throw { status: 400, message: "Preencha os campos equipamento, nome e capacidade!" }
         }
 
+        const [equip] = await pool.query(
+            "SELECT pk_equipamentoID FROM equipamentos WHERE pk_equipamentoID = ?",
+            [equipamentoId]
+        )
+
+        if(equip.length === 0){
+            throw { status: 404, message: "Equipamento não encontrado!" }
+        }
+
         const [result] = await pool.query(
-            "INSERT INTO maquinas (fk_equipamentoID, nomeMaquina, descricao, capacidadeMaxima) VALUES (?, ?, ?, ?) ",
-            [equipamento, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao],
+            "INSERT INTO maquinas (fk_equipamentoID, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao) VALUES (?, ?, ?, ?, ?) ",
+            [equipamentoId, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao || null],
         )
 
         return NextResponse.json({
@@ -42,7 +53,8 @@ export async function POST(request){
 
 export async function GET(request) {
     try{
-        checkAuthPosition(request)
+        // Leitura liberada pra qualquer usuário logado, igual aos equipamentos
+        checkAuth(request)
 
         const [result] = await pool.query(
             "SELECT * FROM maquinas ORDER BY pk_maquinaID DESC"

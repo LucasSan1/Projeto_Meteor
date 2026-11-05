@@ -43,7 +43,8 @@ export async function POST(request) {
 
 export async function GET(request) {
   try{
-    checkAuthPosition(request)
+    // Leitura liberada pra qualquer usuário logado: as telas de manutenção
+    checkAuth(request)
 
     const [result] = await pool.query(
       "SELECT * FROM equipamentos"

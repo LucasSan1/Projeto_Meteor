@@ -5,7 +5,7 @@ import { checkAuth, checkAuthPosition } from "../../../utils/authChecker"
 export async function PATCH(request, { params } ) {
     const { id } = await params;
     const body = await request.json();
-    let { peca, material, peso, dimensoes } = body;
+    let { peca, peso, dimensoes } = body;
 
     try{
         checkAuthPosition(request)
@@ -22,22 +22,12 @@ export async function PATCH(request, { params } ) {
         const part = exist[0]
 
         peca = peca && peca.trim() !== "" ? peca : part.peca;
-        material = material !== "" ? part.fk_material : material;
-        peso = peso && peso.trim() !== "" ? peso : part.peso;
-        dimensoes = dimensoes && dimensoes.trim() !== "" ? dimensoes : part.Dimensoes;
-
-        const [mat] = await pool.query(
-            "SELECT pk_materiaID FROM materiasPrimas WHERE pk_materiaID = ? AND status = 'Ativo'",
-            [material]
-        );
-
-        if(!mat || mat.length === 0){
-            throw { status: 404, message: "Material inválido!" }
-        } 
+        peso = peso && String(peso).trim() !== "" ? peso : part.peso;
+        dimensoes = dimensoes && String(dimensoes).trim() !== "" ? dimensoes : part.dimensoes;
 
         const [result] = await pool.query(
-            "UPDATE pecas SET peca = ?, fk_material = ?, peso = ?, Dimensoes = ? WHERE pk_pecaID = ? AND status = 'Ativo'",
-            [peca, material, peso, dimensoes, id]
+            "UPDATE pecas SET peca = ?, peso = ?, dimensoes = ? WHERE pk_pecaID = ? AND status = 'Ativo'",
+            [peca, peso, dimensoes, id]
         )
         
         if(result.affectedRows === 0 ){

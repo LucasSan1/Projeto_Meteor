@@ -8,7 +8,7 @@ export async function PATCH(request, { params }){
 
     const { id } = await params;
     const body = await request.json();
-    let { nome, endereco, contato, avaliacao, status } = body;
+    let { nome, cnpj, endereco, contato, avaliacao, status } = body;
 
     try{ 
         checkAuthPosition(request)
@@ -30,14 +30,34 @@ export async function PATCH(request, { params }){
 
         // Se não tiver valor no json seta os valores já existentes no banco
         nome = nome && nome.trim() !== "" ? nome : fornecedor.nomeFornecedor;
+        cnpj = cnpj ? String(cnpj).replace(/\D/g, "") : fornecedor.cnpj;
         endereco = endereco && endereco.trim() !== "" ? endereco : fornecedor.endereco;
         contato = contato && contato.trim() !== "" ? contato : fornecedor.contato;
-        avaliacao = avaliacao && avaliacao.trim() !== "" ? avaliacao : fornecedor.avaliacao;
+        // avaliacao vem como número do banco e como string do input, então evita o .trim() cego
+        avaliacao = avaliacao !== undefined && avaliacao !== "" ? avaliacao : fornecedor.avaliacao;
         status = status && status.trim() !== ""  ? status : fornecedor.status
-        
+
+        // Mesma faixa do POST: DECIMAL(2,1) não aceita negativo nem 10
+        if (
+            avaliacao !== null &&
+            (!Number.isFinite(Number(avaliacao)) || Number(avaliacao) < 0 || Number(avaliacao) > 9.9)
+        ) {
+            return NextResponse.json(
+                { message: "A avaliação deve ficar entre 0 e 9.9!" },
+                { status: 400 }
+            )
+        }
+
+        if (String(cnpj).length !== 14) {
+            return NextResponse.json(
+                { message: "O CNPJ deve ter 14 dígitos!" },
+                { status: 400 }
+            )
+        }
+
         const [result] = await pool.query(
-            "UPDATE fornecedores SET nomeFornecedor = ?, endereco = ?, contato = ?, avaliacao = ?, status = ? WHERE pk_fornecedorID = ?",
-            [nome, endereco, contato, avaliacao, status, id] 
+            "UPDATE fornecedores SET nomeFornecedor = ?, cnpj = ?, endereco = ?, contato = ?, avaliacao = ?, status = ? WHERE pk_fornecedorID = ?",
+            [nome, cnpj, endereco, contato, avaliacao, status, id] 
         )
 
         if(result.affectedRows === 0 ){
@@ -54,6 +74,13 @@ export async function PATCH(request, { params }){
 
     } catch(err){
         console.log("Fornecedores PATCH: ", err)
+
+        if(err.code === "ER_DUP_ENTRY"){
+            return NextResponse.json(
+                { message: "Já existe um fornecedor com esse CNPJ!" },
+                { status: 409 }
+            )
+        }
 
         if(err.status){
             return NextResponse.json(

@@ -4,7 +4,7 @@ import { checkAuthPosition } from "../../../utils/authChecker";
 
 export async function PATCH(request, { params }) {
     const { id } = await params;
-    const body = request.json();
+    const body = await request.json();
     let { equipamento, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao } = body;
 
     try{
@@ -22,14 +22,26 @@ export async function PATCH(request, { params }) {
 
         const maquina = exist[0];
 
+        const equipamentoFinal = equipamento || maquina.fk_equipamentoID;
+
         nomeMaquina = nomeMaquina && nomeMaquina.trim() !== "" ? nomeMaquina : maquina.nomeMaquina;
         descricao =  descricao && descricao.trim() !== "" ? descricao :  maquina.descricao;
         capacidadeMaxima = capacidadeMaxima && capacidadeMaxima.trim() !== "" ? capacidadeMaxima : maquina.capacidadeMaxima;
-        ultimaManutencao = ultimaManutencao && ultimaManutencao.trim() !== "" ? ultimaManutencao : maquina.ultimaManutencao
+        ultimaManutencao = ultimaManutencao && String(ultimaManutencao).trim() !== "" ? ultimaManutencao : maquina.ultimaManutencao
+
+        // Confere se o equipamento escolhido existe antes de trocar o vínculo
+        const [equip] = await pool.query(
+            "SELECT pk_equipamentoID FROM equipamentos WHERE pk_equipamentoID = ?",
+            [equipamentoFinal]
+        )
+
+        if(equip.length === 0){
+            throw { status: 404, message: "Equipamento não encontrado!" }
+        }
 
         const [result] = await pool.query(
-            "UPDATE maquinas SET nomeMaquina = ?, descricao = ?, capacidadeMaxima = ?, ultimaManutenção = ?, WHERE pk_maquinaID = ?",
-            [nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao, id] 
+            "UPDATE maquinas SET fk_equipamentoID = ?, nomeMaquina = ?, descricao = ?, capacidadeMaxima = ?, ultimaManutencao = ? WHERE pk_maquinaID = ?",
+            [equipamentoFinal, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao, id] 
         )
 
         if(result.affectedRows === 0 ){
