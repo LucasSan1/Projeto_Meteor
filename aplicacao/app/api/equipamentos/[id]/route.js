@@ -9,7 +9,7 @@ export async function PATCH(request, { params }) {
 
     try{
 
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const[exist] = await pool.query(
             "SELECT * FROM equipamentos WHERE pk_equipamentoID = ? AND status = 'Ativo'",
@@ -65,7 +65,7 @@ export async function DELETE(request, { params }) {
     const {id} = await params;
 
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const[exist] = await pool.query(
             "SELECT * FROM equipamentos WHERE pk_equipamentoID = ?",
@@ -117,7 +117,7 @@ export async function PUT(request, { params }) {
     const {id} = await params;
 
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
         
          const[exist] = await pool.query(
             "SELECT * FROM equipamentos WHERE pk_equipamentoID = ?",

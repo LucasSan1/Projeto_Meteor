@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken"
 
-const secretKey = "LoginJWT"
+const secretKey = process.env.JWT_SECRET || "LoginJWT"
 
 // Função geradora de tokens de acesso (validos por 12hrs)
 export function generateToken(email, cargo){

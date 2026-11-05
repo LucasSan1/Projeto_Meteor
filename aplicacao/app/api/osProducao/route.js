@@ -1,14 +1,31 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
+import {
+  autorizar,
+  CARGOS,
+  exigirPerfilOperador,
+} from "../../utils/authMiddleware";
 import { toSqlDatetime } from "../../utils/datetimeSql";
 
 // Lista as ordens com peça e operador já resolvidos
+// Gestor vê tudo; operador vê só o que está atribuído a ele
 export async function GET(request) {
   try {
-    checkAuth(request);
+    const usuario = await autorizar(request, [
+      CARGOS.GERENTE,
+      CARGOS.OPERADOR,
+    ]);
 
-    const [result] = await pool.query(`
+    const soDoOperador = usuario.cargo === CARGOS.OPERADOR;
+
+    if (soDoOperador) exigirPerfilOperador(usuario);
+
+    const filtro = soDoOperador ? "WHERE op.fk_operadorID = ?" : "";
+    const params = soDoOperador ? [usuario.profissionalID] : [];
+
+    const [result] = await pool.query(
+      `
       SELECT
         op.pk_ordemID,
         op.codigo,
@@ -27,8 +44,11 @@ export async function GET(request) {
       INNER JOIN pecas p ON op.fk_pecaID = p.pk_pecaID
       INNER JOIN profissionais prof ON op.fk_operadorID = prof.pk_profissionalID
       INNER JOIN usuarios u ON prof.fk_usuarioID = u.id
+      ${filtro}
       ORDER BY op.inicioPlanejado
-    `);
+    `,
+      params,
+    );
 
     return NextResponse.json({ data: result }, { status: 200 });
   } catch (err) {
@@ -61,7 +81,7 @@ export async function POST(request) {
   } = body;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     if (
       !codigo?.trim() ||

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
 
 // Lista as inspeções com a ordem e a peça
 export async function GET(request) {
   try {
-    checkAuth(request);
+    await checkAuthPosition(request);
 
     const [result] = await pool.query(`
       SELECT
@@ -47,7 +47,7 @@ export async function POST(request) {
   const { ordem, totalProduzido, aprovadas, rejeitadas, observacoes } = body;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     if (!ordem || totalProduzido === undefined || totalProduzido === "") {
       throw {

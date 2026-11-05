@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
 import { hashPass } from "../../utils/hash";
 
 // Lista os usuários do sistema 
 export async function GET(request) {
   try {
-    checkAuth(request);
+    await checkAuthPosition(request);
 
     const [result] = await pool.query(
       "SELECT id, nome, email, cargo, status FROM usuarios ORDER BY nome",
@@ -36,7 +36,7 @@ export async function POST(request) {
   const { nome, email, cargo, senha } = body;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     if (!nome?.trim() || !email?.trim() || !cargo || !senha?.trim()) {
       throw { status: 400, message: "Preencha todos os campos!" };

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
 
 // Lista as rejeições com a inspeção/ordem/peça de origem
 export async function GET(request) {
   try {
-    checkAuth(request);
+    await checkAuthPosition(request);
 
     const [result] = await pool.query(`
       SELECT
@@ -49,7 +49,7 @@ export async function POST(request) {
   const { inspecao, quantidade, motivoRejeicao, tipo, acoesCorretivas } = body;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     if (!inspecao || !quantidade || !motivoRejeicao?.trim()) {
       throw {

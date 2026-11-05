@@ -11,7 +11,7 @@ export async function PATCH(request, { params }){
     let { nome, cnpj, endereco, contato, avaliacao, status } = body;
 
     try{ 
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         // Verifica se o fornecedor existe
         const [exist] = await pool.query(
@@ -103,7 +103,7 @@ export async function DELETE(request, { params }) {
     const { id } = await params;
 
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM fornecedores WHERE pk_fornecedorID = ?",
@@ -159,7 +159,7 @@ export async function PUT(request, { params }) {
      const { id } = await params;
 
    try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM fornecedores WHERE pk_fornecedorID = ?",

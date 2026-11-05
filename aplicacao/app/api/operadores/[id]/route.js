@@ -6,7 +6,7 @@ export async function DELETE(request, { params } ) {
     const { id } = await params;
 
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM operadores WHERE pk_operadorID = ?",
@@ -60,7 +60,7 @@ export async function POST(request, { params }) {
     const { id } = await params;
 
    try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM operadores WHERE pk_operadorID= ?",
@@ -114,7 +114,7 @@ export async function PUT(request, { params }) {
 
     try {
 
-        checkAuthPosition(request);
+        await checkAuthPosition(request);
 
         const [result] = await pool.query(
             `

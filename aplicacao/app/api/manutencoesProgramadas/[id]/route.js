@@ -1,12 +1,26 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql";
 import { checkAuthPosition } from "../../../utils/authChecker";
+import {
+  autorizar,
+  CARGOS,
+  exigirPerfilMecanico,
+  garantirTitularidade,
+} from "../../../utils/authMiddleware";
 import { getDataBrasilia } from "../../../utils/Datetime";
 import { toSqlDatetime } from "../../../utils/datetimeSql";
 
 const TRANSICOES = {
   Programada: ["Em Execução", "Cancelada"],
   "Em Execução": ["Concluída", "Cancelada"],
+  Concluída: [],
+  Cancelada: [],
+};
+
+// Mecânico inicia e conclui; cancelar é privilégio do gestor
+const TRANSICOES_MECANICO = {
+  Programada: ["Em Execução"],
+  "Em Execução": ["Concluída"],
   Concluída: [],
   Cancelada: [],
 };
@@ -27,7 +41,7 @@ export async function PATCH(request, { params }) {
   } = body;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM manutencoesProgramadas WHERE pk_manutencaoID = ?",
@@ -156,7 +170,15 @@ export async function PUT(request, { params }) {
   let connection;
 
   try {
-    const payload = checkAuthPosition(request);
+    const usuarioLogado = await autorizar(request, [
+      CARGOS.GERENTE,
+      CARGOS.MECANICO,
+    ]);
+
+    const transicoes =
+      usuarioLogado.cargo === CARGOS.MECANICO
+        ? TRANSICOES_MECANICO
+        : TRANSICOES;
 
     // Custos negativos estouram o CHECK do histórico, então barra antes de chegar no banco
     const custoFinal =
@@ -180,7 +202,17 @@ export async function PUT(request, { params }) {
 
     const manutencao = exist[0];
 
-    if (!TRANSICOES[manutencao.status]) {
+    // Mecânico só age na própria intervenção
+    if (usuarioLogado.cargo === CARGOS.MECANICO) {
+      exigirPerfilMecanico(usuarioLogado);
+      garantirTitularidade(
+        usuarioLogado,
+        manutencao.fk_mecanicoID,
+        "Essa manutenção não está atribuída a você!",
+      );
+    }
+
+    if (!transicoes[manutencao.status]) {
       throw { status: 400, message: "Status atual inválido!" };
     }
 
@@ -193,7 +225,7 @@ export async function PUT(request, { params }) {
       );
     }
 
-    if (!TRANSICOES[manutencao.status].includes(status)) {
+    if (!transicoes[manutencao.status].includes(status)) {
       throw {
         status: 400,
         message: `Não é possível mudar de "${manutencao.status}" para "${status}"!`,
@@ -247,25 +279,18 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const [usuario] = await connection.query(
-      "SELECT id FROM usuarios WHERE email = ?",
-      [payload.email],
+    await connection.query(
+      `INSERT INTO auditoria
+        (fk_usuarioID, entidade, entidadeID, acao, dadosAnteriores, dadosNovos, observacao)
+       VALUES (?, 'manutencao', ?, 'mudancaStatus', ?, ?, ?)`,
+      [
+        usuarioLogado.id,
+        id,
+        JSON.stringify({ status: manutencao.status }),
+        JSON.stringify({ status }),
+        observacoes || null,
+      ],
     );
-
-    if (usuario.length > 0) {
-      await connection.query(
-        `INSERT INTO auditoria
-          (fk_usuarioID, entidade, entidadeID, acao, dadosAnteriores, dadosNovos, observacao)
-         VALUES (?, 'manutencao', ?, 'mudancaStatus', ?, ?, ?)`,
-        [
-          usuario[0].id,
-          id,
-          JSON.stringify({ status: manutencao.status }),
-          JSON.stringify({ status }),
-          observacoes || null,
-        ],
-      );
-    }
 
     await connection.commit();
 
@@ -299,7 +324,7 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM manutencoesProgramadas WHERE pk_manutencaoID = ?",

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql"
-import { checkAuthPosition, checkAuth } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
 
 // Função para salvar um novo fornecedor no banco
 export async function POST(request){
     try{
 
         // Verifica o token com base no cargo
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         // Extrai o json e valida os campos
         const body = await request.json();
@@ -81,7 +81,7 @@ export async function GET(request){
     try{
 
         // Apenas verifica se o token é valido e não expirou, ignorando o cargo
-        checkAuth(request)
+        await checkAuthPosition(request)
 
         const [result] = await pool.query(
             "SELECT * FROM fornecedores"

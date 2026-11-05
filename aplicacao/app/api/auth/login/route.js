@@ -3,6 +3,7 @@ import  pool  from "../../../lib/connSql";
 import bcrypt from "bcrypt"
 import { generateToken } from "../../../utils/jwt"
 import { hashPass } from "../../../utils/hash"
+import { autenticar } from "../../../utils/authMiddleware"
 
 export async function POST(request) {
     try {
@@ -48,12 +49,18 @@ export async function POST(request) {
 // Rota para atualizar senha
 export async function PUT(request){
     try{
+        const usuarioLogado = await autenticar(request);
+
         const body = await request.json();
-        const { email, senhaAtual, novaSenha } = body;
+        const { senhaAtual, novaSenha } = body;
+
+        if(!senhaAtual || !novaSenha?.trim()){
+            throw { status: 400, message: "Informe a senha atual e a nova senha!" };
+        }
 
         const [user] = await pool.query(
             "SELECT senha FROM usuarios WHERE email = ?",
-            [email]
+            [usuarioLogado.email]
         )
 
         // Verifica se o usuario existe e retorna msg generica (mensagem correta no console da api)
@@ -82,7 +89,7 @@ export async function PUT(request){
 
         await pool.query(
             "UPDATE usuarios SET senha = ? WHERE email = ?",
-            [hashedPass, email]
+            [hashedPass, usuarioLogado.email]
         )
 
         return NextResponse.json(
@@ -92,6 +99,13 @@ export async function PUT(request){
 
     } catch(err){
         console.error(err);
+
+        if(err.status){
+            return NextResponse.json(
+                { message: err.message },
+                { status: err.status }
+            )
+        }
 
         return NextResponse.json(
             { message: "Erro ao atualizar senha" },

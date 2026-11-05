@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql"
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
+import { autorizar, CARGOS } from "../../utils/authMiddleware";
 
 export async function POST(request) {
   const body = await request.json();
@@ -8,7 +9,7 @@ export async function POST(request) {
   const { nome, descricao, dataAquisicao, vidaUtil } = body;
 
   try{
-    checkAuthPosition(request)
+    await checkAuthPosition(request)
 
     if(!nome.trim() || !descricao.trim() || !dataAquisicao.trim()){
       throw { status: 400, message: "Os campos não devem estar vazio!" }
@@ -43,8 +44,8 @@ export async function POST(request) {
 
 export async function GET(request) {
   try{
-    // Leitura liberada pra qualquer usuário logado: as telas de manutenção
-    checkAuth(request)
+    // Gestor cadastra; mecânico precisa enxergar equipamentos pra agendar manutenção
+    await autorizar(request, [CARGOS.GERENTE, CARGOS.MECANICO])
 
     const [result] = await pool.query(
       "SELECT * FROM equipamentos"

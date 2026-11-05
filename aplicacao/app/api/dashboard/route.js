@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
 
 export async function GET(request) {
   try {
-    checkAuth(request);
+    await checkAuthPosition(request);
 
     const [
       [[ordensPendentes]],

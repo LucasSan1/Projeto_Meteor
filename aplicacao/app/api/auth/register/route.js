@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import  pool  from "../../../lib/connSql";
 
 import { hashPass } from "../../../utils/hash"
+import { checkAuthPosition } from "../../../utils/authChecker"
 
 // Rota para adicionar novos usuarios
 export async function POST(request) {
   try {
+    await checkAuthPosition(request)
+
     const body = await request.json();
 
     const { nome, email, cargo } = body;
@@ -32,6 +35,13 @@ export async function POST(request) {
 
   } catch (err) {
     console.error(err);
+
+    if (err.status) {
+      return NextResponse.json(
+        { message: err.message },
+        { status: err.status }
+      );
+    }
 
     return NextResponse.json(
       { error: "Erro do lado do servidor para registrar usuarios!" },

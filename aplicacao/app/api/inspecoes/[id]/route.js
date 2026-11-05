@@ -8,7 +8,7 @@ export async function PATCH(request, { params }) {
   const { totalProduzido, aprovadas, rejeitadas, observacoes } = body;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM inspecoes WHERE pk_inspecaoID = ?",
@@ -103,7 +103,7 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM inspecoes WHERE pk_inspecaoID = ?",

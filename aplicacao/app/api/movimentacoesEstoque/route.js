@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
 import { ajustarEstoque } from "./estoque";
 
 // Lista o livro-razão do estoque com os nomes já resolvidos
 export async function GET(request) {
   try {
-    checkAuth(request);
+    await checkAuthPosition(request);
 
     const [result] = await pool.query(`
       SELECT
@@ -57,7 +57,7 @@ export async function POST(request) {
   try {
     connection = await pool.getConnection();
 
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     if (!materia || !tipo || !quantidade || !unidadeMedida?.trim() || !usuario) {
       throw {

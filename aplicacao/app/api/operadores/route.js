@@ -7,7 +7,7 @@ export async function POST(request) {
     const {nome, especializacao } = body;
 
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         if(!nome?.trim() || !especializacao?.trim()){
             throw { status: 400, message: "Preencha todos os campos"}
@@ -44,7 +44,7 @@ export async function POST(request) {
 
 export async function GET(request) {
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const [result] = await pool.query(
             "SELECT * FROM operadores ORDER BY pk_operadorID DESC"

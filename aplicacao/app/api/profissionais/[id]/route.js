@@ -8,7 +8,7 @@ export async function PATCH(request, { params }) {
   const { ehOperador, ehMecanico, especializacao, telefone } = body;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM profissionais WHERE pk_profissionalID = ?",
@@ -81,7 +81,7 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM profissionais WHERE pk_profissionalID = ?",
@@ -129,7 +129,7 @@ export async function PUT(request, { params }) {
   const { id } = await params;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM profissionais WHERE pk_profissionalID = ?",

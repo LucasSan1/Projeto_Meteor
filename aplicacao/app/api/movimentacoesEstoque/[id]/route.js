@@ -13,7 +13,7 @@ export async function PATCH(request, { params }) {
   try {
     connection = await pool.getConnection();
 
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     await connection.beginTransaction();
 
@@ -133,7 +133,7 @@ export async function DELETE(request, { params }) {
   try {
     connection = await pool.getConnection();
 
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     await connection.beginTransaction();
 

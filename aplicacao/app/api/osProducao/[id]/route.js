@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql";
 import { checkAuthPosition } from "../../../utils/authChecker";
+import {
+  autorizar,
+  CARGOS,
+  exigirPerfilOperador,
+  garantirTitularidade,
+} from "../../../utils/authMiddleware";
 import { getDataBrasilia } from "../../../utils/Datetime";
 import { toSqlDatetime } from "../../../utils/datetimeSql";
 
@@ -12,13 +18,29 @@ const TRANSICOES = {
   Cancelada: [],
 };
 
+// Operador só anda pra frente e nunca cancela; cancelar é coisa de gestor
+const TRANSICOES_OPERADOR = {
+  Pendente: ["Em Produção"],
+  "Em Produção": ["Concluída"],
+  Concluída: [],
+  Cancelada: [],
+};
+
 export async function PUT(request, { params }) {
   const { id } = await params;
   const body = await request.json();
   const { status, observacao } = body;
 
   try {
-    const payload = checkAuthPosition(request);
+    const usuarioLogado = await autorizar(request, [
+      CARGOS.GERENTE,
+      CARGOS.OPERADOR,
+    ]);
+
+    const transicoes =
+      usuarioLogado.cargo === CARGOS.OPERADOR
+        ? TRANSICOES_OPERADOR
+        : TRANSICOES;
 
     const [exist] = await pool.query(
       "SELECT * FROM ordensProducao WHERE pk_ordemID = ?",
@@ -31,7 +53,17 @@ export async function PUT(request, { params }) {
 
     const ordem = exist[0];
 
-    if (!TRANSICOES[ordem.status]) {
+    // Operador só mexe na própria ordem
+    if (usuarioLogado.cargo === CARGOS.OPERADOR) {
+      exigirPerfilOperador(usuarioLogado);
+      garantirTitularidade(
+        usuarioLogado,
+        ordem.fk_operadorID,
+        "Essa ordem não está atribuída a você!",
+      );
+    }
+
+    if (!transicoes[ordem.status]) {
       throw { status: 400, message: "Status atual inválido!" };
     }
 
@@ -42,7 +74,7 @@ export async function PUT(request, { params }) {
       );
     }
 
-    if (!TRANSICOES[ordem.status].includes(status)) {
+    if (!transicoes[ordem.status].includes(status)) {
       throw {
         status: 400,
         message: `Não é possível mudar de "${ordem.status}" para "${status}"!`,
@@ -64,20 +96,15 @@ export async function PUT(request, { params }) {
       [status, inicioEfetivo, conclusaoEfetiva, id],
     );
 
-    // Descobre o usuário pelo e-mail do token pra assinar o histórico
-    const [usuario] = await pool.query(
-      "SELECT id FROM usuarios WHERE email = ?",
-      [payload.email],
-    );
-
-    if (usuario.length > 0) {
+    // Assina o histórico com o usuário que já veio autenticado
+    if (usuarioLogado.id) {
       await pool.query(
         `INSERT INTO historicoOrdens
           (fk_ordemID, fk_usuarioID, statusAnterior, statusNovo, observacao)
          VALUES (?, ?, ?, ?, ?)`,
         [
           id,
-          usuario[0].id,
+          usuarioLogado.id,
           ordem.status,
           status,
           observacao || null,
@@ -90,7 +117,7 @@ export async function PUT(request, { params }) {
           (fk_usuarioID, entidade, entidadeID, acao, dadosAnteriores, dadosNovos, observacao)
          VALUES (?, 'ordem', ?, 'mudancaStatus', ?, ?, ?)`,
         [
-          usuario[0].id,
+          usuarioLogado.id,
           id,
           JSON.stringify({ status: ordem.status }),
           JSON.stringify({ status }),
@@ -135,7 +162,7 @@ export async function PATCH(request, { params }) {
   } = body;
 
   try {
-    const payload = checkAuthPosition(request);
+    const payload = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM ordensProducao WHERE pk_ordemID = ?",

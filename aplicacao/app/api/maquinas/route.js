@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
+import { autorizar, CARGOS } from "../../utils/authMiddleware";
 
 export async function POST(request){
     const body = await request.json();
     const { equipamento, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao } = body;
 
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const equipamentoId = equipamento ? String(equipamento).trim() : "";
 
@@ -53,8 +54,8 @@ export async function POST(request){
 
 export async function GET(request) {
     try{
-        // Leitura liberada pra qualquer usuário logado, igual aos equipamentos
-        checkAuth(request)
+        // Gestor cadastra, mecânico precisa enxergar máquinas pra agendar manutenção
+        await autorizar(request, [CARGOS.GERENTE, CARGOS.MECANICO])
 
         const [result] = await pool.query(
             "SELECT * FROM maquinas ORDER BY pk_maquinaID DESC"

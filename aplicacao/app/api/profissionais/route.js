@@ -1,13 +1,24 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
+import { autorizar, CARGOS } from "../../utils/authMiddleware";
 
 // Lista os profissionais junto com os dados de login (nome, e-mail, cargo)
+// Gestor vê todo mundo; operador/mecânico só vê o próprio cadastro
 export async function GET(request) {
   try {
-    checkAuth(request);
+    const usuario = await autorizar(request, [
+      CARGOS.GERENTE,
+      CARGOS.OPERADOR,
+      CARGOS.MECANICO,
+    ]);
 
-    const [result] = await pool.query(`
+    const soEleMesmo = usuario.cargo !== CARGOS.GERENTE;
+    const filtro = soEleMesmo ? "WHERE p.pk_profissionalID = ?" : "";
+    const params = soEleMesmo ? [usuario.profissionalID] : [];
+
+    const [result] = await pool.query(
+      `
       SELECT
         p.pk_profissionalID,
         p.fk_usuarioID,
@@ -21,8 +32,11 @@ export async function GET(request) {
         u.cargo
       FROM profissionais p
       INNER JOIN usuarios u ON p.fk_usuarioID = u.id
+      ${filtro}
       ORDER BY u.nome
-    `);
+    `,
+      params,
+    );
 
     return NextResponse.json({ data: result }, { status: 200 });
   } catch (err) {
@@ -48,7 +62,7 @@ export async function POST(request) {
   const { usuario, ehOperador, ehMecanico, especializacao, telefone } = body;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     if (!usuario) {
       throw { status: 400, message: "Selecione um usuário!" };

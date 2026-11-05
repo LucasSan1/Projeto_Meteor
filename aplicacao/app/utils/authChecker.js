@@ -1,47 +1,19 @@
-import { isvalid } from "../utils/jwt";
+import {
+  autenticar,
+  autorizar,
+  autorizarGestor,
+  CARGOS,
+} from "./authMiddleware";
 
-export function checkAuthPosition(request){
-
-    const authHeader = request.headers.get("authorization");
-
-    if (!authHeader) {
-        throw { status: 401, message: "Token não informado!" };
-    }
-
-    const payload = isvalid(authHeader);
-
-    if(payload === "TokenExpiredError"){
-        throw { status: 401, message: "Token expirado!" }
-    }
-
-    if(payload === "JsonWebTokenError"){
-        throw { status: 401, message: "Não Autorizado!" };
-    }
-
-    if (payload.cargo !== "gerente") {
-        throw { status: 403, message: "Acesso negado!" };
-    }
-
-    return payload;
+// Mantém os nomes antigos pra não quebrar as rotas existentes.
+// A diferença é que agora a verificação é async e consulta o banco, então toda chamada precisa de await
+export async function checkAuth(request) {
+  return autenticar(request);
 }
 
-export function checkAuth(request){
-
-    const authHeader = request.headers.get("authorization");
-
-    if(!authHeader){
-        throw { status: 401, message: "Token não informado!" }
-    }
-
-    const payload = isvalid(authHeader);
-
-    if(payload === "TokenExpiredError"){
-        throw { status: 401, message: "Token expirado!" }
-    } 
-    
-    if(payload === "JsonWebTokenError"){
-        throw { status: 401, message: "Não Autorizado!" };
-    }
-
-    return payload
+// checkAuthPosition continua sendo o "só gestor"
+export async function checkAuthPosition(request) {
+  return autorizarGestor(request);
 }
+
+export { autenticar, autorizar, autorizarGestor, CARGOS };

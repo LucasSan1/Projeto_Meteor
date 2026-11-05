@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
 
 export async function POST(request) {
   const body = await request.json();
   const { peca, peso, dimensoes } = body;
 
   try {
-    checkAuthPosition(request);
+    await checkAuthPosition(request);
 
     if (!peca?.trim()) {
       throw { status: 400, message: "O nome da peça é obrigatório!" };
@@ -41,7 +41,7 @@ export async function POST(request) {
 
 export async function GET(request) {
   try {
-    checkAuth(request);
+    await checkAuthPosition(request);
 
     const [result] = await pool.query(`
         SELECT

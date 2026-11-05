@@ -1,14 +1,31 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth, checkAuthPosition } from "../../utils/authChecker";
+import {
+  autorizar,
+  CARGOS,
+  exigirPerfilMecanico,
+  garantirTitularidade,
+} from "../../utils/authMiddleware";
 import { toSqlDatetime } from "../../utils/datetimeSql";
 
 // Lista as manutenções programadas com equipamento, máquina e mecânico
+// Gestor vê tudo; mecânico vê só as intervenções dele
 export async function GET(request) {
   try {
-    checkAuth(request);
+    const usuario = await autorizar(request, [
+      CARGOS.GERENTE,
+      CARGOS.MECANICO,
+    ]);
 
-    const [result] = await pool.query(`
+    const soDoMecanico = usuario.cargo === CARGOS.MECANICO;
+
+    if (soDoMecanico) exigirPerfilMecanico(usuario);
+
+    const filtro = soDoMecanico ? "WHERE mp.fk_mecanicoID = ?" : "";
+    const params = soDoMecanico ? [usuario.profissionalID] : [];
+
+    const [result] = await pool.query(
+      `
       SELECT
         mp.pk_manutencaoID,
         mp.fk_equipamentoID,
@@ -31,8 +48,11 @@ export async function GET(request) {
       LEFT JOIN maquinas mq ON mp.fk_maquinaID = mq.pk_maquinaID
       INNER JOIN profissionais prof ON mp.fk_mecanicoID = prof.pk_profissionalID
       INNER JOIN usuarios u ON prof.fk_usuarioID = u.id
+      ${filtro}
       ORDER BY mp.inicioPrevisto
-    `);
+    `,
+      params,
+    );
 
     return NextResponse.json({ data: result }, { status: 200 });
   } catch (err) {
@@ -66,7 +86,10 @@ export async function POST(request) {
   } = body;
 
   try {
-    checkAuthPosition(request);
+    const usuario = await autorizar(request, [
+      CARGOS.GERENTE,
+      CARGOS.MECANICO,
+    ]);
 
     if (
       !equipamento ||
@@ -80,6 +103,16 @@ export async function POST(request) {
         status: 400,
         message: "Preencha equipamento, descrição, especialização, mecânico e datas!",
       };
+    }
+
+    // Gestor agenda pra qualquer mecânico; mecânico agenda só pra si
+    if (usuario.cargo === CARGOS.MECANICO) {
+      exigirPerfilMecanico(usuario);
+      garantirTitularidade(
+        usuario,
+        mecanico,
+        "Você só pode agendar manutenções para você mesmo!",
+      );
     }
 
     const inicio = toSqlDatetime(inicioPrevisto);

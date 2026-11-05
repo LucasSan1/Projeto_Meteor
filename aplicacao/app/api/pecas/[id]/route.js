@@ -8,7 +8,7 @@ export async function PATCH(request, { params } ) {
     let { peca, peso, dimensoes } = body;
 
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const [exist] = await pool.query(
             "SELECT * FROM pecas WHERE pk_pecaID = ? AND status = 'Ativo'",
@@ -65,7 +65,7 @@ export async function DELETE(request, { params } ) {
     const { id } = await params;
 
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM pecas WHERE pk_pecaID = ?",
@@ -119,7 +119,7 @@ export async function PUT(request, { params }) {
      const { id } = await params;
 
    try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM pecas WHERE pk_pecaID= ?",

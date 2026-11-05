@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuth } from "../../utils/authChecker";
+import { checkAuthPosition } from "../../utils/authChecker";
 
 // Consulta dos materiais previstos/consumidos por ordem
 export async function GET(request) {
   try {
-    checkAuth(request);
+    await checkAuthPosition(request);
 
     const [result] = await pool.query(`
       SELECT

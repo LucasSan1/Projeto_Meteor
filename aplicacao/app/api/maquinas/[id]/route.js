@@ -8,7 +8,7 @@ export async function PATCH(request, { params }) {
     let { equipamento, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao } = body;
 
     try{
-        checkAuthPosition(request)
+        await checkAuthPosition(request)
 
            // Verifica se a maquina existe
         const [exist] = await pool.query(
@@ -83,7 +83,7 @@ export async function PUT(request, { params }) {
     console.log("Das ", id)
     try {
 
-        checkAuthPosition(request);
+        await checkAuthPosition(request);
 
         const [result] = await pool.query(
             `
