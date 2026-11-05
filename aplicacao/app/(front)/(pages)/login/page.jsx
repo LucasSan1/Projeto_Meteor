@@ -47,7 +47,14 @@ export default function Login() {
       title: "Login realizado!",
     });
 
-    router.push("/");
+    // Cada perfil cai na tela que realmente usa
+    const homePorCargo = {
+      gerente: "/",
+      operador: "/ordemServico",
+      mecanico: "/manutencoesProgramadas",
+    };
+
+    router.push(homePorCargo[response.cargo] || "/");
   }
 
   return (

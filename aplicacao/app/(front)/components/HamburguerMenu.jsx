@@ -3,16 +3,83 @@
 import { useState } from "react";
 import Link from "next/link";
 
-export default function HamburgerMenu() {
+// Cada perfil vê só o que faz sentido pro trabalho dele
+// O gestor manda em tudo, operador e mecânico ficam no essencial
+const MENUS_POR_CARGO = {
+  gerente: [
+    {
+      itens: [{ href: "/", label: "Home" }],
+    },
+    {
+      secao: "Pessoas",
+      itens: [
+        { href: "/usuarios", label: "Usuários" },
+        { href: "/profissionais", label: "Profissionais" },
+      ],
+    },
+    {
+      secao: "Cadastros",
+      itens: [
+        { href: "/fornecedores", label: "Fornecedores" },
+        { href: "/materiasPrimas", label: "Matérias-primas" },
+        { href: "/pecas", label: "Peças" },
+        { href: "/equipamentos", label: "Equipamentos" },
+        { href: "/maquinas", label: "Máquinas" },
+      ],
+    },
+    {
+      secao: "Produção",
+      itens: [
+        { href: "/ordemServico", label: "Ordens de Produção" },
+        { href: "/ordemMateriais", label: "Materiais por Ordem" },
+        { href: "/inspecoes", label: "Inspeções" },
+        { href: "/rejeicoes", label: "Rejeições" },
+        { href: "/movimentacoesEstoque", label: "Movimentações de Estoque" },
+      ],
+    },
+    {
+      secao: "Manutenção",
+      itens: [
+        { href: "/manutencoesProgramadas", label: "Manutenções" },
+        { href: "/historicoManutencao", label: "Histórico de Manutenção" },
+      ],
+    },
+    {
+      secao: "Consultas",
+      itens: [
+        { href: "/historicoOrdens", label: "Histórico de Ordens" },
+        { href: "/auditoria", label: "Auditoria" },
+      ],
+    },
+  ],
+  operador: [
+    {
+      itens: [{ href: "/ordemServico", label: "Ordens de Produção" }],
+    },
+  ],
+  mecanico: [
+    {
+      itens: [{ href: "/manutencoesProgramadas", label: "Manutenções" }],
+    },
+  ],
+};
+
+export default function HamburguerMenu() {
   const [open, setOpen] = useState(false);
+
+  // localStorage só existe no client. Ler direto na inicialização do componente evita que o menu "pisque" ao abrir a página
+  const [cargo] = useState(() =>
+    typeof window === "undefined" ? null : localStorage.getItem("cargo"),
+  );
 
   const toggleMenu = () => {
     setOpen(!open);
   };
 
+  const menu = MENUS_POR_CARGO[cargo] || [];
+
   return (
     <>
-  
       <button
         onClick={toggleMenu}
         className="
@@ -59,144 +126,25 @@ export default function HamburgerMenu() {
             ✕
           </button>
 
-          {/* LINKS */}
+          {menu.map((grupo, index) => (
+            <div key={grupo.secao || `grupo-${index}`} className="flex flex-col gap-3">
+              {grupo.secao && (
+                <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
+                  {grupo.secao}
+                </span>
+              )}
 
-          <Link href="/" className="text-white hover:text-[#C69214] transition">
-            Home
-          </Link>
-
-          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
-            Pessoas
-          </span>
-
-          <Link
-            href="/usuarios"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Usuários
-          </Link>
-
-          <Link
-            href="/profissionais"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Profissionais
-          </Link>
-
-          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
-            Cadastros
-          </span>
-
-          <Link
-            href="/fornecedores"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Fornecedores
-          </Link>
-
-          <Link
-            href="/materiasPrimas"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Matérias-primas
-          </Link>
-
-          <Link
-            href="/pecas"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Peças
-          </Link>
-
-          <Link
-            href="/equipamentos"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Equipamentos
-          </Link>
-
-          <Link
-            href="/maquinas"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Máquinas
-          </Link>
-
-          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
-            Produção
-          </span>
-
-          <Link
-            href="/ordemServico"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Ordens de Produção
-          </Link>
-
-          <Link
-            href="/ordemMateriais"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Materiais por Ordem
-          </Link>
-
-          <Link
-            href="/inspecoes"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Inspeções
-          </Link>
-
-          <Link
-            href="/rejeicoes"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Rejeições
-          </Link>
-
-          <Link
-            href="/movimentacoesEstoque"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Movimentações de Estoque
-          </Link>
-
-          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
-            Manutenção
-          </span>
-
-          <Link
-            href="/manutencoesProgramadas"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Manutenções
-          </Link>
-
-          <Link
-            href="/historicoManutencao"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Histórico de Manutenção
-          </Link>
-
-          <span className="text-xs uppercase tracking-wide text-[#C69214] mt-2">
-            Consultas
-          </span>
-
-          <Link
-            href="/historicoOrdens"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Histórico de Ordens
-          </Link>
-
-          <Link
-            href="/auditoria"
-            className="text-white hover:text-[#C69214] transition"
-          >
-            Auditoria
-          </Link>
-
+              {grupo.itens.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-white hover:text-[#C69214] transition"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          ))}
         </div>
       )}
     </>

@@ -28,6 +28,7 @@ export default function OrdemServico() {
   const [pecas, setPecas] = useState([]);
   const [operadores, setOperadores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cargo, setCargo] = useState(null);
 
   // MODAIS
   const [modalStatusOpen, setModalStatusOpen] = useState(false);
@@ -43,13 +44,28 @@ export default function OrdemServico() {
   // Status disponíveis no fluxo novo do DDL
   const statusOptions = ["Pendente", "Em Produção", "Concluída", "Cancelada"];
 
+  const isGestor = cargo === "gerente";
+  const isOperador = cargo === "operador";
+
   // O backend valida o fluxo; aqui só escondemos as opções inválidas
-  const transicoesStatus = {
+  // Operador só inicia e conclui; cancelar continua sendo coisa de gestor
+  const transicoesGestor = {
     Pendente: ["Em Produção", "Cancelada"],
     "Em Produção": ["Concluída", "Cancelada"],
     Concluída: [],
     Cancelada: [],
   };
+
+  const transicoesOperador = {
+    Pendente: ["Em Produção"],
+    "Em Produção": ["Concluída"],
+    Concluída: [],
+    Cancelada: [],
+  };
+
+  const transicoesStatus = isOperador
+    ? transicoesOperador
+    : transicoesGestor;
 
   const opcoesStatusSelecionada = ordemStatusSelecionada
     ? [
@@ -101,36 +117,43 @@ export default function OrdemServico() {
 
   async function carregar() {
     try {
-      const [ordensRes, pecasRes, profissionaisRes] = await Promise.all([
-        getOrdens(),
-        getPecas(),
-        getProfissionais(),
-      ]);
+      const cargoAtual = localStorage.getItem("cargo");
+      const ehGestor = cargoAtual === "gerente";
+
+      const ordensRes = await getOrdens();
 
       if (ordensRes) {
         setOrdens(ordensRes.data);
       }
 
-      if (pecasRes) {
-        setPecas(
-          pecasRes.data
-            .filter((p) => p.status === "Ativo")
-            .map((p) => ({
-              value: p.pk_pecaID,
-              label: p.peca,
-            })),
-        );
-      }
+      // Só o gestor cria/edita ordem, então só ele precisa dos catálogos
+      if (ehGestor) {
+        const [pecasRes, profissionaisRes] = await Promise.all([
+          getPecas(),
+          getProfissionais(),
+        ]);
 
-      if (profissionaisRes) {
-        setOperadores(
-          profissionaisRes.data
-            .filter((p) => p.status === "Ativo" && p.ehOperador)
-            .map((p) => ({
-              value: p.pk_profissionalID,
-              label: `${p.nome}${p.especializacao ? ` (${p.especializacao})` : ""}`,
-            })),
-        );
+        if (pecasRes) {
+          setPecas(
+            pecasRes.data
+              .filter((p) => p.status === "Ativo")
+              .map((p) => ({
+                value: p.pk_pecaID,
+                label: p.peca,
+              })),
+          );
+        }
+
+        if (profissionaisRes) {
+          setOperadores(
+            profissionaisRes.data
+              .filter((p) => p.status === "Ativo" && p.ehOperador)
+              .map((p) => ({
+                value: p.pk_profissionalID,
+                label: `${p.nome}${p.especializacao ? ` (${p.especializacao})` : ""}`,
+              })),
+          );
+        }
       }
     } catch (err) {
       console.error("Erro ao carregar dados:", err);
@@ -140,6 +163,7 @@ export default function OrdemServico() {
   }
 
   useEffect(() => {
+    setCargo(localStorage.getItem("cargo"));
     carregar();
   }, []);
 
@@ -314,7 +338,8 @@ export default function OrdemServico() {
           onStatus={abrirModalStatus}
           onEdit={abrirEdicao}
           allowStatusChange={true}
-          allowEdit={true}
+          allowEdit={isGestor}
+          modoOperador={isOperador}
         />
 
         <Section
@@ -324,31 +349,34 @@ export default function OrdemServico() {
           onEdit={abrirEdicao}
           allowStatusChange={true}
           allowEdit={false}
+          modoOperador={isOperador}
         />
       </div>
 
-      <button
-        onClick={() => setModalAddOpen(true)}
-        className="
-          fixed
-          bottom-6
-          right-6
-          w-14
-          h-14
-          bg-green-600
-          text-white
-          text-2xl
-          rounded-full
-          shadow-lg
-          hover:bg-green-700
-          flex
-          items-center
-          justify-center
-          z-50
-        "
-      >
-        +
-      </button>
+      {isGestor && (
+        <button
+          onClick={() => setModalAddOpen(true)}
+          className="
+            fixed
+            bottom-6
+            right-6
+            w-14
+            h-14
+            bg-green-600
+            text-white
+            text-2xl
+            rounded-full
+            shadow-lg
+            hover:bg-green-700
+            flex
+            items-center
+            justify-center
+            z-50
+          "
+        >
+          +
+        </button>
+      )}
 
       {modalStatusOpen && (
         <ModalStatus
@@ -428,6 +456,7 @@ function Section({
   onEdit,
   allowStatusChange,
   allowEdit,
+  modoOperador,
 }) {
   const [open, setOpen] = useState(true);
 
@@ -486,7 +515,11 @@ function Section({
                     onClick={() => onStatus(ordem)}
                     className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                   >
-                    Mudar Status
+                    {modoOperador
+                      ? ordem.status === "Pendente"
+                        ? "Iniciar"
+                        : "Concluir"
+                      : "Mudar Status"}
                   </button>
                 )}
 

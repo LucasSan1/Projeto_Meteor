@@ -32,6 +32,7 @@ export default function ManutencoesProgramadas() {
   const [maquinas, setMaquinas] = useState([]);
   const [mecanicos, setMecanicos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cargo, setCargo] = useState(null);
 
   const [modalAddOpen, setModalAddOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
@@ -140,6 +141,7 @@ export default function ManutencoesProgramadas() {
   }
 
   useEffect(() => {
+    setCargo(localStorage.getItem("cargo"));
     carregar();
   }, []);
 
@@ -301,6 +303,8 @@ export default function ManutencoesProgramadas() {
     return <p className="p-6">Carregando manutenções...</p>;
   }
 
+  const isGestor = cargo === "gerente";
+
   const programadas = manutencoes.filter((m) => m.status === "Programada");
   const emExecucao = manutencoes.filter((m) => m.status === "Em Execução");
   const concluidas = manutencoes.filter((m) => m.status === "Concluída");
@@ -327,6 +331,13 @@ export default function ManutencoesProgramadas() {
           </button>
         </div>
 
+        {/* O mecânico só enxerga as manutenções atribuídas a ele */}
+        {!isGestor && (
+          <p className="text-sm text-gray-600">
+            Você está vendo apenas as manutenções atribuídas a você.
+          </p>
+        )}
+
         <Section
           title="Manutenções Programadas"
           manutencoes={programadas}
@@ -334,7 +345,8 @@ export default function ManutencoesProgramadas() {
           onEditar={abrirEdicao}
           onCancelar={handleCancelar}
           podeIniciar={true}
-          podeEditar={true}
+          podeEditar={isGestor}
+          podeCancelar={isGestor}
         />
 
         <Section
@@ -345,6 +357,7 @@ export default function ManutencoesProgramadas() {
           onCancelar={handleCancelar}
           podeIniciar={false}
           podeEditar={false}
+          podeCancelar={isGestor}
           onConcluir={(manutencao) => {
             setManutencaoSelecionada(manutencao);
             setModalConclusaoOpen(true);
@@ -379,6 +392,10 @@ export default function ManutencoesProgramadas() {
         <ModalIncluir
           title="Nova Manutenção Programada"
           fields={manutencaoFields}
+          // Mecânico só agenda pra si mesmo; já deixa o campo preenchido
+          initialData={
+            !isGestor ? { mecanico: mecanicos[0]?.value ?? "" } : null
+          }
           onSubmit={handleCreate}
           onClose={() => setModalAddOpen(false)}
         />
@@ -454,6 +471,7 @@ function Section({
   onConcluir,
   podeIniciar,
   podeEditar,
+  podeCancelar,
 }) {
   const [open, setOpen] = useState(true);
 
@@ -537,12 +555,14 @@ function Section({
                   </button>
                 )}
 
-                <button
-                  onClick={() => onCancelar(manutencao)}
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                >
-                  Cancelar
-                </button>
+                {podeCancelar && (
+                  <button
+                    onClick={() => onCancelar(manutencao)}
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
             </Card>
           ))}
