@@ -14,13 +14,11 @@ import {
   createPeca,
   deletePeca,
   activatePeca,
-  getMaterial,
   updatePeca,
 } from "../../services/pecaService";
 
 export default function Pecas() {
   const [pecas, setPecas] = useState([]);
-  const [material, setMaterial] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingPeca, setEditingPeca] = useState(null);
 
@@ -36,18 +34,12 @@ export default function Pecas() {
       type: "text",
     },
     {
-      name: "material",
-      label: "Material",
-      type: "select",
-      options: [{ value: "", label: "Selecione um material" }, ...material],
-    },
-    {
       name: "peso",
       label: "Peso",
       type: "text",
     },
     {
-      name: "Dimensoes",
+      name: "dimensoes",
       label: "Dimensões",
       type: "text",
     },
@@ -55,22 +47,10 @@ export default function Pecas() {
 
   async function carregar() {
     try {
-      const [pecasRes, materialRes] = await Promise.all([
-        getPecas(),
-        getMaterial(),
-      ]);
+      const pecasRes = await getPecas();
 
       if (pecasRes) {
         setPecas(pecasRes.data);
-      }
-
-      if (materialRes) {
-        const options = materialRes.data.map((m) => ({
-          value: m.pk_materiaID,
-          label: m.materia,
-        }));
-
-        setMaterial(options);
       }
     } catch (err) {
       console.error("Erro ao carregar peças:", err);
@@ -209,10 +189,7 @@ export default function Pecas() {
   }
 
   function abrirEdicao(peca) {
-    setEditingPeca({
-      ...peca,
-      material: peca.fk_material,
-    });
+    setEditingPeca(peca);
 
     setModalAddOpen(true);
   }
@@ -294,16 +271,12 @@ export default function Pecas() {
               value: "peca",
             },
             {
-              label: "Material",
-              value: "material",
-            },
-            {
               label: "Peso",
               value: "peso",
             },
             {
               label: "Dimensões",
-              value: "Dimensoes",
+              value: "dimensoes",
             },
           ]}
           onActivate={handleActivatePeca}
@@ -337,15 +310,13 @@ function Section({ title, pecas, onDelete, onEdit }) {
         <div className="flex flex-col gap-4">
           {pecas.map((peca) => (
             <Card key={peca.pk_pecaID} title={peca.peca}>
-              <p className="text-sm text-black">Material: {peca.material}</p>
-
               {peca.peso && (
                 <p className="text-sm text-black">Peso: {peca.peso}</p>
               )}
 
-              {peca.Dimensoes && (
+              {peca.dimensoes && (
                 <p className="text-sm text-black">
-                  Dimensões: {peca.Dimensoes}
+                  Dimensões: {peca.dimensoes}
                 </p>
               )}
 

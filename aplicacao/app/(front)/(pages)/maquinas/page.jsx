@@ -9,7 +9,7 @@ import ModalDesativados from "../../components/modalDesativados";
 
 import Swal from "sweetalert2";
 
-import { getMaquina, createMaquina, getEquipamento, deleteMaquina } from "../../services/maquinasService";
+import { getMaquina, createMaquina, getEquipamento, deleteMaquina, updateMaquina } from "../../services/maquinasService";
 
 import { formatData } from "../../../utils/Datetime";
 
@@ -49,7 +49,7 @@ export default function Maquinas() {
       name: "equipamento",
       label: "Equipamento",
       type: "select",
-      options: [{ values: "", label: "Selecione um equipamento", }, ...equipamentos, ]
+      options: [{ value: "", label: "Selecione um equipamento" }, ...equipamentos]
       
     },
   ];
@@ -113,8 +113,29 @@ export default function Maquinas() {
     }
   }
 
-  // IMPLEMENTAR DEPOIS
-  async function handleEditMaquina(data) {}
+  async function handleEditMaquina(data) {
+    try {
+      const response = await updateMaquina(maquinaSelecionada.pk_maquinaID, data);
+
+      if (!response) return;
+
+      setModalEditOpen(false);
+      setMaquinaSelecionada(null);
+
+      await Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Máquina atualizada!",
+        showConfirmButton: false,
+        timer: 2500,
+      });
+
+      await carregar();
+    } catch (err) {
+      console.error("Erro ao editar máquina:", err);
+    }
+  }
 
   // IMPLEMENTAR DEPOIS
   async function handleDeleteMaquina(maquina) {
@@ -244,7 +265,13 @@ export default function Maquinas() {
         <ModalIncluir
           title="Editar Máquina"
           fields={maquinaFields}
-          initialData={maquinaSelecionada}
+          initialData={{
+            ...maquinaSelecionada,
+            equipamento: maquinaSelecionada.fk_equipamentoID,
+            ultimaManutencao: maquinaSelecionada.ultimaManutencao
+              ? String(maquinaSelecionada.ultimaManutencao).slice(0, 10)
+              : "",
+          }}
           onSubmit={handleEditMaquina}
           onClose={() => {
             setModalEditOpen(false);
@@ -272,7 +299,11 @@ export default function Maquinas() {
             },
           ]}
           idField="pk_maquinaID"
-          onActivate={handleDeleteMaquina}
+          onActivate={(id) =>
+            handleDeleteMaquina(
+              maquinas.find((m) => m.pk_maquinaID === id),
+            )
+          }
           onClose={() => setShowDesativados(false)}
         />
       )}

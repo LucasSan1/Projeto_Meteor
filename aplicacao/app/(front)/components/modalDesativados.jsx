@@ -1,6 +1,6 @@
 "use client";
 
-import { formatData } from "../../utils/Datetime";
+import { formatData, formatDataHora } from "../../utils/Datetime";
 
 export default function ModalDesativados({
   title = "Registros Desativados",
@@ -38,6 +38,8 @@ export default function ModalDesativados({
 
                   if (field.type === "date") {
                     valor = formatData(valor);
+                  } else if (field.type === "datetime") {
+                    valor = formatDataHora(valor);
                   }
 
                   return (

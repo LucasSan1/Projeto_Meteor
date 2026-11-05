@@ -36,6 +36,11 @@ export default function Fornecedores() {
       type: "text",
     },
     {
+      name: "cnpj",
+      label: "CNPJ (somente números)",
+      type: "text",
+    },
+    {
       name: "endereco",
       label: "Endereço",
       type: "text",
@@ -47,8 +52,9 @@ export default function Fornecedores() {
     },
     {
       name: "avaliacao",
-      label: "Avaliação",
+      label: "Avaliação (0 a 9.9)",
       type: "number",
+      step: "0.1",
     },
   ];
 
@@ -260,6 +266,7 @@ export default function Fornecedores() {
           fields={fornecedorFields}
           initialData={{
             nome: fornecedorSelecionado.nomeFornecedor,
+            cnpj: fornecedorSelecionado.cnpj,
             endereco: fornecedorSelecionado.endereco,
             contato: fornecedorSelecionado.contato,
             avaliacao: fornecedorSelecionado.avaliacao,
@@ -278,6 +285,10 @@ export default function Fornecedores() {
               label: "Fornecedor",
               value: "nomeFornecedor"
             }, 
+            {
+              label: "CNPJ",
+              value: "cnpj"
+            },
             {
               label: "Endereço",
               value: "endereco"
@@ -323,6 +334,10 @@ function Section({ title, fornecedores, onDelete, onActivate, onEdit }) {
               key={fornecedor.pk_fornecedorID}
               title={fornecedor.nomeFornecedor}
             >
+              <p className="text-sm text-black">
+                CNPJ: {fornecedor.cnpj}
+              </p>
+
               <p className="text-sm text-black">
                 Endereço: {fornecedor.endereco}
               </p>

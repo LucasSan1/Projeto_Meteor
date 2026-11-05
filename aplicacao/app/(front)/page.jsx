@@ -131,16 +131,16 @@ export default function Home() {
           </div>
         </div>
 
-        {/* OPERADORES */}
+        {/* PROFISSIONAIS */}
         <div>
           <h2 className="text-xl font-bold text-[#4E342E] mb-3">
-            Operadores
+            Profissionais
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card
-              title="Disponíveis"
-              value={dashboard.operadores.disponiveis}
+              title="Operadores"
+              value={dashboard.profissionais.operadores}
             >
               <p className="text-sm text-gray-500">
                 Aptos para produção
@@ -148,11 +148,11 @@ export default function Home() {
             </Card>
 
             <Card
-              title="Indisponíveis"
-              value={dashboard.operadores.indisponiveis}
+              title="Mecânicos"
+              value={dashboard.profissionais.mecanicos}
             >
               <p className="text-sm text-gray-500">
-                Fora de operação
+                Aptos para manutenção
               </p>
             </Card>
           </div>
@@ -184,11 +184,11 @@ export default function Home() {
             </Card>
 
             <Card
-              title="Manutenção"
+              title="Manutenções em aberto"
               value={dashboard.maquinas.manutencaoPendente}
             >
               <p className="text-sm text-gray-500">
-                Implementação futura
+                Programadas ou em execução
               </p>
             </Card>
           </div>
@@ -200,7 +200,25 @@ export default function Home() {
             Cadastros
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card
+              title="Matérias-primas"
+              value={dashboard.estoque.materias}
+            >
+              <p className="text-sm text-gray-500">
+                Itens ativos
+              </p>
+            </Card>
+
+            <Card
+              title="Estoque baixo"
+              value={dashboard.estoque.estoqueBaixo}
+            >
+              <p className="text-sm text-gray-500">
+                Abaixo do mínimo
+              </p>
+            </Card>
+
             <Card
               title="Peças"
               value={dashboard.estoque.pecas}
@@ -225,6 +243,33 @@ export default function Home() {
             >
               <p className="text-sm text-gray-500">
                 Fornecedores ativos
+              </p>
+            </Card>
+          </div>
+        </div>
+
+        {/* QUALIDADE */}
+        <div>
+          <h2 className="text-xl font-bold text-[#4E342E] mb-3">
+            Qualidade
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card
+              title="Inspeções"
+              value={dashboard.qualidade.inspecoes}
+            >
+              <p className="text-sm text-gray-500">
+                Ordens inspecionadas
+              </p>
+            </Card>
+
+            <Card
+              title="Peças rejeitadas"
+              value={dashboard.qualidade.rejeitadas}
+            >
+              <p className="text-sm text-gray-500">
+                Total rejeitado nas inspeções
               </p>
             </Card>
           </div>

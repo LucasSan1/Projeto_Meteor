@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function ModalIncluir({
   title = "Incluir Registro",
@@ -9,21 +9,20 @@ export default function ModalIncluir({
   onClose,
   initialData = null,
 }) {
-  const [formData, setFormData] = useState({});
-
-  // Inicializa campos automaticamente
-   useEffect(() => {
+  // Inicializa os campos direto no state, sem efeito colateral
+  // (o modal é montado do zero sempre que abre, então isso basta)
+  const [formData, setFormData] = useState(() => {
     const data = {};
 
     fields.forEach((field) => {
       // Se tiver initialData, usa ela
-      // Senão, deixa vazio
-      data[field.name] = initialData?.[field.name] || "";
+      // Senão, deixa vazio (?? evita transformar 0 em "")
+      data[field.name] = initialData?.[field.name] ?? "";
     });
 
-    setFormData(data);
-  }, [fields, initialData]);
-  
+    return data;
+  });
+
   function handleChange(name, value) {
     setFormData((prev) => ({
       ...prev,
@@ -61,6 +60,8 @@ export default function ModalIncluir({
         shadow-lg
         w-full
         max-w-md
+        max-h-[90vh]
+        overflow-y-auto
         flex
         flex-col
         gap-4
@@ -85,7 +86,7 @@ export default function ModalIncluir({
             {/* SELECT */}
             {field.type === "select" ? (
               <select
-                value={formData[field.name] || ""}
+                value={formData[field.name] ?? ""}
                 onChange={(e) => handleChange(field.name, e.target.value)}
                 className="
                   border
@@ -93,7 +94,10 @@ export default function ModalIncluir({
                   p-2
                 "
               >
-                <option value="">Selecione...</option>
+                {/* Só coloca o "Selecione" se a lista ainda não tiver um vazio */}
+                {!field.options?.some((option) => option.value === "") && (
+                  <option value="">Selecione...</option>
+                )}
 
                 {field.options?.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -101,10 +105,23 @@ export default function ModalIncluir({
                   </option>
                 ))}
               </select>
+            ) : field.type === "textarea" ? (
+              /* Textarea pra observações e históricos, que não cabem numa linha */
+              <textarea
+                value={formData[field.name] ?? ""}
+                onChange={(e) => handleChange(field.name, e.target.value)}
+                rows={field.rows || 3}
+                className="
+                  border
+                  rounded
+                  p-2
+                "
+              />
             ) : (
               <input
                 type={field.type || "text"}
-                value={formData[field.name] || "" }
+                step={field.step}
+                value={formData[field.name] ?? "" }
                 onChange={(e) => handleChange(field.name, e.target.value)}
                 className="
                   border
