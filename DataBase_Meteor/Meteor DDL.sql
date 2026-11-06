@@ -8,6 +8,7 @@ USE meteor;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS auditoria;
+DROP TABLE IF EXISTS historicoProducao;
 DROP TABLE IF EXISTS historicoManutencao;
 DROP TABLE IF EXISTS manutencoesProgramadas;
 DROP TABLE IF EXISTS maquinas;
@@ -296,8 +297,11 @@ CREATE TABLE historicoManutencao (
     historicoID             INT NOT NULL AUTO_INCREMENT,
     fk_manutencaoID         INT NOT NULL,
     fk_equipamentoID        INT,
+    fk_mecanicoID           INT NULL,                           -- executor que fechou a intervenção
     manutencaoRealizada     VARCHAR(100),
     dataManutencao          DATE NOT NULL,
+    inicioEfetivo           DATETIME NULL,
+    terminoEfetivo          DATETIME NULL,
     custos                  DECIMAL(12,2) NOT NULL DEFAULT 0,   -- dinheiro = 2 casas
     observacoes             VARCHAR(200),
 
@@ -305,7 +309,26 @@ CREATE TABLE historicoManutencao (
     UNIQUE (fk_manutencaoID),         
     FOREIGN KEY (fk_manutencaoID) REFERENCES manutencoesProgramadas(pk_manutencaoID),
     FOREIGN KEY (fk_equipamentoID) REFERENCES equipamentos(pk_equipamentoID),
-    CONSTRAINT chkHistCusto CHECK (custos >= 0)
+    CONSTRAINT fkHistoricoMecanico FOREIGN KEY (fk_mecanicoID) REFERENCES profissionais(pk_profissionalID),
+    CONSTRAINT chkHistCusto CHECK (custos >= 0),
+    CONSTRAINT chkHistPeriodo CHECK (terminoEfetivo IS NULL OR inicioEfetivo IS NULL OR terminoEfetivo >= inicioEfetivo)
+);
+
+-- Histórico de conclusão da produção: no máximo uma linha por ordem.
+CREATE TABLE historicoProducao (
+    pk_historicoProducaoID  INT NOT NULL AUTO_INCREMENT,
+    fk_ordemID              INT NOT NULL,
+    fk_operadorID           INT NOT NULL,                       -- operador executor
+    fk_maquinaID            INT NULL,                           -- máquina usada, quando informada
+    dataConclusao           DATETIME NOT NULL,
+    quantidadeProduzida     INT NOT NULL,
+
+    PRIMARY KEY (pk_historicoProducaoID),
+    UNIQUE (fk_ordemID),
+    FOREIGN KEY (fk_ordemID) REFERENCES ordensProducao(pk_ordemID),
+    FOREIGN KEY (fk_operadorID) REFERENCES profissionais(pk_profissionalID),
+    FOREIGN KEY (fk_maquinaID) REFERENCES maquinas(pk_maquinaID),
+    CONSTRAINT chkHistProdQtd CHECK (quantidadeProduzida >= 0)
 );
 
 

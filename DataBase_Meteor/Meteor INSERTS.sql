@@ -157,6 +157,17 @@ INSERT INTO maquinas (pk_maquinaID, fk_equipamentoID, nomeMaquina, descricao, ca
 (5, 5, 'Forno FT-800', 'Forno elétrico com controlador digital', '800 °C', '2026-06-12', 'Desativado')
 ON DUPLICATE KEY UPDATE pk_maquinaID = pk_maquinaID;
 
+-- Histórico de produção depende das máquinas, então só entra depois delas.
+INSERT INTO historicoProducao
+  (pk_historicoProducaoID, fk_ordemID, fk_operadorID, fk_maquinaID, dataConclusao, quantidadeProduzida)
+VALUES
+(1, 1, @p_bruno, 1, '2026-09-04 16:40:00', 100),
+(2, 2, @p_bruno, 2, '2026-09-11 17:20:00', 50),
+(3, 5, @p_bruno, 1, '2026-09-18 17:10:00', 30),
+(4, 6, @p_carla, 3, '2026-09-27 15:50:00', 120),
+(5, 7, @p_bruno, 2, '2026-10-02 16:30:00', 80)
+ON DUPLICATE KEY UPDATE pk_historicoProducaoID = pk_historicoProducaoID;
+
 -- 5 concluídas pra fechar o histórico, mais 1 em execução, 1 programada e 1 cancelada
 INSERT INTO manutencoesProgramadas
   (pk_manutencaoID, fk_equipamentoID, fk_maquinaID, tipoManutencao, descricao, especializacao, fk_mecanicoID, inicioPrevisto, terminoPrevisto, inicioEfetivo, conclusaoEfetiva, servicosRealizados, status)
@@ -171,12 +182,14 @@ VALUES
 (8, 4, NULL, 'Preditiva', 'Análise de vibração do compressor', 'Elétrica', @p_diego, '2026-10-25 09:00:00', '2026-10-25 11:00:00', NULL, NULL, NULL, 'Cancelada')
 ON DUPLICATE KEY UPDATE pk_manutencaoID = pk_manutencaoID;
 
-INSERT INTO historicoManutencao (historicoID, fk_manutencaoID, fk_equipamentoID, manutencaoRealizada, dataManutencao, custos, observacoes) VALUES
-(1, 1, 1, 'Preventiva', '2026-09-15', 1250.00, 'Troca de correia e lubrificação'),
-(2, 2, 2, 'Corretiva', '2026-08-20', 2380.50, 'Substituição do rolamento do eixo'),
-(3, 3, 3, 'Preventiva', '2026-07-05', 890.00, 'Revisão do sistema hidráulico'),
-(4, 4, 4, 'Preventiva', '2026-09-28', 450.75, 'Limpeza e troca de filtros'),
-(5, 5, 5, 'Corretiva', '2026-06-12', 3120.00, 'Reparo da resistência de aquecimento')
+INSERT INTO historicoManutencao
+  (historicoID, fk_manutencaoID, fk_equipamentoID, fk_mecanicoID, manutencaoRealizada, dataManutencao, inicioEfetivo, terminoEfetivo, custos, observacoes)
+VALUES
+(1, 1, 1, @p_diego, 'Preventiva', '2026-09-15', '2026-09-15 08:00:00', '2026-09-15 11:30:00', 1250.00, 'Troca de correia e lubrificação'),
+(2, 2, 2, @p_diego, 'Corretiva', '2026-08-20', '2026-08-20 08:10:00', '2026-08-20 16:40:00', 2380.50, 'Substituição do rolamento do eixo'),
+(3, 3, 3, @p_diego, 'Preventiva', '2026-07-05', '2026-07-05 08:00:00', '2026-07-05 15:30:00', 890.00, 'Revisão do sistema hidráulico'),
+(4, 4, 4, @p_diego, 'Preventiva', '2026-09-28', '2026-09-28 09:00:00', '2026-09-28 11:45:00', 450.75, 'Limpeza e troca de filtros'),
+(5, 5, 5, @p_diego, 'Corretiva', '2026-06-12', '2026-06-12 08:15:00', '2026-06-12 16:20:00', 3120.00, 'Reparo da resistência de aquecimento')
 ON DUPLICATE KEY UPDATE historicoID = historicoID;
 
 -- ============================================================
@@ -217,6 +230,7 @@ UNION ALL SELECT 'pecas', COUNT(*) FROM pecas
 UNION ALL SELECT 'ordensProducao', COUNT(*) FROM ordensProducao
 UNION ALL SELECT 'ordemMateriais', COUNT(*) FROM ordemMateriais
 UNION ALL SELECT 'historicoOrdens', COUNT(*) FROM historicoOrdens
+UNION ALL SELECT 'historicoProducao', COUNT(*) FROM historicoProducao
 UNION ALL SELECT 'inspecoes', COUNT(*) FROM inspecoes
 UNION ALL SELECT 'rejeicoes', COUNT(*) FROM rejeicoes
 UNION ALL SELECT 'equipamentos', COUNT(*) FROM equipamentos
