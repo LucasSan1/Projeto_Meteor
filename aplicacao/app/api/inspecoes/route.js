@@ -17,10 +17,13 @@ export async function GET(request) {
         i.dataInspecao,
         i.observacoes,
         op.codigo AS ordem,
-        p.peca
+        p.peca,
+        u.nome AS operador
       FROM inspecoes i
       INNER JOIN ordensProducao op ON i.fk_ordemID = op.pk_ordemID
       INNER JOIN pecas p ON op.fk_pecaID = p.pk_pecaID
+      INNER JOIN profissionais prof ON op.fk_operadorID = prof.pk_profissionalID
+      INNER JOIN usuarios u ON prof.fk_usuarioID = u.id
       ORDER BY i.dataInspecao DESC, i.pk_inspecaoID DESC
     `);
 

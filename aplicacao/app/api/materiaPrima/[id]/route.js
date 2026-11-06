@@ -35,6 +35,48 @@ export async function PATCH(request, { params }) {
       ? unidadeMedida
       : atual.unidadeMedida;
 
+    // Depois que o material entra no livro-razão, origem e unidade ficam congeladas
+    const [movimentacoes] = await pool.query(
+      "SELECT COUNT(*) AS total FROM movimentacoesEstoque WHERE fk_materiaID = ?",
+      [id],
+    );
+
+    const temMovimentacao = Number(movimentacoes[0].total) > 0;
+
+    if (temMovimentacao) {
+      if (unidadeFinal !== atual.unidadeMedida) {
+        throw {
+          status: 400,
+          message: "A unidade de medida não pode mudar depois de movimentações!",
+        };
+      }
+
+      if (Number(fornecedorFinal) !== Number(atual.fk_fornecedor)) {
+        throw {
+          status: 400,
+          message: "O fornecedor não pode mudar depois de movimentações!",
+        };
+      }
+    }
+
+    // Saldo é coisa de movimentação, não de edição de cadastro
+    // Se o front mandar um valor diferente, avisa em vez de deixar passar batido
+    const quantidadeInformada =
+      quantidadeEstoque !== undefined && quantidadeEstoque !== ""
+        ? validarQuantidade(quantidadeEstoque, "Quantidade em estoque")
+        : null;
+
+    if (
+      quantidadeInformada !== null &&
+      Number(quantidadeInformada) !== Number(atual.quantidadeEstoque)
+    ) {
+      throw {
+        status: 400,
+        message:
+          "O saldo só pode ser ajustado pela tela de movimentações de estoque!",
+      };
+    }
+
     const minimoFinal = validarQuantidade(
       estoqueMinimo !== undefined && estoqueMinimo !== ""
         ? estoqueMinimo
@@ -43,9 +85,7 @@ export async function PATCH(request, { params }) {
     );
 
     const quantidadeFinal = validarQuantidade(
-      quantidadeEstoque !== undefined && quantidadeEstoque !== ""
-        ? quantidadeEstoque
-        : atual.quantidadeEstoque,
+      atual.quantidadeEstoque,
       "Quantidade em estoque",
     );
 
@@ -116,6 +156,24 @@ export async function DELETE(request, { params }) {
 
     if (exist.length === 0) {
       throw { status: 404, message: "Matéria-prima não encontrada!" };
+    }
+
+    // Material em ordem aberta não pode sumir do mapa
+    const [ordensAbertas] = await pool.query(
+      `SELECT op.codigo
+       FROM ordemMateriais om
+       INNER JOIN ordensProducao op ON op.pk_ordemID = om.fk_ordemID
+       WHERE om.fk_materiaID = ?
+         AND op.status IN ('Pendente', 'Em Produção')
+       LIMIT 1`,
+      [id],
+    );
+
+    if (ordensAbertas.length > 0) {
+      throw {
+        status: 409,
+        message: `A matéria-prima está em uso pela ordem ${ordensAbertas[0].codigo}. Resolva a ordem antes de desativar!`,
+      };
     }
 
     const [result] = await pool.query(

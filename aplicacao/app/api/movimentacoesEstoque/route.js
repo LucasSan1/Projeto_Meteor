@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
+import { autorizarGestor } from "../../utils/authMiddleware";
 import { ajustarEstoque } from "./estoque";
 
 // Lista o livro-razão do estoque com os nomes já resolvidos
@@ -49,36 +50,39 @@ export async function GET(request) {
 
 export async function POST(request) {
   const body = await request.json();
-  const { materia, tipo, quantidade, unidadeMedida, usuario, ordem, observacao } =
-    body;
+  const { materia, tipo, quantidade, unidadeMedida, ordem, observacao } = body;
 
   let connection;
 
   try {
+    const usuario = await autorizarGestor(request);
+
     connection = await pool.getConnection();
 
-    await checkAuthPosition(request);
-
-    if (!materia || !tipo || !quantidade || !unidadeMedida?.trim() || !usuario) {
+    if (!materia || !tipo || !quantidade || !unidadeMedida?.trim()) {
       throw {
         status: 400,
-        message: "Preencha material, tipo, quantidade, unidade e responsável!",
+        message: "Preencha material, tipo, quantidade e unidade!",
       };
     }
 
-    if (!["Entrada", "Saida"].includes(tipo)) {
-      throw { status: 400, message: "Tipo de movimentação inválido!" };
+    // Reposição é manual, consumo nasce da conclusão da ordem
+    if (tipo !== "Entrada") {
+      throw {
+        status: 400,
+        message:
+          "Saídas de estoque são geradas automaticamente na conclusão da ordem!",
+      };
     }
 
     if (Number(quantidade) <= 0) {
       throw { status: 400, message: "A quantidade deve ser maior que zero!" };
     }
 
-    // Saída só existe dentro de uma ordem, igual a regra do DDL
-    if (tipo === "Saida" && !ordem) {
+    if (ordem) {
       throw {
         status: 400,
-        message: "Saída de estoque precisa estar vinculada a uma ordem!",
+        message: "Entrada manual não pode ser vinculada a uma ordem!",
       };
     }
 
@@ -91,23 +95,18 @@ export async function POST(request) {
       throw { status: 404, message: "Matéria-prima não encontrada!" };
     }
 
-    const [usu] = await pool.query("SELECT id FROM usuarios WHERE id = ?", [
-      usuario,
-    ]);
-
-    if (usu.length === 0) {
-      throw { status: 404, message: "Usuário responsável não encontrado!" };
+    if (mat[0].status !== "Ativo") {
+      throw {
+        status: 400,
+        message: "Matéria-prima inativa não pode receber novas entradas!",
+      };
     }
 
-    if (ordem) {
-      const [os] = await pool.query(
-        "SELECT pk_ordemID FROM ordensProducao WHERE pk_ordemID = ?",
-        [ordem],
-      );
-
-      if (os.length === 0) {
-        throw { status: 404, message: "Ordem de produção não encontrada!" };
-      }
+    if (mat[0].unidadeMedida !== unidadeMedida.trim()) {
+      throw {
+        status: 400,
+        message: `A unidade da movimentação precisa ser "${mat[0].unidadeMedida}"!`,
+      };
     }
 
     await connection.beginTransaction();
@@ -115,14 +114,13 @@ export async function POST(request) {
     const [result] = await connection.query(
       `INSERT INTO movimentacoesEstoque
         (fk_materiaID, tipo, quantidade, unidadeMedida, fk_usuarioID, fk_ordemID, observacao)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, NULL, ?)`,
       [
         materia,
         tipo,
         quantidade,
-        unidadeMedida,
-        usuario,
-        ordem || null,
+        unidadeMedida.trim(),
+        usuario.id,
         observacao || null,
       ],
     );
@@ -132,23 +130,13 @@ export async function POST(request) {
     await connection.commit();
 
     return NextResponse.json({
-      message: "Movimentação registrada com sucesso!",
+      message: "Entrada de estoque registrada com sucesso!",
       id: result.insertId,
     });
   } catch (err) {
     if (connection) await connection.rollback();
 
     console.log("Movimentacoes POST : ", err);
-
-    if (err.code === "ER_DUP_ENTRY") {
-      return NextResponse.json(
-        {
-          message:
-            "Já existe uma movimentação desse tipo para esse material nessa ordem!",
-        },
-        { status: 409 },
-      );
-    }
 
     if (err.status) {
       return NextResponse.json(

@@ -28,6 +28,15 @@ export async function PATCH(request, { params }) {
 
     const atual = exist[0];
 
+    // Saída automática é documento histórico da conclusão, só leitura
+    if (atual.fk_ordemID) {
+      throw {
+        status: 400,
+        message:
+          "Saídas geradas pela conclusão da ordem não podem ser editadas!",
+      };
+    }
+
     const tipoFinal = tipo || atual.tipo;
     const quantidadeFinal =
       quantidade !== undefined && quantidade !== ""
@@ -38,18 +47,38 @@ export async function PATCH(request, { params }) {
       : atual.unidadeMedida;
     const ordemFinal = ordem !== undefined ? ordem || null : atual.fk_ordemID;
 
-    if (!["Entrada", "Saida"].includes(tipoFinal)) {
-      throw { status: 400, message: "Tipo de movimentação inválido!" };
+    if (tipoFinal !== "Entrada") {
+      throw {
+        status: 400,
+        message:
+          "Movimentações manuais são apenas entradas; saídas vêm da conclusão da ordem!",
+      };
+    }
+
+    if (ordemFinal) {
+      throw {
+        status: 400,
+        message: "Entrada manual não pode ser vinculada a uma ordem!",
+      };
     }
 
     if (Number(quantidadeFinal) <= 0) {
       throw { status: 400, message: "A quantidade deve ser maior que zero!" };
     }
 
-    if (tipoFinal === "Saida" && !ordemFinal) {
+    const [materia] = await connection.query(
+      "SELECT unidadeMedida FROM materiasPrimas WHERE pk_materiaID = ?",
+      [atual.fk_materiaID],
+    );
+
+    if (materia.length === 0) {
+      throw { status: 404, message: "Matéria-prima não encontrada!" };
+    }
+
+    if (materia[0].unidadeMedida !== unidadeFinal) {
       throw {
         status: 400,
-        message: "Saída de estoque precisa estar vinculada a uma ordem!",
+        message: `A unidade da movimentação precisa ser "${materia[0].unidadeMedida}"!`,
       };
     }
 
@@ -147,6 +176,15 @@ export async function DELETE(request, { params }) {
     }
 
     const movimentacao = exist[0];
+
+    // Saída automática não pode ser apagada sem quebrar a conclusão da ordem
+    if (movimentacao.fk_ordemID) {
+      throw {
+        status: 400,
+        message:
+          "Saídas geradas pela conclusão da ordem não podem ser excluídas!",
+      };
+    }
 
     // Remove o impacto da movimentação no saldo antes de apagar
     await ajustarEstoque(

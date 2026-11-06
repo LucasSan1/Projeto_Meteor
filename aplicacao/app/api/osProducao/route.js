@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuthPosition } from "../../utils/authChecker";
 import {
   autorizar,
+  autorizarGestor,
   CARGOS,
   exigirPerfilOperador,
 } from "../../utils/authMiddleware";
 import { toSqlDatetime } from "../../utils/datetimeSql";
+import {
+  especializacaoCompativel,
+  validarAgendaOperador,
+} from "../../utils/agenda";
+import { validarMateriaisPlanejados } from "../../utils/producao";
 
-// Lista as ordens com peça e operador já resolvidos
+// Lista as ordens com peça, operador e materiais já resolvidos
 // Gestor vê tudo; operador vê só o que está atribuído a ele
 export async function GET(request) {
   try {
@@ -24,33 +29,70 @@ export async function GET(request) {
     const filtro = soDoOperador ? "WHERE op.fk_operadorID = ?" : "";
     const params = soDoOperador ? [usuario.profissionalID] : [];
 
-    const [result] = await pool.query(
-      `
-      SELECT
-        op.pk_ordemID,
-        op.codigo,
-        op.fk_pecaID,
-        p.peca AS nomePeca,
-        op.quantidadePlanejada,
-        op.especializacao,
-        op.fk_operadorID,
-        u.nome AS operador,
-        op.inicioPlanejado,
-        op.terminoPlanejado,
-        op.inicioEfetivo,
-        op.conclusaoEfetiva,
-        op.status
-      FROM ordensProducao op
-      INNER JOIN pecas p ON op.fk_pecaID = p.pk_pecaID
-      INNER JOIN profissionais prof ON op.fk_operadorID = prof.pk_profissionalID
-      INNER JOIN usuarios u ON prof.fk_usuarioID = u.id
-      ${filtro}
-      ORDER BY op.inicioPlanejado
-    `,
-      params,
-    );
+    const [[result], [materiais]] = await Promise.all([
+      pool.query(
+        `
+        SELECT
+          op.pk_ordemID,
+          op.codigo,
+          op.fk_pecaID,
+          p.peca AS nomePeca,
+          op.quantidadePlanejada,
+          op.especializacao,
+          op.fk_operadorID,
+          u.nome AS operador,
+          op.inicioPlanejado,
+          op.terminoPlanejado,
+          op.inicioEfetivo,
+          op.conclusaoEfetiva,
+          op.status,
+          CASE
+            WHEN op.status IN ('Pendente', 'Em Produção')
+             AND op.terminoPlanejado < NOW()
+            THEN 1 ELSE 0
+          END AS atrasada
+        FROM ordensProducao op
+        INNER JOIN pecas p ON op.fk_pecaID = p.pk_pecaID
+        INNER JOIN profissionais prof ON op.fk_operadorID = prof.pk_profissionalID
+        INNER JOIN usuarios u ON prof.fk_usuarioID = u.id
+        ${filtro}
+        ORDER BY op.inicioPlanejado
+      `,
+        params,
+      ),
+      pool.query(`
+        SELECT
+          om.fk_ordemID,
+          om.fk_materiaID,
+          om.quantidadePrevista,
+          om.quantidadeConsumida,
+          m.materia,
+          m.unidadeMedida,
+          m.quantidadeEstoque
+        FROM ordemMateriais om
+        INNER JOIN materiasPrimas m ON m.pk_materiaID = om.fk_materiaID
+        ORDER BY m.materia
+      `),
+    ]);
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    const materiaisPorOrdem = new Map();
+
+    for (const material of materiais) {
+      const lista = materiaisPorOrdem.get(material.fk_ordemID) || [];
+      lista.push(material);
+      materiaisPorOrdem.set(material.fk_ordemID, lista);
+    }
+
+    return NextResponse.json(
+      {
+        data: result.map((ordem) => ({
+          ...ordem,
+          atrasada: Boolean(ordem.atrasada),
+          materiais: materiaisPorOrdem.get(ordem.pk_ordemID) || [],
+        })),
+      },
+      { status: 200 },
+    );
   } catch (err) {
     console.log("OS produção GET : ", err);
 
@@ -78,10 +120,13 @@ export async function POST(request) {
     operadorID,
     inicioPlanejado,
     terminoPlanejado,
+    materiais,
   } = body;
 
+  let connection;
+
   try {
-    await checkAuthPosition(request);
+    const usuario = await autorizarGestor(request);
 
     if (
       !codigo?.trim() ||
@@ -95,8 +140,13 @@ export async function POST(request) {
       throw { status: 400, message: "Preencha todos os campos da ordem!" };
     }
 
-    if (Number(quantidadePlanejada) <= 0) {
-      throw { status: 400, message: "A quantidade deve ser maior que zero!" };
+    const quantidade = Number(quantidadePlanejada);
+
+    if (!Number.isInteger(quantidade) || quantidade <= 0) {
+      throw {
+        status: 400,
+        message: "A quantidade planejada deve ser um inteiro maior que zero!",
+      };
     }
 
     const inicio = toSqlDatetime(inicioPlanejado);
@@ -109,7 +159,10 @@ export async function POST(request) {
       };
     }
 
-    const [peca] = await pool.query(
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [peca] = await connection.query(
       "SELECT * FROM pecas WHERE pk_pecaID = ? AND status = 'Ativo'",
       [pecaID],
     );
@@ -118,7 +171,7 @@ export async function POST(request) {
       throw { status: 404, message: "Peça não encontrada ou inativa!" };
     }
 
-    const [operador] = await pool.query(
+    const [operador] = await connection.query(
       `SELECT p.*, u.nome
        FROM profissionais p
        INNER JOIN usuarios u ON p.fk_usuarioID = u.id
@@ -133,7 +186,15 @@ export async function POST(request) {
       };
     }
 
-    const [codigoExist] = await pool.query(
+    // Operador precisa ter especialização compatível com a peça
+    if (!especializacaoCompativel(especializacao, operador[0].especializacao)) {
+      throw {
+        status: 400,
+        message: `O operador ${operador[0].nome} não possui a especialização exigida (${especializacao})!`,
+      };
+    }
+
+    const [codigoExist] = await connection.query(
       "SELECT pk_ordemID FROM ordensProducao WHERE codigo = ?",
       [codigo],
     );
@@ -142,14 +203,27 @@ export async function POST(request) {
       throw { status: 409, message: "Já existe uma ordem com esse código!" };
     }
 
-    const [result] = await pool.query(
+    // Agenda antes de gravar, um operador só pode ter uma atividade por dia
+    await validarAgendaOperador(connection, {
+      profissionalID: operadorID,
+      inicio,
+      termino,
+    });
+
+    // Saldo e situação dos materiais planejados (RN04)
+    const materiaisValidos = await validarMateriaisPlanejados(
+      connection,
+      materiais,
+    );
+
+    const [result] = await connection.query(
       `INSERT INTO ordensProducao
         (codigo, fk_pecaID, quantidadePlanejada, especializacao, fk_operadorID, inicioPlanejado, terminoPlanejado)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         codigo,
         pecaID,
-        quantidadePlanejada,
+        quantidade,
         especializacao,
         operadorID,
         inicio,
@@ -157,11 +231,48 @@ export async function POST(request) {
       ],
     );
 
+    const valoresMateriais = materiaisValidos.map((material) => [
+      result.insertId,
+      material.materiaID,
+      material.quantidadePrevista,
+    ]);
+
+    await connection.query(
+      `INSERT INTO ordemMateriais
+        (fk_ordemID, fk_materiaID, quantidadePrevista)
+       VALUES ?`,
+      [valoresMateriais],
+    );
+
+    await connection.query(
+      `INSERT INTO auditoria
+        (fk_usuarioID, entidade, entidadeID, acao, dadosNovos, observacao)
+       VALUES (?, 'ordem', ?, 'criacao', ?, ?)`,
+      [
+        usuario.id,
+        result.insertId,
+        JSON.stringify({
+          codigo,
+          pecaID,
+          quantidadePlanejada: quantidade,
+          operadorID,
+          inicioPlanejado: inicio,
+          terminoPlanejado: termino,
+          materiais: materiaisValidos,
+        }),
+        "Ordem de produção criada",
+      ],
+    );
+
+    await connection.commit();
+
     return NextResponse.json({
       message: "Ordem de produção cadastrada com sucesso!",
       id: result.insertId,
     });
   } catch (err) {
+    if (connection) await connection.rollback();
+
     console.log("OS produção POST : ", err);
 
     if (err.code === "ER_DUP_ENTRY") {
@@ -182,5 +293,7 @@ export async function POST(request) {
       { message: "Erro do servidor!" },
       { status: 500 },
     );
+  } finally {
+    if (connection) connection.release();
   }
 }

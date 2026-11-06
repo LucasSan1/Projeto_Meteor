@@ -7,6 +7,10 @@ import {
   garantirTitularidade,
 } from "../../utils/authMiddleware";
 import { toSqlDatetime } from "../../utils/datetimeSql";
+import {
+  especializacaoCompativel,
+  validarAgendaMecanico,
+} from "../../utils/agenda";
 
 // Lista as manutenções programadas com equipamento, máquina e mecânico
 // Gestor vê tudo; mecânico vê só as intervenções dele
@@ -40,6 +44,11 @@ export async function GET(request) {
         mp.conclusaoEfetiva,
         mp.servicosRealizados,
         mp.status,
+        CASE
+          WHEN mp.status IN ('Programada', 'Em Execução')
+           AND mp.terminoPrevisto < NOW()
+          THEN 1 ELSE 0
+        END AS atrasada,
         e.nomeEquipamento AS equipamento,
         mq.nomeMaquina AS maquina,
         u.nome AS mecanico
@@ -54,7 +63,15 @@ export async function GET(request) {
       params,
     );
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    return NextResponse.json(
+      {
+        data: result.map((item) => ({
+          ...item,
+          atrasada: Boolean(item.atrasada),
+        })),
+      },
+      { status: 200 },
+    );
   } catch (err) {
     console.log("Manutencoes GET : ", err);
 
@@ -85,6 +102,8 @@ export async function POST(request) {
     terminoPrevisto,
   } = body;
 
+  let connection;
+
   try {
     const usuario = await autorizar(request, [
       CARGOS.GERENTE,
@@ -105,7 +124,7 @@ export async function POST(request) {
       };
     }
 
-    // Gestor agenda pra qualquer mecânico; mecânico agenda só pra si
+    // Gestor agenda pra qualquer mecânico, mecânico agenda só pra si
     if (usuario.cargo === CARGOS.MECANICO) {
       exigirPerfilMecanico(usuario);
       garantirTitularidade(
@@ -125,7 +144,10 @@ export async function POST(request) {
       };
     }
 
-    const [equip] = await pool.query(
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [equip] = await connection.query(
       "SELECT * FROM equipamentos WHERE pk_equipamentoID = ? AND status = 'Ativo'",
       [equipamento],
     );
@@ -135,7 +157,7 @@ export async function POST(request) {
     }
 
     if (maquina) {
-      const [maq] = await pool.query(
+      const [maq] = await connection.query(
         "SELECT * FROM maquinas WHERE pk_maquinaID = ? AND fk_equipamentoID = ?",
         [maquina, equipamento],
       );
@@ -148,7 +170,7 @@ export async function POST(request) {
       }
     }
 
-    const [mec] = await pool.query(
+    const [mec] = await connection.query(
       "SELECT * FROM profissionais WHERE pk_profissionalID = ? AND status = 'Ativo' AND ehMecanico = 1",
       [mecanico],
     );
@@ -160,7 +182,22 @@ export async function POST(request) {
       };
     }
 
-    const [result] = await pool.query(
+    // Mecânico precisa ter especialização compatível com a intervenção
+    if (!especializacaoCompativel(especializacao, mec[0].especializacao)) {
+      throw {
+        status: 400,
+        message: `O mecânico selecionado não possui a especialização exigida (${especializacao})!`,
+      };
+    }
+
+    // Sem sobreposição e sem manutenção em dia de produção do mesmo profissional
+    await validarAgendaMecanico(connection, {
+      profissionalID: mecanico,
+      inicio,
+      termino,
+    });
+
+    const [result] = await connection.query(
       `INSERT INTO manutencoesProgramadas
         (fk_equipamentoID, fk_maquinaID, tipoManutencao, descricao, especializacao, fk_mecanicoID, inicioPrevisto, terminoPrevisto)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -176,11 +213,15 @@ export async function POST(request) {
       ],
     );
 
+    await connection.commit();
+
     return NextResponse.json({
       message: "Manutenção programada com sucesso!",
       id: result.insertId,
     });
   } catch (err) {
+    if (connection) await connection.rollback();
+
     console.log("Manutencoes POST : ", err);
 
     if (err.status) {
@@ -194,5 +235,7 @@ export async function POST(request) {
       { message: "Erro do servidor!" },
       { status: 500 },
     );
+  } finally {
+    if (connection) connection.release();
   }
 }

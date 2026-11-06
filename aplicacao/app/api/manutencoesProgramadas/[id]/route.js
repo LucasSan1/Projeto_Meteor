@@ -1,18 +1,24 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql";
-import { checkAuthPosition } from "../../../utils/authChecker";
 import {
   autorizar,
+  autorizarGestor,
   CARGOS,
   exigirPerfilMecanico,
   garantirTitularidade,
 } from "../../../utils/authMiddleware";
 import { getDataBrasilia } from "../../../utils/Datetime";
 import { toSqlDatetime } from "../../../utils/datetimeSql";
+import {
+  especializacaoCompativel,
+  validarAgendaMecanico,
+  validarExecucaoAberta,
+  validarJanelaExecucao,
+} from "../../../utils/agenda";
 
 const TRANSICOES = {
   Programada: ["Em Execução", "Cancelada"],
-  "Em Execução": ["Concluída", "Cancelada"],
+  "Em Execução": ["Concluída"],
   Concluída: [],
   Cancelada: [],
 };
@@ -25,7 +31,7 @@ const TRANSICOES_MECANICO = {
   Cancelada: [],
 };
 
-// Edição dos dados planejados 
+// Edição dos dados planejados
 export async function PATCH(request, { params }) {
   const { id } = await params;
   const body = await request.json();
@@ -40,11 +46,16 @@ export async function PATCH(request, { params }) {
     terminoPrevisto,
   } = body;
 
-  try {
-    await checkAuthPosition(request);
+  let connection;
 
-    const [exist] = await pool.query(
-      "SELECT * FROM manutencoesProgramadas WHERE pk_manutencaoID = ?",
+  try {
+    const usuario = await autorizarGestor(request);
+
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [exist] = await connection.query(
+      "SELECT * FROM manutencoesProgramadas WHERE pk_manutencaoID = ? FOR UPDATE",
       [id],
     );
 
@@ -91,7 +102,7 @@ export async function PATCH(request, { params }) {
       };
     }
 
-    const [equip] = await pool.query(
+    const [equip] = await connection.query(
       "SELECT * FROM equipamentos WHERE pk_equipamentoID = ? AND status = 'Ativo'",
       [equipamentoFinal],
     );
@@ -101,7 +112,7 @@ export async function PATCH(request, { params }) {
     }
 
     if (maquinaFinal) {
-      const [maq] = await pool.query(
+      const [maq] = await connection.query(
         "SELECT * FROM maquinas WHERE pk_maquinaID = ? AND fk_equipamentoID = ?",
         [maquinaFinal, equipamentoFinal],
       );
@@ -114,7 +125,7 @@ export async function PATCH(request, { params }) {
       }
     }
 
-    const [mec] = await pool.query(
+    const [mec] = await connection.query(
       "SELECT * FROM profissionais WHERE pk_profissionalID = ? AND status = 'Ativo' AND ehMecanico = 1",
       [mecanicoFinal],
     );
@@ -123,7 +134,23 @@ export async function PATCH(request, { params }) {
       throw { status: 404, message: "Mecânico inválido ou inativo!" };
     }
 
-    await pool.query(
+    // Reprogramar com outro mecânico/especialização também passa pela aptidão
+    if (!especializacaoCompativel(especializacaoFinal, mec[0].especializacao)) {
+      throw {
+        status: 400,
+        message: `O mecânico selecionado não possui a especialização exigida (${especializacaoFinal})!`,
+      };
+    }
+
+    // Reprogramação valida a agenda desconsiderando só este compromisso
+    await validarAgendaMecanico(connection, {
+      profissionalID: mecanicoFinal,
+      inicio,
+      termino,
+      ignorarManutencaoID: id,
+    });
+
+    await connection.query(
       `UPDATE manutencoesProgramadas
        SET fk_equipamentoID = ?, fk_maquinaID = ?, tipoManutencao = ?, descricao = ?, especializacao = ?, fk_mecanicoID = ?, inicioPrevisto = ?, terminoPrevisto = ?
        WHERE pk_manutencaoID = ?`,
@@ -140,11 +167,34 @@ export async function PATCH(request, { params }) {
       ],
     );
 
+    await connection.query(
+      `INSERT INTO auditoria
+        (fk_usuarioID, entidade, entidadeID, acao, dadosAnteriores, dadosNovos, observacao)
+       VALUES (?, 'manutencao', ?, 'reprogramacao', ?, ?, ?)`,
+      [
+        usuario.id,
+        id,
+        JSON.stringify(manutencao),
+        JSON.stringify({
+          equipamento: equipamentoFinal,
+          maquina: maquinaFinal,
+          mecanico: mecanicoFinal,
+          inicioPrevisto: inicio,
+          terminoPrevisto: termino,
+        }),
+        "Reprogramação da manutenção",
+      ],
+    );
+
+    await connection.commit();
+
     return NextResponse.json(
       { message: "Manutenção atualizada!" },
       { status: 200 },
     );
   } catch (err) {
+    if (connection) await connection.rollback();
+
     console.log("Manutencoes PATCH : ", err);
 
     if (err.status) {
@@ -158,6 +208,8 @@ export async function PATCH(request, { params }) {
       { message: "Erro do servidor!" },
       { status: 500 },
     );
+  } finally {
+    if (connection) connection.release();
   }
 }
 
@@ -233,19 +285,46 @@ export async function PUT(request, { params }) {
     }
 
     const agora = getDataBrasilia();
+    let inicioEfetivo = manutencao.inicioEfetivo;
+    let conclusaoEfetiva = manutencao.conclusaoEfetiva;
+    let servicosFinal = manutencao.servicosRealizados;
 
-    const inicioEfetivo =
-      status === "Em Execução" && !manutencao.inicioEfetivo
-        ? agora
-        : manutencao.inicioEfetivo;
+    if (status === "Em Execução") {
+      // Início só na janela prevista, sem execução aberta e sem conflito de agenda
+      validarJanelaExecucao(
+        manutencao.inicioPrevisto,
+        manutencao.terminoPrevisto,
+        "manutenção",
+      );
 
-    const conclusaoEfetiva =
-      status === "Concluída" ? agora : manutencao.conclusaoEfetiva;
+      await validarExecucaoAberta(connection, manutencao.fk_mecanicoID, {
+        ignorarManutencaoID: id,
+      });
 
-    const servicosFinal =
-      status === "Concluída"
-        ? servicosRealizados || manutencao.servicosRealizados
+      await validarAgendaMecanico(connection, {
+        profissionalID: manutencao.fk_mecanicoID,
+        inicio: manutencao.inicioPrevisto,
+        termino: manutencao.terminoPrevisto,
+        ignorarManutencaoID: id,
+      });
+
+      inicioEfetivo = agora;
+    }
+
+    if (status === "Concluída") {
+      servicosFinal = servicosRealizados?.trim()
+        ? servicosRealizados
         : manutencao.servicosRealizados;
+
+      if (!servicosFinal?.trim()) {
+        throw {
+          status: 400,
+          message: "Descreva os serviços realizados antes de concluir!",
+        };
+      }
+
+      conclusaoEfetiva = agora;
+    }
 
     await connection.query(
       `UPDATE manutencoesProgramadas
@@ -257,22 +336,26 @@ export async function PUT(request, { params }) {
     // Ao concluir, fecha o histórico da manutenção
     // Tudo na mesma transação, pra não sobrar status "Concluída" sem histórico
     if (status === "Concluída") {
-      const dataManutencao = getDataBrasilia().split(" ")[0];
-
       await connection.query(
         `INSERT INTO historicoManutencao
-          (fk_manutencaoID, fk_equipamentoID, manutencaoRealizada, dataManutencao, custos, observacoes)
-         VALUES (?, ?, ?, ?, ?, ?)
+          (fk_manutencaoID, fk_equipamentoID, fk_mecanicoID, manutencaoRealizada, dataManutencao, inicioEfetivo, terminoEfetivo, custos, observacoes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
+          fk_mecanicoID = VALUES(fk_mecanicoID),
           manutencaoRealizada = VALUES(manutencaoRealizada),
           dataManutencao = VALUES(dataManutencao),
+          inicioEfetivo = VALUES(inicioEfetivo),
+          terminoEfetivo = VALUES(terminoEfetivo),
           custos = VALUES(custos),
           observacoes = VALUES(observacoes)`,
         [
           id,
           manutencao.fk_equipamentoID,
+          manutencao.fk_mecanicoID,
           manutencao.tipoManutencao || manutencao.descricao,
-          dataManutencao,
+          agora.split(" ")[0],
+          inicioEfetivo,
+          agora,
           custoFinal,
           observacoes || servicosFinal || null,
         ],
@@ -287,7 +370,12 @@ export async function PUT(request, { params }) {
         usuarioLogado.id,
         id,
         JSON.stringify({ status: manutencao.status }),
-        JSON.stringify({ status }),
+        JSON.stringify({
+          status,
+          inicioEfetivo,
+          conclusaoEfetiva,
+          custos: custoFinal,
+        }),
         observacoes || null,
       ],
     );
@@ -320,11 +408,12 @@ export async function PUT(request, { params }) {
 }
 
 // Cancelamento, que é o "delete" lógico dessa tabela
+// Só manutenção Programada pode ser cancelada
 export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await autorizarGestor(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM manutencoesProgramadas WHERE pk_manutencaoID = ?",
@@ -335,16 +424,29 @@ export async function DELETE(request, { params }) {
       throw { status: 404, message: "Manutenção não encontrada!" };
     }
 
-    if (["Concluída", "Cancelada"].includes(exist[0].status)) {
+    if (exist[0].status !== "Programada") {
       throw {
         status: 400,
-        message: "Manutenção já concluída ou cancelada!",
+        message: "Só é possível cancelar manutenções com status Programada!",
       };
     }
 
     await pool.query(
       "UPDATE manutencoesProgramadas SET status = 'Cancelada' WHERE pk_manutencaoID = ?",
       [id],
+    );
+
+    await pool.query(
+      `INSERT INTO auditoria
+        (fk_usuarioID, entidade, entidadeID, acao, dadosAnteriores, dadosNovos, observacao)
+       VALUES (?, 'manutencao', ?, 'cancelamento', ?, ?, ?)`,
+      [
+        usuario.id,
+        id,
+        JSON.stringify({ status: exist[0].status }),
+        JSON.stringify({ status: "Cancelada" }),
+        "Cancelamento da manutenção",
+      ],
     );
 
     return NextResponse.json(

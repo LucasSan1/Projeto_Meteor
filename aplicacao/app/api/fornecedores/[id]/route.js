@@ -117,6 +117,24 @@ export async function DELETE(request, { params }) {
             )
         }
 
+        // Fornecedor com matéria-prima (ativa ou não) fica no cadastro pra não arrancar a rastreabilidade da cadeia de suprimentos
+        const [materias] = await pool.query(
+            `SELECT m.materia
+             FROM materiasPrimas m
+             WHERE m.fk_fornecedor = ?
+             LIMIT 1`,
+            [id]
+        )
+
+        if (materias.length > 0) {
+            return NextResponse.json(
+                {
+                    message: `O fornecedor possui a matéria-prima "${materias[0].materia}" vinculada e não pode ser excluído!`
+                },
+                { status: 409 }
+            )
+        }
+
         const [result] = await pool.query(
             "UPDATE fornecedores SET status = 'Desativado' WHERE pk_fornecedorID = ? AND status = 'Ativo'",
             [id] 

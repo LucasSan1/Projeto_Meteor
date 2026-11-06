@@ -42,6 +42,39 @@ export async function PATCH(request, { params }) {
       };
     }
 
+    // Tirar a função de alguém com atividade aberta deixa a operação órfã
+    if (profissional.ehOperador && !operador) {
+      const [ordensAbertas] = await pool.query(
+        `SELECT codigo FROM ordensProducao
+         WHERE fk_operadorID = ? AND status IN ('Pendente', 'Em Produção')
+         LIMIT 1`,
+        [id],
+      );
+
+      if (ordensAbertas.length > 0) {
+        throw {
+          status: 409,
+          message: `O profissional ainda tem a ordem ${ordensAbertas[0].codigo} aberta. Resolva antes de remover o perfil de operador!`,
+        };
+      }
+    }
+
+    if (profissional.ehMecanico && !mecanico) {
+      const [manutencoesAbertas] = await pool.query(
+        `SELECT descricao FROM manutencoesProgramadas
+         WHERE fk_mecanicoID = ? AND status IN ('Programada', 'Em Execução')
+         LIMIT 1`,
+        [id],
+      );
+
+      if (manutencoesAbertas.length > 0) {
+        throw {
+          status: 409,
+          message: `O profissional ainda tem a manutenção "${manutencoesAbertas[0].descricao}" aberta. Resolva antes de remover o perfil de mecânico!`,
+        };
+      }
+    }
+
     const espFinal =
       especializacao !== undefined ? especializacao : profissional.especializacao;
 
@@ -90,6 +123,35 @@ export async function DELETE(request, { params }) {
 
     if (exist.length === 0) {
       throw { status: 404, message: "Profissional não encontrado!" };
+    }
+
+    // Não dá pra desativar quem ainda tem compromisso em aberto
+    const [ordensAbertas] = await pool.query(
+      `SELECT codigo FROM ordensProducao
+       WHERE fk_operadorID = ? AND status IN ('Pendente', 'Em Produção')
+       LIMIT 1`,
+      [id],
+    );
+
+    if (ordensAbertas.length > 0) {
+      throw {
+        status: 409,
+        message: `O profissional ainda tem a ordem ${ordensAbertas[0].codigo} aberta. Conclua ou reprograme antes de desativar!`,
+      };
+    }
+
+    const [manutencoesAbertas] = await pool.query(
+      `SELECT descricao FROM manutencoesProgramadas
+       WHERE fk_mecanicoID = ? AND status IN ('Programada', 'Em Execução')
+       LIMIT 1`,
+      [id],
+    );
+
+    if (manutencoesAbertas.length > 0) {
+      throw {
+        status: 409,
+        message: `O profissional ainda tem a manutenção "${manutencoesAbertas[0].descricao}" aberta. Conclua ou cancele antes de desativar!`,
+      };
     }
 
     const [result] = await pool.query(

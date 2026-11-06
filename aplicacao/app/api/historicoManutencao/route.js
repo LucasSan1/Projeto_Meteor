@@ -11,13 +11,19 @@ export async function GET(request) {
         h.historicoID,
         h.fk_manutencaoID,
         h.fk_equipamentoID,
+        h.fk_mecanicoID,
         h.manutencaoRealizada,
         h.dataManutencao,
+        h.inicioEfetivo,
+        h.terminoEfetivo,
         h.custos,
         h.observacoes,
-        e.nomeEquipamento AS equipamento
+        e.nomeEquipamento AS equipamento,
+        u.nome AS mecanico
       FROM historicoManutencao h
       LEFT JOIN equipamentos e ON h.fk_equipamentoID = e.pk_equipamentoID
+      LEFT JOIN profissionais prof ON h.fk_mecanicoID = prof.pk_profissionalID
+      LEFT JOIN usuarios u ON prof.fk_usuarioID = u.id
       ORDER BY h.dataManutencao DESC, h.historicoID DESC
     `);
 
