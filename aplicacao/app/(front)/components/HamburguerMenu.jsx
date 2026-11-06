@@ -31,7 +31,6 @@ const MENUS_POR_CARGO = {
       secao: "Produção",
       itens: [
         { href: "/ordemServico", label: "Ordens de Produção" },
-        { href: "/ordemMateriais", label: "Materiais por Ordem" },
         { href: "/inspecoes", label: "Inspeções" },
         { href: "/rejeicoes", label: "Rejeições" },
         { href: "/movimentacoesEstoque", label: "Movimentações de Estoque" },
@@ -41,13 +40,14 @@ const MENUS_POR_CARGO = {
       secao: "Manutenção",
       itens: [
         { href: "/manutencoesProgramadas", label: "Manutenções" },
-        { href: "/historicoManutencao", label: "Histórico de Manutenção" },
       ],
     },
     {
       secao: "Consultas",
       itens: [
+        { href: "/ordemMateriais", label: "Materiais por Ordem" },
         { href: "/historicoOrdens", label: "Histórico de Ordens" },
+        { href: "/historicoManutencao", label: "Histórico de Manutenção" },
         { href: "/auditoria", label: "Auditoria" },
       ],
     },
