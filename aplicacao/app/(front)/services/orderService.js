@@ -23,16 +23,16 @@ export function getPecas() {
 
 }
 
-// Atualizar status
+// Atualizar status 
 export function updateStatusOrdem(
     id,
-    status
+    data
 ){
+    const body = typeof data === "string" ? { status: data } : data;
+
     return apiFetch(`/api/osProducao/${id}`, {
         method: "PUT",
-        body: JSON.stringify({
-            status
-        })
+        body: JSON.stringify(body)
     })
 
 }

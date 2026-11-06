@@ -27,3 +27,10 @@ export function deleteInspecao(id) {
     method: "DELETE",
   });
 }
+
+// GET indicadores de qualidade
+export function getIndicadoresQualidade(params = {}) {
+  const query = new URLSearchParams(params).toString();
+
+  return apiFetch(`/api/indicadoresQualidade${query ? `?${query}` : ""}`);
+}
