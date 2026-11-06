@@ -125,7 +125,7 @@ export default function Home() {
               value={dashboard.ordens.atrasadas}
             >
               <p className="text-sm text-gray-500">
-                Implementação futura
+                Pendentes ou em produção com prazo vencido
               </p>
             </Card>
           </div>
@@ -164,7 +164,7 @@ export default function Home() {
             Máquinas
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card
               title="Ativas"
               value={dashboard.maquinas.ativas}
@@ -189,6 +189,15 @@ export default function Home() {
             >
               <p className="text-sm text-gray-500">
                 Programadas ou em execução
+              </p>
+            </Card>
+
+            <Card
+              title="Manutenções atrasadas"
+              value={dashboard.maquinas.manutencoesAtrasadas}
+            >
+              <p className="text-sm text-gray-500">
+                Passaram do término previsto
               </p>
             </Card>
           </div>
@@ -254,7 +263,7 @@ export default function Home() {
             Qualidade
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card
               title="Inspeções"
               value={dashboard.qualidade.inspecoes}
@@ -265,11 +274,51 @@ export default function Home() {
             </Card>
 
             <Card
+              title="Peças inspecionadas"
+              value={dashboard.qualidade.inspecionado}
+            >
+              <p className="text-sm text-gray-500">
+                Total produzido e conferido
+              </p>
+            </Card>
+
+            <Card
+              title="Índice de rejeição"
+              value={
+                dashboard.qualidade.indiceRejeicao === null
+                  ? "não calculável"
+                  : `${dashboard.qualidade.indiceRejeicao}%`
+              }
+            >
+              <p className="text-sm text-gray-500">
+                Rejeitadas ÷ inspecionadas
+              </p>
+            </Card>
+
+            <Card
+              title="Peças aprovadas"
+              value={dashboard.qualidade.aprovadas}
+            >
+              <p className="text-sm text-gray-500">
+                Dentro da tolerância
+              </p>
+            </Card>
+
+            <Card
               title="Peças rejeitadas"
               value={dashboard.qualidade.rejeitadas}
             >
               <p className="text-sm text-gray-500">
                 Total rejeitado nas inspeções
+              </p>
+            </Card>
+
+            <Card
+              title="Perdas x retrabalho"
+              value={`${dashboard.qualidade.perdas} / ${dashboard.qualidade.retrabalhos}`}
+            >
+              <p className="text-sm text-gray-500">
+                Refugo definitivo x peças recuperáveis
               </p>
             </Card>
           </div>

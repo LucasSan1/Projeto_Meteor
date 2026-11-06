@@ -15,7 +15,7 @@ export default function Card({ title, value, children }) {
     >
       {title && <span className="text-sm text-gray-500">{title}</span>}
 
-      {value && (
+      {value !== undefined && value !== null && value !== "" && (
         <span
           className="
           text-3xl

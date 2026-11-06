@@ -17,14 +17,10 @@ import {
 } from "../../services/movimentacaoService";
 
 import { getMateriasPrimas } from "../../services/materiaPrimaService";
-import { getUsuarios } from "../../services/usuarioService";
-import { getOrdens } from "../../services/orderService";
 
 export default function MovimentacoesEstoque() {
   const [movimentacoes, setMovimentacoes] = useState([]);
   const [materias, setMaterias] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [ordens, setOrdens] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [modalAddOpen, setModalAddOpen] = useState(false);
@@ -32,16 +28,8 @@ export default function MovimentacoesEstoque() {
 
   const [movimentacaoSelecionada, setMovimentacaoSelecionada] = useState(null);
 
+  // Entrada é a única movimentação manual, Saída nasce da conclusão da ordem 
   const camposMovimentacao = [
-    {
-      name: "tipo",
-      label: "Tipo",
-      type: "select",
-      options: [
-        { value: "Entrada", label: "Entrada" },
-        { value: "Saida", label: "Saída" },
-      ],
-    },
     {
       name: "quantidade",
       label: "Quantidade",
@@ -52,21 +40,6 @@ export default function MovimentacoesEstoque() {
       name: "unidadeMedida",
       label: "Unidade de Medida",
       type: "text",
-    },
-    {
-      name: "usuario",
-      label: "Responsável",
-      type: "select",
-      options: usuarios,
-    },
-    {
-      name: "ordem",
-      label: "Ordem de Produção (obrigatória na saída)",
-      type: "select",
-      options: [
-        { value: "", label: "Sem ordem (entrada manual)" },
-        ...ordens,
-      ],
     },
     {
       name: "observacao",
@@ -87,11 +60,9 @@ export default function MovimentacoesEstoque() {
 
   async function carregar() {
     try {
-      const [movRes, materiasRes, usuariosRes, ordensRes] = await Promise.all([
+      const [movRes, materiasRes] = await Promise.all([
         getMovimentacoes(),
         getMateriasPrimas(),
-        getUsuarios(),
-        getOrdens(),
       ]);
 
       if (movRes) setMovimentacoes(movRes.data);
@@ -103,28 +74,6 @@ export default function MovimentacoesEstoque() {
             .map((m) => ({
               value: m.pk_materiaID,
               label: `${m.materia} (${m.unidadeMedida})`,
-            })),
-        );
-      }
-
-      if (usuariosRes) {
-        setUsuarios(
-          usuariosRes.data
-            .filter((u) => u.status === "Ativo")
-            .map((u) => ({
-              value: u.id,
-              label: u.nome,
-            })),
-        );
-      }
-
-      if (ordensRes) {
-        setOrdens(
-          ordensRes.data
-            .filter((o) => o.status !== "Cancelada")
-            .map((o) => ({
-              value: o.pk_ordemID,
-              label: `${o.codigo} - ${o.nomePeca}`,
             })),
         );
       }
@@ -141,7 +90,10 @@ export default function MovimentacoesEstoque() {
 
   async function handleCreate(data) {
     try {
-      const response = await createMovimentacao(data);
+      const response = await createMovimentacao({
+        ...data,
+        tipo: "Entrada",
+      });
 
       if (!response) return;
 
@@ -151,7 +103,7 @@ export default function MovimentacoesEstoque() {
         toast: true,
         position: "top-end",
         icon: "success",
-        title: "Movimentação registrada!",
+        title: "Entrada registrada!",
         showConfirmButton: false,
         timer: 2500,
       });
@@ -229,11 +181,7 @@ export default function MovimentacoesEstoque() {
   }
 
   function abrirEdicao(movimentacao) {
-    setMovimentacaoSelecionada({
-      ...movimentacao,
-      usuario: movimentacao.fk_usuarioID,
-      ordem: movimentacao.fk_ordemID || "",
-    });
+    setMovimentacaoSelecionada(movimentacao);
     setModalEditOpen(true);
   }
 
@@ -246,54 +194,71 @@ export default function MovimentacoesEstoque() {
       <Header />
 
       <div className="p-6 flex flex-col gap-6">
+        <p className="text-sm text-gray-600">
+          Entradas são lançadas manualmente pelo gestor. As saídas são geradas
+          automaticamente na conclusão das ordens de produção.
+        </p>
+
         {movimentacoes.length === 0 ? (
           <p className="text-gray-500 text-center">
             Nenhuma movimentação registrada
           </p>
         ) : (
           <div className="flex flex-col gap-4">
-            {movimentacoes.map((mov) => (
-              <Card
-                key={mov.pk_movimentacaoID}
-                title={`${mov.tipo} - ${mov.materia}`}
-              >
-                <p className="text-sm text-black">
-                  Quantidade: {mov.quantidade} {mov.unidadeMedida}
-                </p>
+            {movimentacoes.map((mov) => {
+              const automatica = Boolean(mov.fk_ordemID);
 
-                <p className="text-sm text-black">
-                  Responsável: {mov.usuario}
-                </p>
+              return (
+                <Card
+                  key={mov.pk_movimentacaoID}
+                  title={`${mov.tipo} - ${mov.materia}`}
+                >
+                  <p className="text-sm text-black">
+                    Quantidade: {mov.quantidade} {mov.unidadeMedida}
+                  </p>
 
-                <p className="text-sm text-black">
-                  Ordem: {mov.ordem || "-"}
-                </p>
+                  <p className="text-sm text-black">
+                    Responsável: {mov.usuario}
+                  </p>
 
-                <p className="text-sm text-black">
-                  Data: {formatDataHora(mov.dataMovimentacao)}
-                </p>
+                  <p className="text-sm text-black">
+                    Ordem: {mov.ordem || "-"}
+                  </p>
 
-                <p className="text-sm text-black">
-                  Observação: {mov.observacao || "-"}
-                </p>
+                  <p className="text-sm text-black">
+                    Data: {formatDataHora(mov.dataMovimentacao)}
+                  </p>
 
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  <button
-                    onClick={() => abrirEdicao(mov)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                  >
-                    Editar
-                  </button>
+                  <p className="text-sm text-black">
+                    Observação: {mov.observacao || "-"}
+                  </p>
 
-                  <button
-                    onClick={() => handleDelete(mov)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </Card>
-            ))}
+                  {automatica && (
+                    <p className="text-sm text-amber-700 font-semibold">
+                      Saída: somente leitura
+                    </p>
+                  )}
+
+                  {!automatica && (
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      <button
+                        onClick={() => abrirEdicao(mov)}
+                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(mov)}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
@@ -323,7 +288,7 @@ export default function MovimentacoesEstoque() {
 
       {modalAddOpen && (
         <ModalIncluir
-          title="Nova Movimentação de Estoque"
+          title="Nova Entrada de Estoque"
           fields={camposCriacao}
           onSubmit={handleCreate}
           onClose={() => setModalAddOpen(false)}
@@ -332,7 +297,7 @@ export default function MovimentacoesEstoque() {
 
       {modalEditOpen && movimentacaoSelecionada && (
         <ModalIncluir
-          title="Editar Movimentação"
+          title="Editar Entrada"
           fields={camposMovimentacao}
           initialData={movimentacaoSelecionada}
           onSubmit={handleEdit}

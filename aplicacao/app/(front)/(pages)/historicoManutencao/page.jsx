@@ -47,7 +47,10 @@ export default function HistoricoManutencao() {
           fields={[
             { label: "Equipamento", value: "equipamento" },
             { label: "Manutenção realizada", value: "manutencaoRealizada" },
+            { label: "Mecânico", value: "mecanico" },
             { label: "Data", value: "dataManutencao", type: "date" },
+            { label: "Início efetivo", value: "inicioEfetivo", type: "datetime" },
+            { label: "Término efetivo", value: "terminoEfetivo", type: "datetime" },
             { label: "Custos", value: "custos" },
             { label: "Observações", value: "observacoes" },
           ]}

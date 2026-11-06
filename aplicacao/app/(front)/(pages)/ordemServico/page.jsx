@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import Header from "../../components/Header";
 import Card from "../../components/Card";
 import ModalStatus from "../../components/modalStatus";
-import ModalIncluir from "../../components/modalIncluir";
 import ModalDesativados from "../../components/modalDesativados";
+import ModalOrdemProducao from "../../components/modalOrdemProducao";
+import ModalConclusaoProducao from "../../components/modalConclusaoProducao";
 import {
   formatDataHora,
   paraInputDatetime,
@@ -22,11 +23,13 @@ import {
   getPecas,
 } from "../../services/orderService";
 import { getProfissionais } from "../../services/profissionalService";
+import { getMateriasPrimas } from "../../services/materiaPrimaService";
 
 export default function OrdemServico() {
   const [ordens, setOrdens] = useState([]);
   const [pecas, setPecas] = useState([]);
   const [operadores, setOperadores] = useState([]);
+  const [materias, setMaterias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cargo, setCargo] = useState(null);
 
@@ -36,6 +39,7 @@ export default function OrdemServico() {
 
   const [modalAddOpen, setModalAddOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
+  const [modalConclusaoOpen, setModalConclusaoOpen] = useState(false);
   const [ordemEditSelecionada, setOrdemEditSelecionada] = useState(null);
 
   const [showConcluidas, setShowConcluidas] = useState(false);
@@ -48,10 +52,10 @@ export default function OrdemServico() {
   const isOperador = cargo === "operador";
 
   // O backend valida o fluxo; aqui só escondemos as opções inválidas
-  // Operador só inicia e conclui; cancelar continua sendo coisa de gestor
+  // Cancelar só existe a partir de Pendente
   const transicoesGestor = {
     Pendente: ["Em Produção", "Cancelada"],
-    "Em Produção": ["Concluída", "Cancelada"],
+    "Em Produção": ["Concluída"],
     Concluída: [],
     Cancelada: [],
   };
@@ -74,47 +78,6 @@ export default function OrdemServico() {
       ]
     : statusOptions;
 
-  // Campos modal ordem
-  const ordemFields = [
-    {
-      name: "codigo",
-      label: "Código da Ordem",
-      type: "text",
-    },
-    {
-      name: "pecaID",
-      label: "Peça",
-      type: "select",
-      options: pecas,
-    },
-    {
-      name: "quantidadePlanejada",
-      label: "Quantidade Planejada",
-      type: "number",
-    },
-    {
-      name: "especializacao",
-      label: "Especialização Exigida",
-      type: "text",
-    },
-    {
-      name: "operadorID",
-      label: "Operador",
-      type: "select",
-      options: operadores,
-    },
-    {
-      name: "inicioPlanejado",
-      label: "Início Planejado",
-      type: "datetime-local",
-    },
-    {
-      name: "terminoPlanejado",
-      label: "Término Planejado",
-      type: "datetime-local",
-    },
-  ];
-
   async function carregar() {
     try {
       const cargoAtual = localStorage.getItem("cargo");
@@ -128,9 +91,10 @@ export default function OrdemServico() {
 
       // Só o gestor cria/edita ordem, então só ele precisa dos catálogos
       if (ehGestor) {
-        const [pecasRes, profissionaisRes] = await Promise.all([
+        const [pecasRes, profissionaisRes, materiasRes] = await Promise.all([
           getPecas(),
           getProfissionais(),
+          getMateriasPrimas(),
         ]);
 
         if (pecasRes) {
@@ -154,6 +118,17 @@ export default function OrdemServico() {
               })),
           );
         }
+
+        if (materiasRes) {
+          setMaterias(
+            materiasRes.data
+              .filter((m) => m.status === "Ativo")
+              .map((m) => ({
+                value: m.pk_materiaID,
+                label: `${m.materia} (${m.unidadeMedida}) — disp. ${m.quantidadeEstoque}`,
+              })),
+          );
+        }
       }
     } catch (err) {
       console.error("Erro ao carregar dados:", err);
@@ -173,6 +148,13 @@ export default function OrdemServico() {
   }
 
   async function confirmarStatus(payload) {
+    // Conclusão tem formulário próprio (consumo, produção e qualidade)
+    if (payload.status === "Concluída") {
+      setModalStatusOpen(false);
+      setModalConclusaoOpen(true);
+      return;
+    }
+
     try {
       const result = await Swal.fire({
         title: "Confirmar alteração?",
@@ -213,16 +195,36 @@ export default function OrdemServico() {
     }
   }
 
+  async function handleConcluir(data) {
+    try {
+      const response = await updateStatusOrdem(
+        ordemStatusSelecionada.pk_ordemID,
+        data,
+      );
+
+      if (!response) return;
+
+      setModalConclusaoOpen(false);
+      setOrdemStatusSelecionada(null);
+
+      await Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Ordem concluída e inspeção registrada!",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+
+      await carregar();
+    } catch (err) {
+      console.error("Erro ao concluir ordem:", err);
+    }
+  }
+
   async function handleCreateOrdem(data) {
     try {
-      const payload = {
-        ...data,
-        pecaID: Number(data.pecaID),
-        operadorID: Number(data.operadorID),
-        quantidadePlanejada: Number(data.quantidadePlanejada),
-      };
-
-      const response = await createOrdem(payload);
+      const response = await createOrdem(data);
 
       if (!response) return;
 
@@ -247,16 +249,9 @@ export default function OrdemServico() {
 
   async function handleEditOrdem(data) {
     try {
-      const payload = {
-        ...data,
-        pecaID: Number(data.pecaID),
-        operadorID: Number(data.operadorID),
-        quantidadePlanejada: Number(data.quantidadePlanejada),
-      };
-
       const response = await updateOrdem(
         ordemEditSelecionada.pk_ordemID,
-        payload,
+        data,
       );
 
       if (!response) return;
@@ -286,6 +281,7 @@ export default function OrdemServico() {
       operadorID: ordem.fk_operadorID,
       inicioPlanejado: paraInputDatetime(ordem.inicioPlanejado),
       terminoPlanejado: paraInputDatetime(ordem.terminoPlanejado),
+      materiais: ordem.materiais || [],
     });
     setModalEditOpen(true);
   }
@@ -378,7 +374,7 @@ export default function OrdemServico() {
         </button>
       )}
 
-      {modalStatusOpen && (
+      {modalStatusOpen && ordemStatusSelecionada && (
         <ModalStatus
           ordem={ordemStatusSelecionada}
           statusOptions={opcoesStatusSelecionada}
@@ -387,19 +383,34 @@ export default function OrdemServico() {
         />
       )}
 
+      {modalConclusaoOpen && ordemStatusSelecionada && (
+        <ModalConclusaoProducao
+          ordem={ordemStatusSelecionada}
+          onClose={() => {
+            setModalConclusaoOpen(false);
+            setOrdemStatusSelecionada(null);
+          }}
+          onConfirm={handleConcluir}
+        />
+      )}
+
       {modalAddOpen && (
-        <ModalIncluir
+        <ModalOrdemProducao
           title="Nova Ordem de Produção"
-          fields={ordemFields}
+          pecas={pecas}
+          operadores={operadores}
+          materias={materias}
           onSubmit={handleCreateOrdem}
           onClose={() => setModalAddOpen(false)}
         />
       )}
 
       {modalEditOpen && ordemEditSelecionada && (
-        <ModalIncluir
+        <ModalOrdemProducao
           title="Editar Ordem de Produção"
-          fields={ordemFields}
+          pecas={pecas}
+          operadores={operadores}
+          materias={materias}
           initialData={ordemEditSelecionada}
           onSubmit={handleEditOrdem}
           onClose={() => {
@@ -508,6 +519,35 @@ function Section({
               )}
 
               <p className="text-sm text-black">Status: {ordem.status}</p>
+
+              {ordem.atrasada && (
+                <p className="text-sm text-red-600 font-semibold">
+                  {ordem.status === "Pendente"
+                    ? "Prazo vencido: reprograme a ordem para poder iniciar."
+                    : "Ordem em atraso: conclua quando a execução terminar."}
+                </p>
+              )}
+
+              {ordem.materiais?.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm font-semibold text-[#4E342E]">
+                    Materiais
+                  </p>
+
+                  {ordem.materiais.map((material) => (
+                    <p
+                      key={material.fk_materiaID}
+                      className="text-sm text-black"
+                    >
+                      {material.materia}: {material.quantidadePrevista}{" "}
+                      {material.unidadeMedida}
+                      {material.quantidadeConsumida !== null
+                        ? ` (consumido: ${material.quantidadeConsumida})`
+                        : ""}
+                    </p>
+                  ))}
+                </div>
+              )}
 
               <div className="flex gap-2 mt-3 flex-wrap">
                 {allowStatusChange && (

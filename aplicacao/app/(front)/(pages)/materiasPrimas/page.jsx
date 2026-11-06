@@ -55,17 +55,25 @@ export default function MateriasPrimas() {
       step: "0.001",
     },
     {
-      name: "quantidadeEstoque",
-      label: "Quantidade em Estoque",
-      type: "number",
-      step: "0.001",
-    },
-    {
       name: "dataUltimaCompra",
       label: "Data da Última Compra",
       type: "date",
     },
   ];
+
+  // Saldo inicial só no cadastro, Depois disso, o saldo dança conforme as movimentações de estoque
+  const camposCriacao = [
+    ...materiaFields.slice(0, 4),
+    {
+      name: "quantidadeEstoque",
+      label: "Quantidade em Estoque Inicial",
+      type: "number",
+      step: "0.001",
+    },
+    materiaFields[4],
+  ];
+
+  const camposEdicao = materiaFields;
 
   async function carregar() {
     try {
@@ -322,7 +330,7 @@ export default function MateriasPrimas() {
       {modalAddOpen && (
         <ModalIncluir
           title="Nova Matéria-prima"
-          fields={materiaFields}
+          fields={camposCriacao}
           onSubmit={handleCreateMateria}
           onClose={() => setModalAddOpen(false)}
         />
@@ -331,7 +339,7 @@ export default function MateriasPrimas() {
       {modalEditOpen && materiaSelecionada && (
         <ModalIncluir
           title="Editar Matéria-prima"
-          fields={materiaFields}
+          fields={camposEdicao}
           initialData={materiaSelecionada}
           onSubmit={handleEditMateria}
           onClose={() => {

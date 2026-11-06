@@ -357,7 +357,7 @@ export default function ManutencoesProgramadas() {
           onCancelar={handleCancelar}
           podeIniciar={false}
           podeEditar={false}
-          podeCancelar={isGestor}
+          podeCancelar={false}
           onConcluir={(manutencao) => {
             setManutencaoSelecionada(manutencao);
             setModalConclusaoOpen(true);
@@ -526,6 +526,14 @@ function Section({
               </p>
 
               <p className="text-sm text-black">Status: {manutencao.status}</p>
+
+              {manutencao.atrasada && (
+                <p className="text-sm text-red-600 font-semibold">
+                  {manutencao.status === "Programada"
+                    ? "Prazo vencido: reprograme antes de iniciar."
+                    : "Intervenção em atraso: conclua quando o serviço terminar."}
+                </p>
+              )}
 
               <div className="flex gap-2 mt-3 flex-wrap">
                 {podeIniciar && (
