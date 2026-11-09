@@ -5,7 +5,7 @@ import { checkAuthPosition } from "../../../utils/authChecker";
 export async function PATCH(request, { params }) {
   const { id } = await params;
   const body = await request.json();
-  const { quantidade, motivoRejeicao, tipo, acoesCorretivas } = body;
+  const { quantidade, motivoRejeicao, tipo, acoesCorretivas, status } = body;
 
   try {
     await checkAuthPosition(request);
@@ -20,6 +20,27 @@ export async function PATCH(request, { params }) {
     }
 
     const atual = exist[0];
+    const querConcluir = status === "Concluído";
+
+    // Perda é definitiva, retrabalho concluído vira histórico e não muda mais
+    if (atual.tipo === "Perda") {
+      throw {
+        status: 400,
+        message:
+          "Rejeições do tipo Perda são somente histórico e não podem ser alteradas!",
+      };
+    }
+
+    if (atual.status === "Concluído" && !querConcluir) {
+      throw {
+        status: 400,
+        message: "Retrabalhos concluídos não podem mais ser alterados!",
+      };
+    }
+
+    if (status !== undefined && !["Pendente", "Concluído"].includes(status)) {
+      throw { status: 400, message: "Status de rejeição inválido!" };
+    }
 
     const quantidadeFinal =
       quantidade !== undefined && quantidade !== ""
@@ -35,6 +56,15 @@ export async function PATCH(request, { params }) {
     if (!["Retrabalho", "Perda"].includes(tipoFinal)) {
       throw { status: 400, message: "Tipo de rejeição inválido!" };
     }
+
+    if (querConcluir && tipoFinal !== "Retrabalho") {
+      throw {
+        status: 400,
+        message: "Só é possível concluir rejeições do tipo Retrabalho!",
+      };
+    }
+
+    const statusFinal = status || atual.status || "Pendente";
 
     const [insp] = await pool.query(
       "SELECT * FROM inspecoes WHERE pk_inspecaoID = ?",
@@ -60,13 +90,14 @@ export async function PATCH(request, { params }) {
 
     const [result] = await pool.query(
       `UPDATE rejeicoes
-       SET quantidade = ?, motivoRejeicao = ?, tipo = ?, acoesCorretivas = ?
+       SET quantidade = ?, motivoRejeicao = ?, tipo = ?, acoesCorretivas = ?, status = ?
        WHERE pk_rejeicaoID = ?`,
       [
         quantidadeFinal,
         motivoRejeicao?.trim() ? motivoRejeicao : atual.motivoRejeicao,
         tipoFinal,
         acoesCorretivas ?? atual.acoesCorretivas,
+        statusFinal,
         id,
       ],
     );
@@ -109,6 +140,21 @@ export async function DELETE(request, { params }) {
 
     if (exist.length === 0) {
       throw { status: 404, message: "Rejeição não encontrada!" };
+    }
+
+    if (exist[0].tipo === "Perda") {
+      throw {
+        status: 400,
+        message:
+          "Rejeições do tipo Perda são somente histórico e não podem ser excluídas!",
+      };
+    }
+
+    if (exist[0].status === "Concluído") {
+      throw {
+        status: 400,
+        message: "Retrabalhos concluídos não podem ser excluídos!",
+      };
     }
 
     await pool.query("DELETE FROM rejeicoes WHERE pk_rejeicaoID = ?", [id]);

@@ -15,6 +15,7 @@ export async function GET(request) {
         r.motivoRejeicao,
         r.tipo,
         r.acoesCorretivas,
+        r.status,
         r.dataRejeicao,
         op.codigo AS ordem,
         p.peca,

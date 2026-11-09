@@ -110,12 +110,25 @@ export async function PUT(request, { params }) {
         ignorarOrdemID: id,
       });
 
-      // Início só dentro da janela prevista, vencida exige reprogramação
-      validarJanelaExecucao(
+      // Início só dentro da janela prevista, operador pode antecipar com justificativa
+      const janela = validarJanelaExecucao(
         ordem.inicioPlanejado,
         ordem.terminoPlanejado,
         "ordem",
+        { permitirAntecipacao: usuarioLogado.cargo === CARGOS.OPERADOR },
       );
+
+      if (janela.inicioAntecipado && !observacao?.trim()) {
+        throw {
+          status: 400,
+          message:
+            "Informe a observação para justificar o início antes do planejado!",
+        };
+      }
+
+      if (janela.inicioAntecipado) {
+        dadosNovos.inicioAntecipado = true;
+      }
 
       await validarAgendaOperador(connection, {
         profissionalID: ordem.fk_operadorID,

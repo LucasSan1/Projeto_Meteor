@@ -118,11 +118,35 @@ export default function ModalOrdemProducao({
         return;
       }
 
+      // Quantidade de matéria-prima é contada em peças inteiras, sem meio quilo de parafuso
+      const quantidadeInvalida = materiaisValidos.some((material) => {
+        const quantidade = Number(material.quantidadePrevista);
+
+        return !Number.isInteger(quantidade) || quantidade <= 0;
+      });
+
+      if (quantidadeInvalida) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Quantidade inválida",
+          text: "As quantidades das matérias-primas devem ser números inteiros maiores que zero.",
+        });
+
+        return;
+      }
+
       await onSubmit({
         ...formData,
         pecaID: Number(formData.pecaID),
         operadorID: Number(formData.operadorID),
         quantidadePlanejada: Number(formData.quantidadePlanejada),
+        // Planejamento por dia: começa 00:00 e termina 23:59, sem exigir horário
+        inicioPlanejado: formData.inicioPlanejado
+          ? `${formData.inicioPlanejado}T00:00`
+          : "",
+        terminoPlanejado: formData.terminoPlanejado
+          ? `${formData.terminoPlanejado}T23:59`
+          : "",
         materiais: materiaisValidos.map((material) => ({
           materiaID: Number(material.materiaID),
           quantidadePrevista: Number(material.quantidadePrevista),
@@ -211,7 +235,7 @@ export default function ModalOrdemProducao({
 
           <Campo label="Início Planejado">
             <input
-              type="datetime-local"
+              type="date"
               value={formData.inicioPlanejado}
               onClick={abrirCalendario}
               onChange={(e) =>
@@ -223,7 +247,7 @@ export default function ModalOrdemProducao({
 
           <Campo label="Término Planejado">
             <input
-              type="datetime-local"
+              type="date"
               value={formData.terminoPlanejado}
               onClick={abrirCalendario}
               onChange={(e) =>
@@ -277,8 +301,8 @@ export default function ModalOrdemProducao({
                 <Campo label="Quantidade">
                   <input
                     type="number"
-                    min="0.001"
-                    step="0.001"
+                    min="1"
+                    step="1"
                     value={material.quantidadePrevista}
                     onChange={(e) =>
                       atualizarMaterial(

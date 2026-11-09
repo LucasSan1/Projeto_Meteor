@@ -78,12 +78,22 @@ export function especializacaoCompativel(exigida, doProfissional) {
 }
 
 // A execução só começa dentro da janela prevista
-export function validarJanelaExecucao(inicioPrevisto, terminoPrevisto, entidade) {
+// Operador/mecânico podem antecipar, mas a rota exige uma observação nesse caso
+export function validarJanelaExecucao(
+  inicioPrevisto,
+  terminoPrevisto,
+  entidade,
+  { permitirAntecipacao = false } = {},
+) {
   const agora = getDataBrasilia();
   const inicio = normalizarDataHora(inicioPrevisto);
   const termino = normalizarDataHora(terminoPrevisto);
 
   if (agora < inicio) {
+    if (permitirAntecipacao) {
+      return { inicioAntecipado: true };
+    }
+
     throw {
       status: 400,
       message: `A ${entidade} só pode ser iniciada a partir de ${inicio}!`,
@@ -96,6 +106,8 @@ export function validarJanelaExecucao(inicioPrevisto, terminoPrevisto, entidade)
       message: `O período previsto da ${entidade} terminou. Peça ao gestor para reprogramar antes de iniciar!`,
     };
   }
+
+  return { inicioAntecipado: false };
 }
 
 // Nenhuma pessoa pode iniciar outra atividade com uma execução aberta

@@ -24,13 +24,24 @@ export default function ListaRegistros({
       valor = formatData(valor);
     } else if (field.type === "datetime") {
       valor = formatDataHora(valor);
-    } else if (field.type === "json") {
-      valor = valor ? JSON.stringify(valor) : "-";
     } else if (field.type === "boolean") {
       valor = valor ? "Sim" : "Não";
     }
 
     return valor === null || valor === undefined || valor === "" ? "-" : valor;
+  }
+
+  // Auditoria guarda JSON como objeto ou texto; formata com recuo pra dar pra ler
+  function formatarJson(valor) {
+    if (valor === null || valor === undefined || valor === "") return "-";
+
+    try {
+      const objeto = typeof valor === "string" ? JSON.parse(valor) : valor;
+
+      return JSON.stringify(objeto, null, 2);
+    } catch {
+      return String(valor);
+    }
   }
 
   return (
@@ -61,11 +72,21 @@ export default function ListaRegistros({
                   : `${title} #${item[idField] ?? index + 1}`
               }
             >
-              {fields.map((field) => (
-                <p key={field.value} className="text-sm text-black">
-                  {field.label}: {formatarValor(item, field)}
-                </p>
-              ))}
+              {fields.map((field) =>
+                field.type === "json" ? (
+                  <div key={field.value} className="text-sm text-black">
+                    <span className="font-semibold">{field.label}:</span>
+
+                    <pre className="mt-1 bg-[#F9F7F4] border rounded p-2 text-xs whitespace-pre-wrap break-words overflow-x-auto">
+                      {formatarJson(item[field.value])}
+                    </pre>
+                  </div>
+                ) : (
+                  <p key={field.value} className="text-sm text-black">
+                    {field.label}: {formatarValor(item, field)}
+                  </p>
+                ),
+              )}
             </Card>
           ))}
         </div>

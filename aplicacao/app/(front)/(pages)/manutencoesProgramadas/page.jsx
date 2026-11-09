@@ -233,10 +233,26 @@ export default function ManutencoesProgramadas() {
   }
 
   async function handleIniciar(manutencao) {
+    const inicioPrevisto = new Date(manutencao.inicioPrevisto);
+    const antecipado =
+      !Number.isNaN(inicioPrevisto.getTime()) && new Date() < inicioPrevisto;
+
     const result = await Swal.fire({
       title: "Iniciar manutenção?",
-      text: `Iniciar "${manutencao.descricao}"?`,
+      text: antecipado
+        ? `Iniciar "${manutencao.descricao}" antes do previsto? Justifique abaixo.`
+        : `Iniciar "${manutencao.descricao}"?`,
       icon: "question",
+      // Início antecipado exige uma observação, igual à regra do operador
+      input: antecipado ? "textarea" : undefined,
+      inputLabel: antecipado ? "Observação (obrigatória)" : undefined,
+      inputPlaceholder: antecipado
+        ? "Explique o motivo do início antecipado"
+        : undefined,
+      inputValidator: antecipado
+        ? (value) =>
+            value?.trim() ? undefined : "Informe a observação para continuar!"
+        : undefined,
       showCancelButton: true,
       confirmButtonText: "Sim, iniciar",
       cancelButtonText: "Cancelar",
@@ -246,7 +262,11 @@ export default function ManutencoesProgramadas() {
 
     if (!result.isConfirmed) return;
 
-    await confirmarAcao(manutencao, "Em Execução");
+    await confirmarAcao(
+      manutencao,
+      "Em Execução",
+      antecipado ? { observacoes: result.value } : {},
+    );
   }
 
   async function handleConcluir(data) {
@@ -344,7 +364,7 @@ export default function ManutencoesProgramadas() {
           onIniciar={handleIniciar}
           onEditar={abrirEdicao}
           onCancelar={handleCancelar}
-          podeIniciar={true}
+          podeIniciar={!isGestor}
           podeEditar={isGestor}
           podeCancelar={isGestor}
         />

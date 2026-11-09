@@ -9,8 +9,9 @@ import ModalDesativados from "../../components/modalDesativados";
 import ModalOrdemProducao from "../../components/modalOrdemProducao";
 import ModalConclusaoProducao from "../../components/modalConclusaoProducao";
 import {
+  formatData,
   formatDataHora,
-  paraInputDatetime,
+  paraInputDate,
 } from "../../../utils/Datetime";
 import { gerarProximoCodigoOrdem } from "../../../utils/codigoOrdem";
 
@@ -173,7 +174,7 @@ export default function OrdemServico() {
 
       if (!result.isConfirmed) return;
 
-      const response = await updateStatusOrdem(payload.id, payload.status);
+      const response = await updateStatusOrdem(payload.id, payload);
 
       if (!response) return;
 
@@ -280,8 +281,8 @@ export default function OrdemServico() {
       ...ordem,
       pecaID: ordem.fk_pecaID,
       operadorID: ordem.fk_operadorID,
-      inicioPlanejado: paraInputDatetime(ordem.inicioPlanejado),
-      terminoPlanejado: paraInputDatetime(ordem.terminoPlanejado),
+      inicioPlanejado: paraInputDate(ordem.inicioPlanejado),
+      terminoPlanejado: paraInputDate(ordem.terminoPlanejado),
       materiais: ordem.materiais || [],
     });
     setModalEditOpen(true);
@@ -382,6 +383,7 @@ export default function OrdemServico() {
         <ModalStatus
           ordem={ordemStatusSelecionada}
           statusOptions={opcoesStatusSelecionada}
+          permitirAntecipacao={isOperador}
           onClose={() => setModalStatusOpen(false)}
           onConfirm={confirmarStatus}
         />
@@ -452,7 +454,7 @@ export default function OrdemServico() {
             { label: "Peça", value: "nomePeca" },
             { label: "Quantidade", value: "quantidadePlanejada" },
             { label: "Operador", value: "operador" },
-            { label: "Início Planejado", value: "inicioPlanejado", type: "datetime" },
+            { label: "Início Planejado", value: "inicioPlanejado", type: "date" },
           ]}
           showActivateButton={false}
           idField="pk_ordemID"
@@ -510,11 +512,11 @@ function Section({
               </p>
 
               <p className="text-sm text-black">
-                Início planejado: {formatDataHora(ordem.inicioPlanejado)}
+                Início planejado: {formatData(ordem.inicioPlanejado)}
               </p>
 
               <p className="text-sm text-black">
-                Término planejado: {formatDataHora(ordem.terminoPlanejado)}
+                Término planejado: {formatData(ordem.terminoPlanejado)}
               </p>
 
               {ordem.inicioEfetivo && (

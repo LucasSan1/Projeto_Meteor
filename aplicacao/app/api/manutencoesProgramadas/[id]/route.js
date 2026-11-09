@@ -288,14 +288,26 @@ export async function PUT(request, { params }) {
     let inicioEfetivo = manutencao.inicioEfetivo;
     let conclusaoEfetiva = manutencao.conclusaoEfetiva;
     let servicosFinal = manutencao.servicosRealizados;
+    let inicioAntecipado = false;
 
     if (status === "Em Execução") {
-      // Início só na janela prevista, sem execução aberta e sem conflito de agenda
-      validarJanelaExecucao(
+      // Início só na janela prevista, mecânico pode antecipar com justificativa
+      const janela = validarJanelaExecucao(
         manutencao.inicioPrevisto,
         manutencao.terminoPrevisto,
         "manutenção",
+        { permitirAntecipacao: usuarioLogado.cargo === CARGOS.MECANICO },
       );
+
+      inicioAntecipado = janela.inicioAntecipado;
+
+      if (inicioAntecipado && !observacoes?.trim()) {
+        throw {
+          status: 400,
+          message:
+            "Informe a observação para justificar o início antes do previsto!",
+        };
+      }
 
       await validarExecucaoAberta(connection, manutencao.fk_mecanicoID, {
         ignorarManutencaoID: id,
@@ -375,6 +387,7 @@ export async function PUT(request, { params }) {
           inicioEfetivo,
           conclusaoEfetiva,
           custos: custoFinal,
+          inicioAntecipado,
         }),
         observacoes || null,
       ],

@@ -62,3 +62,21 @@ export function paraInputDatetime(data) {
 
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
+
+// Mesma ideia, mas só o dia, planejamento de ordem não exige horário
+export function paraInputDate(data) {
+    if (!data) return "";
+
+    // Se já veio só o dia, devolve direto pra não escorregar no fuso
+    if (typeof data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
+        return data;
+    }
+
+    const date = new Date(data);
+
+    if (Number.isNaN(date.getTime())) return "";
+
+    const pad = (n) => String(n).padStart(2, "0");
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}

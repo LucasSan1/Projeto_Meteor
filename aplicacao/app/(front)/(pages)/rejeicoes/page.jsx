@@ -164,6 +164,45 @@ export default function Rejeicoes() {
     }
   }
 
+  async function handleConcluir(rejeicao) {
+    const result = await Swal.fire({
+      title: "Concluir retrabalho?",
+      text: `Marcar o retrabalho da ordem ${rejeicao.ordem} como concluído?`,
+      icon: "question",
+
+      showCancelButton: true,
+
+      confirmButtonText: "Sim, concluir",
+      cancelButtonText: "Cancelar",
+
+      confirmButtonColor: "#16a34a",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const response = await updateRejeicao(rejeicao.pk_rejeicaoID, {
+        status: "Concluído",
+      });
+
+      if (!response) return;
+
+      await carregar();
+
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Retrabalho concluído!",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+    } catch (err) {
+      console.error("Erro ao concluir retrabalho:", err);
+    }
+  }
+
   async function handleDelete(rejeicao) {
     const result = await Swal.fire({
       title: "Excluir rejeição?",
@@ -239,24 +278,41 @@ export default function Rejeicoes() {
                   Data: {formatDataHora(rejeicao.dataRejeicao)}
                 </p>
 
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  <button
-                    onClick={() => {
-                      setRejeicaoSelecionada(rejeicao);
-                      setModalEditOpen(true);
-                    }}
-                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                  >
-                    Editar
-                  </button>
+                {/* Perda é definitiva e retrabalho concluído vira histórico */}
+                {rejeicao.tipo === "Retrabalho" && (
+                  <p className="text-sm text-black">
+                    Status: {rejeicao.status || "Pendente"}
+                  </p>
+                )}
 
-                  <button
-                    onClick={() => handleDelete(rejeicao)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                  >
-                    Excluir
-                  </button>
-                </div>
+                {rejeicao.tipo === "Retrabalho" &&
+                  rejeicao.status !== "Concluído" && (
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      <button
+                        onClick={() => {
+                          setRejeicaoSelecionada(rejeicao);
+                          setModalEditOpen(true);
+                        }}
+                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(rejeicao)}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                      >
+                        Excluir
+                      </button>
+
+                      <button
+                        onClick={() => handleConcluir(rejeicao)}
+                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                      >
+                        Concluir Retrabalho
+                      </button>
+                    </div>
+                  )}
               </Card>
             ))}
           </div>
