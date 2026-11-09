@@ -19,6 +19,7 @@ import {
 } from "../../services/materiaPrimaService";
 
 import { getFornecedore } from "../../services/fornecedoreServices";
+import { createMovimentacao } from "../../services/movimentacaoService";
 
 export default function MateriasPrimas() {
   const [materias, setMaterias] = useState([]);
@@ -27,9 +28,11 @@ export default function MateriasPrimas() {
 
   const [modalAddOpen, setModalAddOpen] = useState(false);
   const [modalEditOpen, setModalEditOpen] = useState(false);
+  const [modalEntradaOpen, setModalEntradaOpen] = useState(false);
   const [showDesativados, setShowDesativados] = useState(false);
 
   const [materiaSelecionada, setMateriaSelecionada] = useState(null);
+  const [materiaEntrada, setMateriaEntrada] = useState(null);
 
   const materiaFields = [
     {
@@ -74,6 +77,21 @@ export default function MateriasPrimas() {
   ];
 
   const camposEdicao = materiaFields;
+
+  // Entrada manual no estoque, a unidade vem da matéria-prima escolhida
+  const camposEntrada = [
+    {
+      name: "quantidade",
+      label: `Quantidade${materiaEntrada ? ` (${materiaEntrada.unidadeMedida})` : ""}`,
+      type: "number",
+      step: "0.001",
+    },
+    {
+      name: "observacao",
+      label: "Observação",
+      type: "textarea",
+    },
+  ];
 
   async function carregar() {
     try {
@@ -215,6 +233,42 @@ export default function MateriasPrimas() {
     }
   }
 
+  // Repõe saldo no estoque sem passar pela tela de movimentações, que agora é só o livro (histórico) de entradas e saídas
+  async function handleEntradaEstoque(data) {
+    try {
+      const response = await createMovimentacao({
+        materia: materiaEntrada.pk_materiaID,
+        tipo: "Entrada",
+        quantidade: data.quantidade,
+        unidadeMedida: materiaEntrada.unidadeMedida,
+        observacao: data.observacao,
+      });
+
+      if (!response) return;
+
+      setModalEntradaOpen(false);
+      setMateriaEntrada(null);
+
+      await Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Entrada de estoque registrada!",
+        showConfirmButton: false,
+        timer: 2500,
+      });
+
+      await carregar();
+    } catch (err) {
+      console.error("Erro ao registrar entrada de estoque:", err);
+    }
+  }
+
+  function abrirEntradaEstoque(materia) {
+    setMateriaEntrada(materia);
+    setModalEntradaOpen(true);
+  }
+
   function abrirEdicao(materia) {
     setMateriaSelecionada({
       ...materia,
@@ -284,6 +338,13 @@ export default function MateriasPrimas() {
 
                   <div className="flex gap-2 mt-3 flex-wrap">
                     <button
+                      onClick={() => abrirEntradaEstoque(materia)}
+                      className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                    >
+                      Adicionar ao Estoque
+                    </button>
+
+                    <button
                       onClick={() => abrirEdicao(materia)}
                       className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
                     >
@@ -345,6 +406,18 @@ export default function MateriasPrimas() {
           onClose={() => {
             setModalEditOpen(false);
             setMateriaSelecionada(null);
+          }}
+        />
+      )}
+
+      {modalEntradaOpen && materiaEntrada && (
+        <ModalIncluir
+          title={`Entrada de Estoque — ${materiaEntrada.materia} (saldo: ${materiaEntrada.quantidadeEstoque} ${materiaEntrada.unidadeMedida})`}
+          fields={camposEntrada}
+          onSubmit={handleEntradaEstoque}
+          onClose={() => {
+            setModalEntradaOpen(false);
+            setMateriaEntrada(null);
           }}
         />
       )}

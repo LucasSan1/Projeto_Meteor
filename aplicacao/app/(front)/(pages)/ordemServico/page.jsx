@@ -12,6 +12,7 @@ import {
   formatDataHora,
   paraInputDatetime,
 } from "../../../utils/Datetime";
+import { gerarProximoCodigoOrdem } from "../../../utils/codigoOrdem";
 
 import Swal from "sweetalert2";
 
@@ -307,6 +308,9 @@ export default function OrdemServico() {
     .filter((o) => o.status === "Cancelada")
     .sort((a, b) => new Date(b.inicioPlanejado) - new Date(a.inicioPlanejado));
 
+  // O gestor só vê o botão de criar, então a lista completa já basta pro próximo código
+  const proximoCodigo = gerarProximoCodigoOrdem(ordens);
+
   return (
     <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
       <Header />
@@ -400,6 +404,7 @@ export default function OrdemServico() {
           pecas={pecas}
           operadores={operadores}
           materias={materias}
+          codigoInicial={proximoCodigo}
           onSubmit={handleCreateOrdem}
           onClose={() => setModalAddOpen(false)}
         />

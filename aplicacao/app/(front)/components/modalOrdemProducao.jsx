@@ -12,11 +12,15 @@ export default function ModalOrdemProducao({
   operadores = [],
   materias = [],
   initialData = null,
+  codigoInicial = "",
   onSubmit,
   onClose,
 }) {
+  // Na criação o código é gerado sozinho, na edição mantém o que já existe
+  const codigoAutomatico = !initialData;
+
   const [formData, setFormData] = useState(() => ({
-    codigo: initialData?.codigo ?? "",
+    codigo: initialData?.codigo ?? codigoInicial,
     pecaID: initialData?.pecaID ?? "",
     quantidadePlanejada: initialData?.quantidadePlanejada ?? "",
     especializacao: initialData?.especializacao ?? "",
@@ -61,6 +65,15 @@ export default function ModalOrdemProducao({
 
   function removerMaterial(index) {
     setMateriais((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  // Abre o calendário nativo já no clique, sem depender do ícone miúdo
+  function abrirCalendario(event) {
+    try {
+      event.currentTarget.showPicker?.();
+    } catch {
+      // Alguns navegadores já abrem sozinhos ou bloqueiam a chamada, vida que segue
+    }
   }
 
   async function handleConfirm() {
@@ -131,8 +144,17 @@ export default function ModalOrdemProducao({
               type="text"
               value={formData.codigo}
               onChange={(e) => atualizarCampo("codigo", e.target.value)}
-              className="border rounded p-2"
+              readOnly={codigoAutomatico}
+              className={`border rounded p-2 ${
+                codigoAutomatico ? "bg-gray-100 text-gray-600" : ""
+              }`}
             />
+
+            {codigoAutomatico && (
+              <span className="text-xs text-gray-500">
+                Gerado automaticamente no padrão OP-ano-sequencial
+              </span>
+            )}
           </Campo>
 
           <Campo label="Peça">
@@ -191,6 +213,7 @@ export default function ModalOrdemProducao({
             <input
               type="datetime-local"
               value={formData.inicioPlanejado}
+              onClick={abrirCalendario}
               onChange={(e) =>
                 atualizarCampo("inicioPlanejado", e.target.value)
               }
@@ -202,6 +225,7 @@ export default function ModalOrdemProducao({
             <input
               type="datetime-local"
               value={formData.terminoPlanejado}
+              onClick={abrirCalendario}
               onChange={(e) =>
                 atualizarCampo("terminoPlanejado", e.target.value)
               }

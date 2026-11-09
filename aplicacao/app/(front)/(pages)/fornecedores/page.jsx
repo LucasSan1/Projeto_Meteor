@@ -79,7 +79,9 @@ export default function Fornecedores() {
   // Adicionar novo fornecedor
   async function handleCreateFornecedor(data) {
     try {
-      await createFornecedor(data);
+      const response = await createFornecedor(data);
+
+      if (!response) return;
 
       setModalAddOpen(false);
 
@@ -107,7 +109,12 @@ export default function Fornecedores() {
   // Editar fornecedor
   async function handleEditFornecedor(data) {
     try {
-      await updateFornecedor(fornecedorSelecionado.pk_fornecedorID, data);
+      const response = await updateFornecedor(
+        fornecedorSelecionado.pk_fornecedorID,
+        data,
+      );
+
+      if (!response) return;
 
       setModalEditOpen(false);
 
@@ -151,7 +158,10 @@ export default function Fornecedores() {
     if (!result.isConfirmed) return;
 
     try {
-      await deleteFornecedor(fornecedor.pk_fornecedorID);
+      const response = await deleteFornecedor(fornecedor.pk_fornecedorID);
+
+      // Se o backend barrou, o alerta já apareceu e não ta podendo deixar o toast de sucesso subir por baixo
+      if (!response) return;
 
       await carregar();
 
@@ -171,7 +181,9 @@ export default function Fornecedores() {
   // Ativar fornecedor
   async function handleActivateFornecedor(fornecedor) {
     try {
-      await activateFornecedor(fornecedor.pk_fornecedorID);
+      const response = await activateFornecedor(fornecedor.pk_fornecedorID);
+
+      if (!response) return;
 
       await carregar();
 
