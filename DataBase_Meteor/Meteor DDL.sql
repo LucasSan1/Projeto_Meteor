@@ -228,6 +228,7 @@ CREATE TABLE rejeicoes (
     motivoRejeicao  VARCHAR(300) NOT NULL,
     tipo            ENUM('Retrabalho', 'Perda') NOT NULL DEFAULT 'Perda',
     acoesCorretivas VARCHAR(300),
+    status          ENUM('Pendente', 'Concluído') NOT NULL DEFAULT 'Pendente', -- acompanha a conclusão do retrabalho
     dataRejeicao    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (pk_rejeicaoID),
