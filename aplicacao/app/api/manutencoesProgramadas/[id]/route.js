@@ -352,14 +352,14 @@ export async function PUT(request, { params }) {
         `INSERT INTO historicoManutencao
           (fk_manutencaoID, fk_equipamentoID, fk_mecanicoID, manutencaoRealizada, dataManutencao, inicioEfetivo, terminoEfetivo, custos, observacoes)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-          fk_mecanicoID = VALUES(fk_mecanicoID),
-          manutencaoRealizada = VALUES(manutencaoRealizada),
-          dataManutencao = VALUES(dataManutencao),
-          inicioEfetivo = VALUES(inicioEfetivo),
-          terminoEfetivo = VALUES(terminoEfetivo),
-          custos = VALUES(custos),
-          observacoes = VALUES(observacoes)`,
+         ON CONFLICT (fk_manutencaoID) DO UPDATE SET
+          fk_mecanicoID = EXCLUDED.fk_mecanicoID,
+          manutencaoRealizada = EXCLUDED.manutencaoRealizada,
+          dataManutencao = EXCLUDED.dataManutencao,
+          inicioEfetivo = EXCLUDED.inicioEfetivo,
+          terminoEfetivo = EXCLUDED.terminoEfetivo,
+          custos = EXCLUDED.custos,
+          observacoes = EXCLUDED.observacoes`,
         [
           id,
           manutencao.fk_equipamentoID,
