@@ -24,6 +24,14 @@ const CARGO_LABEL = {
   mecanico: "Mecânico",
 };
 
+function normalizarBusca(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 function descreverPapeis(usuario) {
   const papeis = [];
 
@@ -138,6 +146,7 @@ export default function Usuarios() {
   const [showDesativados, setShowDesativados] = useState(false);
 
   const [usuarioSelecionado, setUsuarioSelecionado] = useState(null);
+  const [busca, setBusca] = useState("");
 
   async function carregar() {
     try {
@@ -275,12 +284,30 @@ export default function Usuarios() {
   const usuariosAtivos = usuarios.filter((u) => u.status === "Ativo");
   const usuariosInativos = usuarios.filter((u) => u.status === "Desativado");
 
-  const gestores = usuariosAtivos.filter(
+  const termoBusca = normalizarBusca(busca);
+
+  // Nome ou cargo, tanto faz; o cargo técnico entra junto pra "gerente" também achar o gestor
+  const usuariosFiltrados = usuariosAtivos.filter((usuario) => {
+    if (!termoBusca) return true;
+
+    const nome = normalizarBusca(usuario.nome);
+    const cargo = normalizarBusca(
+      `${CARGO_LABEL[usuario.cargo] || ""} ${usuario.cargo}`,
+    );
+
+    return nome.includes(termoBusca) || cargo.includes(termoBusca);
+  });
+
+  // Por enquanto o gestor só enxerga a própria conta
+  const gestores = usuariosFiltrados.filter(
     (u) => u.cargo === "gerente" && Number(u.id) === Number(usuarioLogado?.id),
   );
 
-  const operadores = usuariosAtivos.filter((u) => u.cargo === "operador");
-  const mecanicos = usuariosAtivos.filter((u) => u.cargo === "mecanico");
+  const operadores = usuariosFiltrados.filter((u) => u.cargo === "operador");
+  const mecanicos = usuariosFiltrados.filter((u) => u.cargo === "mecanico");
+
+  const temBusca = termoBusca.length > 0;
+  const totalEncontrado = gestores.length + operadores.length + mecanicos.length;
 
   return (
     <div className="min-h-screen bg-[#EBECF7] flex flex-col">
@@ -291,6 +318,15 @@ export default function Usuarios() {
           title="Usuários"
           subtitle="Contas, papéis e disponibilidade da equipe"
         >
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome ou cargo..."
+            aria-label="Buscar por nome ou cargo"
+            className="w-full sm:w-64 px-4 py-2 rounded border border-[#334E7F]/30 bg-white text-[#334E7F] text-sm placeholder:text-[#697385]/70 focus:outline-none focus:ring-2 focus:ring-[#4A48A8]/30"
+          />
+
           <button
             onClick={() => setShowDesativados(true)}
             className="px-4 py-2 rounded border border-[#334E7F]/30 bg-white text-[#334E7F] font-semibold hover:bg-[#334E7F]/10 transition-colors"
@@ -299,29 +335,43 @@ export default function Usuarios() {
           </button>
         </PageTitle>
 
-        <SecaoUsuarios
-          titulo="Gestores"
-          usuarios={gestores}
-          usuarioLogadoID={usuarioLogado?.id}
-          onEditar={abrirEdicao}
-          onDesativar={handleDeleteUsuario}
-        />
+        {temBusca && totalEncontrado === 0 ? (
+          <p className="text-[#697385] text-center">
+            Nenhum usuário encontrado para &quot;{busca.trim()}&quot;.
+          </p>
+        ) : (
+          <>
+            {(!temBusca || gestores.length > 0) && (
+              <SecaoUsuarios
+                titulo="Gestores"
+                usuarios={gestores}
+                usuarioLogadoID={usuarioLogado?.id}
+                onEditar={abrirEdicao}
+                onDesativar={handleDeleteUsuario}
+              />
+            )}
 
-        <SecaoUsuarios
-          titulo="Operadores"
-          usuarios={operadores}
-          usuarioLogadoID={usuarioLogado?.id}
-          onEditar={abrirEdicao}
-          onDesativar={handleDeleteUsuario}
-        />
+            {(!temBusca || operadores.length > 0) && (
+              <SecaoUsuarios
+                titulo="Operadores"
+                usuarios={operadores}
+                usuarioLogadoID={usuarioLogado?.id}
+                onEditar={abrirEdicao}
+                onDesativar={handleDeleteUsuario}
+              />
+            )}
 
-        <SecaoUsuarios
-          titulo="Mecânicos"
-          usuarios={mecanicos}
-          usuarioLogadoID={usuarioLogado?.id}
-          onEditar={abrirEdicao}
-          onDesativar={handleDeleteUsuario}
-        />
+            {(!temBusca || mecanicos.length > 0) && (
+              <SecaoUsuarios
+                titulo="Mecânicos"
+                usuarios={mecanicos}
+                usuarioLogadoID={usuarioLogado?.id}
+                onEditar={abrirEdicao}
+                onDesativar={handleDeleteUsuario}
+              />
+            )}
+          </>
+        )}
       </div>
 
       <button
