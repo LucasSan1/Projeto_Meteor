@@ -12,7 +12,6 @@ export async function PATCH(request, { params }) {
     unidadeMedida,
     estoqueMinimo,
     quantidadeEstoque,
-    dataUltimaCompra,
   } = body;
 
   try {
@@ -89,10 +88,8 @@ export async function PATCH(request, { params }) {
       "Quantidade em estoque",
     );
 
-    const dataFinal =
-      dataUltimaCompra !== undefined
-        ? dataUltimaCompra || null
-        : atual.dataUltimaCompra;
+    // A data da última compra é carimbada pela entrada de estoque
+    const dataFinal = atual.dataUltimaCompra;
 
     const [forn] = await pool.query(
       "SELECT pk_fornecedorID FROM fornecedores WHERE pk_fornecedorID = ? AND status = 'Ativo'",
