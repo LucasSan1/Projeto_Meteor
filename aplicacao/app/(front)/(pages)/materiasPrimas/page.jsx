@@ -58,6 +58,17 @@ export default function MateriasPrimas() {
       type: "number",
       step: "0.001",
     },
+  ];
+
+  // Saldo inicial só no cadastro, Depois disso, o saldo dança conforme as movimentações de estoque
+  const camposCriacao = [
+    ...materiaFields,
+    {
+      name: "quantidadeEstoque",
+      label: "Quantidade em Estoque Inicial",
+      type: "number",
+      step: "0.001",
+    },
     {
       name: "dataUltimaCompra",
       label: "Data da Última Compra",
@@ -65,18 +76,7 @@ export default function MateriasPrimas() {
     },
   ];
 
-  // Saldo inicial só no cadastro, Depois disso, o saldo dança conforme as movimentações de estoque
-  const camposCriacao = [
-    ...materiaFields.slice(0, 4),
-    {
-      name: "quantidadeEstoque",
-      label: "Quantidade em Estoque Inicial",
-      type: "number",
-      step: "0.001",
-    },
-    materiaFields[4],
-  ];
-
+  // A última compra é atualizada pela entrada de estoque, não pela edição do cadastro
   const camposEdicao = materiaFields;
 
   // Entrada manual no estoque, a unidade vem da matéria-prima escolhida
@@ -299,71 +299,79 @@ export default function MateriasPrimas() {
           </button>
         </PageTitle>
 
-        {ativas.length === 0 ? (
-          <p className="text-[#697385] text-center">
-            Nenhuma matéria-prima ativa encontrada
-          </p>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {ativas.map((materia) => {
-              const estoqueBaixo =
-                Number(materia.quantidadeEstoque) <=
-                Number(materia.estoqueMinimo);
+        <div className="flex flex-col gap-4">
+          <h2 className="text-xl font-bold text-[#11284F]">
+            Matérias-primas ({ativas.length})
+          </h2>
 
-              return (
-                <Card key={materia.pk_materiaID} title={materia.materia}>
-                  <p className="text-sm text-[#334E7F]">
-                    Fornecedor: {materia.fornecedor}
-                  </p>
+          {ativas.length === 0 ? (
+            <p className="text-[#697385] text-center">
+              Nenhuma matéria-prima ativa encontrada
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {ativas.map((materia) => {
+                const estoqueBaixo =
+                  Number(materia.quantidadeEstoque) <=
+                  Number(materia.estoqueMinimo);
 
-                  <p className="text-sm text-[#334E7F]">
-                    Unidade: {materia.unidadeMedida}
-                  </p>
-
-                  <p className="text-sm text-[#334E7F]">
-                    Estoque: {materia.quantidadeEstoque} / mínimo{" "}
-                    {materia.estoqueMinimo}
-                  </p>
-
-                  {estoqueBaixo && (
-                    <p className="text-sm text-red-600 font-semibold">
-                      Estoque abaixo do mínimo!
+                return (
+                  <Card key={materia.pk_materiaID} title={materia.materia}>
+                    <p className="text-sm text-[#334E7F]">
+                      Fornecedor: {materia.fornecedor}
                     </p>
-                  )}
 
-                  <p className="text-sm text-[#334E7F]">
-                    Última compra: {formatData(materia.dataUltimaCompra)}
-                  </p>
+                    <p className="text-sm text-[#334E7F]">
+                      Unidade: {materia.unidadeMedida}
+                    </p>
 
-                  <p className="text-sm text-[#334E7F]">Status: {materia.status}</p>
+                    <p className="text-sm text-[#334E7F]">
+                      Estoque: {materia.quantidadeEstoque} / mínimo{" "}
+                      {materia.estoqueMinimo}
+                    </p>
 
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    <button
-                      onClick={() => abrirEntradaEstoque(materia)}
-                      className="bg-[#2E9B5E] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#27844F]"
-                    >
-                      Adicionar ao Estoque
-                    </button>
+                    {estoqueBaixo && (
+                      <p className="text-sm text-red-600 font-semibold">
+                        Estoque abaixo do mínimo!
+                      </p>
+                    )}
 
-                    <button
-                      onClick={() => abrirEdicao(materia)}
-                      className="bg-[#334E7F] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#28406b]"
-                    >
-                      Editar
-                    </button>
+                    <p className="text-sm text-[#334E7F]">
+                      Última compra: {formatData(materia.dataUltimaCompra)}
+                    </p>
 
-                    <button
-                      onClick={() => handleDeleteMateria(materia)}
-                      className="bg-[#C94545] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#AD3A3A]"
-                    >
-                      Desativar
-                    </button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                    <p className="text-sm text-[#334E7F]">
+                      Status: {materia.status}
+                    </p>
+
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      <button
+                        onClick={() => abrirEntradaEstoque(materia)}
+                        className="bg-[#2E9B5E] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#27844F]"
+                      >
+                        Adicionar ao Estoque
+                      </button>
+
+                      <button
+                        onClick={() => abrirEdicao(materia)}
+                        className="bg-[#334E7F] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#28406b]"
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteMateria(materia)}
+                        className="bg-[#C94545] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#AD3A3A]"
+                      >
+                        Desativar
+                      </button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       <button
