@@ -150,11 +150,6 @@ function diasDaOrdem(ordem) {
   const dias = new Set();
 
   if (ordem.status === "Concluída") {
-    const inicioReal = ordem.inicioEfetivo || ordem.inicioPlanejado;
-    const fimReal = ordem.conclusaoEfetiva || ordem.terminoPlanejado;
-
-    listarDias(inicioReal, fimReal).forEach((dia) => dias.add(dia));
-
     return dias;
   }
 
