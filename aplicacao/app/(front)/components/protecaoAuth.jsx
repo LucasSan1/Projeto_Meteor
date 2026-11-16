@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { limparSessao, tokenExpirado } from "../../utils/sessao";
+
 // Rotas que não exigem login (se proteger a própria /login vira loop de redirect)
 const ROTAS_PUBLICAS = ["/login"];
 
@@ -11,7 +13,6 @@ const ROTAS_POR_CARGO = {
   gerente: [
     "/",
     "/usuarios",
-    "/profissionais",
     "/operadores",
     "/fornecedores",
     "/materiasPrimas",
@@ -19,7 +20,6 @@ const ROTAS_POR_CARGO = {
     "/equipamentos",
     "/maquinas",
     "/ordemServico",
-    "/ordemMateriais",
     "/inspecoes",
     "/rejeicoes",
     "/movimentacoesEstoque",
@@ -72,11 +72,9 @@ export default function ProtecaoAuth({ children }) {
     const token = localStorage.getItem("token");
     const cargo = localStorage.getItem("cargo");
 
-    // Sem token na caixa = visita não autenticada, manda pro login
-    if (!token || !cargo) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("cargo");
-      localStorage.removeItem("usuario");
+    // Sem token, sem cargo ou com token vencido = volta pro login
+    if (!token || !cargo || tokenExpirado(token)) {
+      limparSessao();
 
       setLiberado(false);
       router.replace("/login");
@@ -87,9 +85,7 @@ export default function ProtecaoAuth({ children }) {
 
     // Cargo estranho também não passa
     if (!rotasPermitidas) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("cargo");
-      localStorage.removeItem("usuario");
+      limparSessao();
 
       setLiberado(false);
       router.replace("/login");

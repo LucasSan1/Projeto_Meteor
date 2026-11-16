@@ -251,48 +251,54 @@ export default function Equipamentos() {
           </button>
         </PageTitle>
 
-        {equipamentosAtivos.length === 0 ? (
-          <p className="text-[#697385] text-center">
-            Nenhum equipamento ativo encontrado
-          </p>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {equipamentosAtivos.map((equip) => (
-              <Card key={equip.pk_equipamentoID} title={equip.nomeEquipamento}>
-                <p className="text-sm text-[#334E7F]">
-                  Descrição: {equip.descricao}
-                </p>
+        <div className="flex flex-col gap-4">
+          <h2 className="text-xl font-bold text-[#11284F]">
+            Equipamentos ({equipamentosAtivos.length})
+          </h2>
 
-                <p className="text-sm text-[#334E7F]">
-                  Data Aquisição: {formatData(equip.dataAquisicao)}
-                </p>
+          {equipamentosAtivos.length === 0 ? (
+            <p className="text-[#697385] text-center">
+              Nenhum equipamento ativo encontrado
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {equipamentosAtivos.map((equip) => (
+                <Card key={equip.pk_equipamentoID} title={equip.nomeEquipamento}>
+                  <p className="text-sm text-[#334E7F]">
+                    Descrição: {equip.descricao}
+                  </p>
 
-                <p className="text-sm text-[#334E7F]">
-                  Vida Útil: {equip.vidaUtilRestante} dias
-                </p>
+                  <p className="text-sm text-[#334E7F]">
+                    Data Aquisição: {formatData(equip.dataAquisicao)}
+                  </p>
 
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => {
-                      setEquipamentoSelecionado(equip);
-                      setModalEditOpen(true);
-                    }}
-                    className="bg-[#334E7F] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#28406b]"
-                  >
-                    Editar
-                  </button>
+                  <p className="text-sm text-[#334E7F]">
+                    Vida Útil: {equip.vidaUtilRestante} dias
+                  </p>
 
-                  <button
-                    onClick={() => handleDeactivate(equip.pk_equipamentoID)}
-                    className="bg-[#C94545] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#AD3A3A]"
-                  >
-                    Desativar
-                  </button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => {
+                        setEquipamentoSelecionado(equip);
+                        setModalEditOpen(true);
+                      }}
+                      className="bg-[#334E7F] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#28406b]"
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      onClick={() => handleDeactivate(equip.pk_equipamentoID)}
+                      className="bg-[#C94545] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#AD3A3A]"
+                    >
+                      Desativar
+                    </button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <button

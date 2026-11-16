@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import HamburgerMenu from "./HamburguerMenu";
 import { CosmoMarca } from "./marca";
+import { limparSessao } from "../../utils/sessao";
 
 export default function Header() {
   const [usuario, setUsuario] = useState("");
@@ -22,9 +23,7 @@ export default function Header() {
   }, []);
 
   function logout() {
-    localStorage.removeItem("cargo");
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
+    limparSessao();
 
     router.push("/login");
   }
