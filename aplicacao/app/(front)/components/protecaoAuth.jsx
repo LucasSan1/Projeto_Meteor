@@ -111,7 +111,7 @@ export default function ProtecaoAuth({ children }) {
 
   // Enquanto confere o token, segura a página pra não sair disparando API sem auth
   if (!liberado) {
-    return <p className="p-6 text-black">Verificando autenticação...</p>;
+    return <p className="p-6 text-[#334E7F]">Verificando autenticação...</p>;
   }
 
   return children;

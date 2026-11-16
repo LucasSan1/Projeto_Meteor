@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import Card from "./Card";
+import { IconeCaixa, IconeSeta } from "./icones";
 import { formatData, formatDataHora } from "../../utils/Datetime";
 
 // Lista genérica pra telas somente leitura (históricos, auditoria, vínculos)
@@ -46,21 +47,33 @@ export default function ListaRegistros({
 
   return (
     <div className="flex flex-col gap-4">
-      <div
+      <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between cursor-pointer select-none"
+        className="flex items-center justify-between cursor-pointer select-none group"
       >
-        <h2 className="text-xl font-bold text-[#4E342E]">
-          {title} ({items.length})
+        <h2 className="text-lg font-bold text-[#11284F]">
+          {title}{" "}
+          <span className="text-sm font-normal text-[#697385]">
+            ({items.length})
+          </span>
         </h2>
 
-        <span className="text-lg text-black">{open ? "-" : "+"}</span>
-      </div>
+        <span className="text-[#697385] group-hover:text-[#11284F] transition-colors">
+          <IconeSeta
+            size={18}
+            className={`transition-transform ${open ? "" : "-rotate-90"}`}
+          />
+        </span>
+      </button>
 
       {open && (
         <div className="flex flex-col gap-4">
           {items.length === 0 && (
-            <p className="text-gray-500 text-center">{emptyMessage}</p>
+            <div className="py-14 text-center">
+              <IconeCaixa size={30} className="mx-auto mb-2 text-[#C9CCDD]" />
+              <p className="text-sm text-[#697385]">{emptyMessage}</p>
+            </div>
           )}
 
           {items.map((item, index) => (
@@ -74,16 +87,19 @@ export default function ListaRegistros({
             >
               {fields.map((field) =>
                 field.type === "json" ? (
-                  <div key={field.value} className="text-sm text-black">
-                    <span className="font-semibold">{field.label}:</span>
+                  <div key={field.value} className="text-sm">
+                    <span className="font-semibold text-[#11284F]">
+                      {field.label}:
+                    </span>
 
-                    <pre className="mt-1 bg-[#F9F7F4] border rounded p-2 text-xs whitespace-pre-wrap break-words overflow-x-auto">
+                    <pre className="mt-1 bg-[#F3F4FB] border border-[#334E7F]/10 rounded-lg p-3 text-xs text-[#334E7F] whitespace-pre-wrap break-words overflow-x-auto">
                       {formatarJson(item[field.value])}
                     </pre>
                   </div>
                 ) : (
-                  <p key={field.value} className="text-sm text-black">
-                    {field.label}: {formatarValor(item, field)}
+                  <p key={field.value} className="text-sm text-[#334E7F]">
+                    <span className="text-[#697385]">{field.label}: </span>
+                    {formatarValor(item, field)}
                   </p>
                 ),
               )}
