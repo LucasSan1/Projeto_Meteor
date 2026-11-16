@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Header from "../../components/Header";
+import PageTitle from "../../components/pageTitle";
 import Card from "../../components/Card";
 import { formatDataHora } from "../../../utils/Datetime";
 
@@ -71,53 +72,55 @@ export default function Inspecoes() {
   }, []);
 
   if (loading) {
-    return <p className="p-6">Carregando inspeções...</p>;
+    return <p className="p-6 text-[#697385]">Carregando inspeções...</p>;
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
+    <div className="min-h-screen bg-[#EBECF7] flex flex-col">
       <Header />
 
-      <div className="p-6 flex flex-col gap-6">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+        <PageTitle title="Inspeções de Qualidade" subtitle="Indicadores e histórico de inspeções" />
+
         {/* INDICADORES */}
         <div className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold text-[#4E342E]">
+          <h2 className="text-xl font-bold text-[#11284F]">
             Indicadores de Qualidade
           </h2>
 
-          <div className="flex flex-col md:flex-row md:items-end gap-3 bg-white p-4 rounded-xl shadow">
+          <div className="flex flex-col md:flex-row md:items-end gap-3 bg-white p-4 rounded-xl border border-[#334E7F]/10">
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-black">De</label>
+              <label className="text-sm font-medium text-gray-700">De</label>
               <input
                 type="date"
                 value={filtros.inicio}
                 onChange={(e) =>
                   setFiltros((prev) => ({ ...prev, inicio: e.target.value }))
                 }
-                className="border rounded p-2"
+                className="campo"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-black">Até</label>
+              <label className="text-sm font-medium text-gray-700">Até</label>
               <input
                 type="date"
                 value={filtros.fim}
                 onChange={(e) =>
                   setFiltros((prev) => ({ ...prev, fim: e.target.value }))
                 }
-                className="border rounded p-2"
+                className="campo"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-black">Operador</label>
+              <label className="text-sm font-medium text-gray-700">Operador</label>
               <select
                 value={filtros.operador}
                 onChange={(e) =>
                   setFiltros((prev) => ({ ...prev, operador: e.target.value }))
                 }
-                className="border rounded p-2"
+                className="campo"
               >
                 <option value="">Todos</option>
                 {operadores.map((operador) => (
@@ -130,7 +133,7 @@ export default function Inspecoes() {
 
             <button
               onClick={() => carregarIndicadores()}
-              className="px-4 py-2 rounded bg-[#4E342E] text-white hover:brightness-110"
+              className="px-4 py-2 rounded bg-[#334E7F] text-white font-semibold hover:bg-[#28406b] transition-colors"
             >
               Filtrar
             </button>
@@ -141,7 +144,7 @@ export default function Inspecoes() {
                 setFiltros(limpos);
                 carregarIndicadores(limpos);
               }}
-              className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+              className="btn-secundario"
             >
               Limpar
             </button>
@@ -154,21 +157,21 @@ export default function Inspecoes() {
                   title="Inspecionadas"
                   value={indicadores.resumo.inspecionado}
                 >
-                  <p className="text-sm text-gray-500">Peças no período</p>
+                  <p className="text-sm text-[#697385]">Peças no período</p>
                 </Card>
 
                 <Card
                   title="Aprovadas"
                   value={indicadores.resumo.aprovadas}
                 >
-                  <p className="text-sm text-gray-500">Dentro da tolerância</p>
+                  <p className="text-sm text-[#697385]">Dentro da tolerância</p>
                 </Card>
 
                 <Card
                   title="Rejeitadas"
                   value={indicadores.resumo.rejeitadas}
                 >
-                  <p className="text-sm text-gray-500">Total rejeitado</p>
+                  <p className="text-sm text-[#697385]">Total rejeitado</p>
                 </Card>
 
                 <Card
@@ -179,24 +182,24 @@ export default function Inspecoes() {
                       : `${indicadores.resumo.indiceRejeicao}%`
                   }
                 >
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#697385]">
                     Rejeitadas / inspecionadas
                   </p>
                 </Card>
 
                 <Card title="Perdas" value={indicadores.resumo.perdas}>
-                  <p className="text-sm text-gray-500">Refugo definitivo</p>
+                  <p className="text-sm text-[#697385]">Refugo definitivo</p>
                 </Card>
 
                 <Card
                   title="Retrabalho"
                   value={indicadores.resumo.retrabalhos}
                 >
-                  <p className="text-sm text-gray-500">Peças recuperáveis</p>
+                  <p className="text-sm text-[#697385]">Peças recuperáveis</p>
                 </Card>
               </div>
 
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[#697385]">
                 O índice usa a soma das rejeitadas dividida pela soma das
                 inspecionadas, sem média simples entre ordens.
               </p>
@@ -208,16 +211,16 @@ export default function Inspecoes() {
                       key={operador.operadorID}
                       title={operador.operador}
                     >
-                      <p className="text-sm text-black">
+                      <p className="text-sm text-[#334E7F]">
                         Ordens: {operador.ordens}
                       </p>
-                      <p className="text-sm text-black">
+                      <p className="text-sm text-[#334E7F]">
                         Inspecionadas: {operador.inspecionado}
                       </p>
-                      <p className="text-sm text-black">
+                      <p className="text-sm text-[#334E7F]">
                         Rejeitadas: {operador.rejeitadas}
                       </p>
-                      <p className="text-sm text-black">
+                      <p className="text-sm text-[#334E7F]">
                         Índice:{" "}
                         {operador.indiceRejeicao === null
                           ? "não calculável"
@@ -231,17 +234,17 @@ export default function Inspecoes() {
           )}
         </div>
 
-        <h2 className="text-xl font-bold text-[#4E342E]">
+        <h2 className="text-xl font-bold text-[#11284F]">
           Inspeções Registradas
         </h2>
 
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-[#697385]">
           As inspeções são geradas automaticamente na conclusão das ordens e
           ficam aqui apenas como histórico.
         </p>
 
         {inspecoes.length === 0 ? (
-          <p className="text-gray-500 text-center">
+          <p className="text-[#697385] text-center">
             Nenhuma inspeção registrada
           </p>
         ) : (
@@ -251,27 +254,27 @@ export default function Inspecoes() {
                 key={inspecao.pk_inspecaoID}
                 title={`${inspecao.ordem} - ${inspecao.peca}`}
               >
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Total produzido: {inspecao.totalProduzido}
                 </p>
 
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Operador: {inspecao.operador}
                 </p>
 
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Aprovadas: {inspecao.aprovadas}
                 </p>
 
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Rejeitadas: {inspecao.rejeitadas}
                 </p>
 
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Data: {formatDataHora(inspecao.dataInspecao)}
                 </p>
 
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Observações: {inspecao.observacoes || "-"}
                 </p>
               </Card>

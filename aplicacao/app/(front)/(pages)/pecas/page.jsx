@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Header from "../../components/Header";
+import PageTitle from "../../components/pageTitle";
 import Card from "../../components/Card";
 import ModalIncluir from "../../components/modalIncluir";
 import ModalDesativados from "../../components/modalDesativados";
@@ -195,7 +196,7 @@ export default function Pecas() {
   }
 
   if (loading) {
-    return <p className="p-6">Carregando peças...</p>;
+    return <p className="p-6 text-[#697385]">Carregando peças...</p>;
   }
 
   // FILTROS
@@ -203,18 +204,18 @@ export default function Pecas() {
   const desativadas = pecas.filter((p) => p.status === "Desativado");
 
   return (
-    <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
+    <div className="min-h-screen bg-[#EBECF7] flex flex-col">
       <Header />
 
-      <div className="p-6 flex flex-col gap-6">
-        <div className="flex justify-end">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+        <PageTitle title="Peças" subtitle="Catálogo de peças fabricadas">
           <button
             onClick={() => setShowDesativadas(true)}
-            className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+            className="px-4 py-2 rounded border border-[#334E7F]/30 bg-white text-[#334E7F] font-semibold hover:bg-[#334E7F]/10 transition-colors"
           >
             Ver Desativadas
           </button>
-        </div>
+        </PageTitle>
 
         <Section
           title="Peças Ativas"
@@ -232,12 +233,15 @@ export default function Pecas() {
           right-6
           w-14
           h-14
-          bg-green-600
+          bg-[#2E9B5E]
           text-white
-          text-2xl
+          text-3xl
+          leading-none
           rounded-full
-          shadow-lg
-          hover:bg-green-700
+          shadow-xl
+          transition-all
+          hover:scale-105
+          hover:bg-[#27844F]
           flex
           items-center
           justify-center
@@ -299,11 +303,11 @@ function Section({ title, pecas, onDelete, onEdit }) {
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between cursor-pointer select-none"
       >
-        <h2 className="text-xl font-bold text-[#4E342E]">
+        <h2 className="text-xl font-bold text-[#11284F]">
           {title} ({pecas.length})
         </h2>
 
-        <span className="text-lg text-black">{open ? "-" : "+"}</span>
+        <span className="w-7 h-7 rounded-full bg-white border border-[#334E7F]/15 text-[#334E7F] flex items-center justify-center text-base leading-none">{open ? "-" : "+"}</span>
       </div>
 
       {open && (
@@ -311,28 +315,28 @@ function Section({ title, pecas, onDelete, onEdit }) {
           {pecas.map((peca) => (
             <Card key={peca.pk_pecaID} title={peca.peca}>
               {peca.peso && (
-                <p className="text-sm text-black">Peso: {peca.peso}</p>
+                <p className="text-sm text-[#334E7F]">Peso: {peca.peso}</p>
               )}
 
               {peca.dimensoes && (
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Dimensões: {peca.dimensoes}
                 </p>
               )}
 
-              <p className="text-sm text-black">Status: {peca.status}</p>
+              <p className="text-sm text-[#334E7F]">Status: {peca.status}</p>
 
               <div className="flex gap-2 mt-3 flex-wrap">
                 <button
                   onClick={() => onEdit(peca)}
-                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                  className="bg-[#334E7F] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#28406b]"
                 >
                   Editar
                 </button>
 
                 <button
                   onClick={() => onDelete(peca)}
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                  className="bg-[#C94545] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#AD3A3A]"
                 >
                   Desativar
                 </button>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Header from "../../components/Header";
+import PageTitle from "../../components/pageTitle";
 import Card from "../../components/Card";
 import ModalIncluir from "../../components/modalIncluir";
 import ModalDesativados from "../../components/modalDesativados";
@@ -266,36 +267,36 @@ export default function Operadores() {
   const operadoresInativos = operadores.filter((op) => op.status === "Desativado");
 
   if (loading) {
-    return <p className="p-6">Carregando operadores...</p>;
+    return <p className="p-6 text-[#697385]">Carregando operadores...</p>;
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
+    <div className="min-h-screen bg-[#EBECF7] flex flex-col">
       <Header />
 
-      <div className="p-6 flex flex-col gap-6">
-        <div className="flex justify-end">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+        <PageTitle title="Operadores" subtitle="Disponibilidade da mão de obra">
           <button
             onClick={() => setShowDesativados(true)}
-            className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+            className="px-4 py-2 rounded border border-[#334E7F]/30 bg-white text-[#334E7F] font-semibold hover:bg-[#334E7F]/10 transition-colors"
           >
             Mostrar desativados
           </button>
-        </div>
+        </PageTitle>
 
         {operadoresAtivos.length === 0 ? (
-          <p className="text-gray-500 text-center">
+          <p className="text-[#697385] text-center">
             Nenhum operador ativo encontrado
           </p>
         ) : (
           <div className="flex flex-col gap-4">
             {operadoresAtivos.map((op) => (
               <Card key={op.pk_operadorID} title={op.nome}>
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Especialização: {op.especializacao}
                 </p>
 
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Disponibilidade:{" "}
                   <span
                     className={
@@ -311,20 +312,20 @@ export default function Operadores() {
                 <div className="flex gap-2 mt-3">
                   <button onClick={() => {setOperadorSelecionado(op); 
                                           setModalEditOpen(true) }}
-                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                    className="bg-[#334E7F] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#28406b]"
                   >
                     Editar
                   </button>
 
                   <button onClick={() => handleToggleDisponibilidade(op.pk_operadorID)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                    className="bg-[#4A48A8] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#3d3b8f]"
                   >
                     Alternar Disponibilidade
                   </button>
 
                   <button
                     onClick={() => handleDeactivate(op.pk_operadorID)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    className="bg-[#C94545] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#AD3A3A]"
                   >
                     Desativar
                   </button>
@@ -343,12 +344,15 @@ export default function Operadores() {
           right-6
           w-14
           h-14
-          bg-green-600
+          bg-[#2E9B5E]
           text-white
-          text-2xl
+          text-3xl
+          leading-none
           rounded-full
-          shadow-lg
-          hover:bg-green-700
+          shadow-xl
+          transition-all
+          hover:scale-105
+          hover:bg-[#27844F]
           flex
           items-center
           justify-center
