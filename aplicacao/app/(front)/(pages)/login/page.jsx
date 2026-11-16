@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import logo from "@/app/(front)/assets/Logo Meteor.png";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import Swal from "sweetalert2";
 
+import { BrandLogo, CosmoMarca } from "@/app/(front)/components/marca";
 import { loginService } from "@/app/(front)/services/loginService";
 
 export default function Login() {
@@ -58,34 +57,47 @@ export default function Login() {
   }
 
   return (
-    <div className="flex h-screen">
-      <div className="hidden md:flex w-1/2 bg-[#4E342E] items-center justify-center flex-col text-white p-10">
-        <Image
-          src={logo}
-          alt="Logo Meteor"
-          width={600}
-          height={600}
-          className="mb-6"
-        />
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-[#EBECF7]">
+      {/* Painel esquerdo — marca sobre o navy */}
+      <div className="relative hidden md:flex items-center justify-center p-10 md:p-12 bg-[#11284F] overflow-hidden">
+        <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-[#4A48A8]/20 blur-3xl" />
+        <div className="absolute -bottom-32 -right-16 w-80 h-80 rounded-full bg-[#334E7F]/40 blur-3xl" />
+
+        <div className="relative flex flex-col items-center text-center">
+          <BrandLogo width={340} claro />
+
+          <p className="mt-6 text-sm text-white/50 tracking-wide">
+            Gestão industrial do começo ao fim
+          </p>
+        </div>
       </div>
 
       {/* FORM */}
-      <div className="flex w-full md:w-1/2 items-center justify-center bg-[#F9F7F4]">
-        <div className="w-[22rem] flex flex-col gap-6 bg-white p-8 rounded-xl shadow-md">
-          <h2 className="text-3xl font-bold text-center text-[#4E342E]">
-            Login
+      <div className="flex items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-sm">
+          <div className="md:hidden flex justify-center mb-8">
+            <CosmoMarca size={34} legenda />
+          </div>
+
+          <h2
+            className="text-center text-3xl font-bold tracking-[0.12em] text-[#11284F]"
+            style={{
+              fontFamily: "var(--font-playfair), Georgia, serif",
+            }}
+          >
+            LOGIN
           </h2>
 
-          <p className="text-sm text-gray-600 text-center">
+          <p className="mt-2 text-sm text-center text-[#697385]">
             Faça login para acessar o sistema
           </p>
 
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <form className="mt-8 flex flex-col gap-4" onSubmit={handleSubmit}>
 
             {/* EMAIL */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-[#4E342E]">
-                Email
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-semibold text-[#334E7F]">
+                E-mail
               </label>
 
               <input
@@ -94,22 +106,27 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="
-                text-gray-900
-                placeholder-gray-400
-                border border-gray-300
-                rounded-md
-                p-2
+                w-full
+                rounded-full
+                px-5
+                py-3
+                text-sm
+                text-[#11284F]
+                bg-white
+                border
+                border-[#334E7F]/15
+                placeholder:text-[#697385]/60
                 focus:outline-none
                 focus:ring-2
-                focus:ring-[#C69214]
-                transition
+                focus:ring-[#4A48A8]/40
+                transition-shadow
                 "
               />
             </div>
 
             {/* SENHA */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-[#4E342E]">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-semibold text-[#334E7F]">
                 Senha
               </label>
 
@@ -120,17 +137,21 @@ export default function Login() {
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   className="
-                  border border-gray-300
-                  rounded-md
-                  p-2
-                  pr-10
-                  text-gray-900
-                  placeholder-gray-400
+                  w-full
+                  rounded-full
+                  px-5
+                  py-3
+                  pr-20
+                  text-sm
+                  text-[#11284F]
+                  bg-white
+                  border
+                  border-[#334E7F]/15
+                  placeholder:text-[#697385]/60
                   focus:outline-none
                   focus:ring-2
-                  focus:ring-[#C69214]
-                  transition
-                  w-full
+                  focus:ring-[#4A48A8]/40
+                  transition-shadow
                   "
                 />
 
@@ -140,22 +161,27 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="
                   absolute
-                  right-2
+                  right-4
                   top-1/2
                   -translate-y-1/2
-                  text-gray-500
-                  hover:text-gray-700
-                  transition
+                  text-xs
+                  font-semibold
+                  text-[#4A48A8]
+                  hover:text-[#3d3b8f]
+                  transition-colors
                   "
                 >
-                  {showPassword ? "hiden" : "show"}
+                  {showPassword ? "ocultar" : "mostrar"}
                 </button>
               </div>
             </div>
 
             {/* CHECKBOX */}
-            <div className="flex items-center gap-2 text-sm text-[#4E342E]">
-              <input type="checkbox" className="accent-[#C69214]" />
+            <div className="flex items-center gap-2 text-sm text-[#334E7F]">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-[#4A48A8]"
+              />
 
               <label>Manter logado</label>
             </div>
@@ -163,25 +189,31 @@ export default function Login() {
             <button
               type="submit"
               className="
-              bg-[#C69214]
+              w-full
+              rounded-full
+              py-3.5
+              mt-2
+              bg-[#11284F]
               text-white
-              p-2
-              rounded-md
-              hover:bg-[#a87a10]
-              transition
-              font-medium
+              text-sm
+              font-bold
+              tracking-[0.14em]
+              hover:bg-[#1c2947]
+              transition-colors
               "
             >
-              Entrar
+              ENTRAR
             </button>
 
             <Link
               href="/forgot"
               className="
-              text-sm
-              text-[#C69214]
-              hover:underline
               text-center
+              text-[13px]
+              font-semibold
+              text-[#4A48A8]
+              hover:text-[#3d3b8f]
+              transition-colors
               "
             >
               Esqueceu sua senha?

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import HamburgerMenu from "./HamburguerMenu";
+import { CosmoMarca } from "./marca";
 
 export default function Header() {
   const [usuario, setUsuario] = useState("");
@@ -15,6 +16,7 @@ export default function Header() {
     const user = localStorage.getItem("usuario");
 
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUsuario(user);
     }
   }, []);
@@ -28,36 +30,27 @@ export default function Header() {
   }
 
   return (
-    <header className="w-full bg-[#4E342E] shadow-md relative z-40">
-      <div className="w-full flex justify-between items-center px-6 py-4">
-        <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-40 w-full h-14 bg-white border-b border-[#334E7F]/10 shadow-sm">
+      <div className="w-full h-full flex justify-between items-center px-4 gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <HamburgerMenu />
 
-          <Link href="/">
-            <h1 className="text-2xl font-bold text-white tracking-wide hover:text-[#C69214] transition cursor-pointer">
-              Meteor
-            </h1>
+          <Link href="/" className="flex items-center min-w-0">
+            <CosmoMarca size={26} />
           </Link>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-200">
-            {usuario ? `Usuário: ${usuario}` : "Usuário não identificado"}
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="hidden sm:block text-sm text-[#697385] truncate">
+            Usuário:{" "}
+            <span className="text-[#11284F] font-semibold">
+              {usuario || "não identificado"}
+            </span>
           </span>
 
           <button
             onClick={logout}
-            className="
-              bg-[#C69214]
-              text-white
-              px-4
-              py-2
-              rounded-md
-              hover:bg-[#a87a10]
-              transition
-              text-sm
-              font-medium
-            "
+            className="bg-[#4A48A8] hover:bg-[#3d3b8f] text-white px-3 py-1.5 rounded text-sm font-bold transition-colors flex-shrink-0"
           >
             Sair
           </button>

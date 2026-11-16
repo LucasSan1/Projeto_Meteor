@@ -3,9 +3,65 @@
 import { useEffect, useState } from "react";
 
 import Header from "./components/Header";
-import Card from "./components/Card";
+import {
+  IconeAlerta,
+  IconeCheck,
+  IconeEquipamento,
+  IconeFornecedor,
+  IconeGauge,
+  IconeMaquina,
+  IconeMateria,
+  IconeOrdem,
+  IconePeca,
+  IconePessoa,
+  IconeRelogio,
+  IconeTendencia,
+} from "./components/icones";
 
 import Swal from "sweetalert2";
+
+// Tons das caixinhas de KPI, no mesmo espírito do painel do Cosmo
+const TONS = {
+  amber: "bg-amber-50 border-amber-200 text-amber-700",
+  navy: "bg-blue-50 border-blue-200 text-blue-800",
+  green: "bg-green-50 border-green-200 text-green-700",
+  red: "bg-red-50 border-red-200 text-red-700",
+  slate: "bg-slate-50 border-slate-200 text-slate-600",
+  indigo: "bg-[#EFEEFA] border-[#C9C8EC] text-[#4A48A8]",
+};
+
+function Kpi({ titulo, valor, dica, tom = "navy", Icone }) {
+  return (
+    <div className={`rounded-xl border p-4 ${TONS[tom]}`}>
+      <div className="w-9 h-9 rounded-lg bg-white/70 flex items-center justify-center mb-3">
+        <Icone size={18} />
+      </div>
+
+      <div className="text-2xl font-bold leading-tight">{valor}</div>
+
+      <div className="text-xs text-[#697385] mt-1 leading-snug">{titulo}</div>
+
+      {dica && (
+        <p className="text-[11px] text-[#697385]/80 mt-1 leading-snug">
+          {dica}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Secao({ titulo, children }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className="w-1 h-5 rounded-full bg-[#4A48A8]" />
+        <h2 className="text-lg font-bold text-[#11284F]">{titulo}</h2>
+      </div>
+
+      {children}
+    </section>
+  );
+}
 
 export default function Home() {
   const [dashboard, setDashboard] = useState(null);
@@ -50,279 +106,238 @@ export default function Home() {
   }, []);
 
   if (loading) {
-    return <p className="p-6">Carregando dashboard...</p>;
+    return <p className="p-6 text-[#697385]">Carregando dashboard...</p>;
   }
 
   if (!dashboard) {
-    return <p className="p-6">Erro ao carregar dashboard.</p>;
+    return <p className="p-6 text-[#697385]">Erro ao carregar dashboard.</p>;
   }
 
   return (
-    <div
-      className="
-      min-h-screen
-      bg-[#F9F7F4]
-      flex
-      flex-col
-    "
-    >
+    <div className="min-h-screen bg-[#EBECF7] flex flex-col">
       <Header />
 
-      <div
-        className="
-        p-6
-        flex
-        flex-col
-        gap-6
-      "
-      >
-        <h1
-          className="
-          text-2xl
-          font-bold
-          text-[#4E342E]
-        "
-        >
-          Dashboard
-        </h1>
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[#11284F]">Dashboard</h1>
+          <p className="text-sm text-[#697385]">
+            Visão geral da produção, do patrimônio e da qualidade
+          </p>
+        </div>
+
+        {/* Resumo do clima da fábrica */}
+        <div className="bg-[#11284F] text-white rounded-xl p-4 md:p-5 flex gap-4">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+            <IconeGauge size={20} className="text-[#c9c8ec]" />
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#c9c8ec] mb-1">
+              Leitura do momento
+            </p>
+            <p className="text-sm leading-relaxed text-white/90">
+              Acompanhe ordens em andamento, disponibilidade de máquinas e o
+              desempenho da qualidade em um só lugar.
+            </p>
+          </div>
+        </div>
 
         {/* ORDENS */}
-        <div>
-          <h2 className="text-xl font-bold text-[#4E342E] mb-3">
-            Ordens de Produção
-          </h2>
+        <Secao titulo="Ordens de Produção">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Kpi
+              tom="amber"
+              Icone={IconeRelogio}
+              titulo="Ordens Pendentes"
+              valor={dashboard.ordens.pendentes}
+              dica="Aguardando início"
+            />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card
-              title="Ordens Pendentes"
-              value={dashboard.ordens.pendentes}
-            >
-              <p className="text-sm text-gray-500">
-                Aguardando início
-              </p>
-            </Card>
+            <Kpi
+              tom="navy"
+              Icone={IconeOrdem}
+              titulo="Em Produção"
+              valor={dashboard.ordens.producao}
+              dica="Atualmente em fabricação"
+            />
 
-            <Card
-              title="Em Produção"
-              value={dashboard.ordens.producao}
-            >
-              <p className="text-sm text-gray-500">
-                Atualmente em fabricação
-              </p>
-            </Card>
+            <Kpi
+              tom="green"
+              Icone={IconeCheck}
+              titulo="Finalizadas"
+              valor={dashboard.ordens.finalizadas}
+              dica="Produções concluídas"
+            />
 
-            <Card
-              title="Finalizadas"
-              value={dashboard.ordens.finalizadas}
-            >
-              <p className="text-sm text-gray-500">
-                Produções concluídas
-              </p>
-            </Card>
-
-            <Card
-              title="Atrasadas"
-              value={dashboard.ordens.atrasadas}
-            >
-              <p className="text-sm text-gray-500">
-                Pendentes ou em produção com prazo vencido
-              </p>
-            </Card>
+            <Kpi
+              tom="red"
+              Icone={IconeAlerta}
+              titulo="Atrasadas"
+              valor={dashboard.ordens.atrasadas}
+              dica="Pendentes ou em produção com prazo vencido"
+            />
           </div>
-        </div>
+        </Secao>
 
         {/* PROFISSIONAIS */}
-        <div>
-          <h2 className="text-xl font-bold text-[#4E342E] mb-3">
-            Profissionais
-          </h2>
+        <Secao titulo="Profissionais">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Kpi
+              tom="navy"
+              Icone={IconePessoa}
+              titulo="Operadores"
+              valor={dashboard.profissionais.operadores}
+              dica="Aptos para produção"
+            />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card
-              title="Operadores"
-              value={dashboard.profissionais.operadores}
-            >
-              <p className="text-sm text-gray-500">
-                Aptos para produção
-              </p>
-            </Card>
-
-            <Card
-              title="Mecânicos"
-              value={dashboard.profissionais.mecanicos}
-            >
-              <p className="text-sm text-gray-500">
-                Aptos para manutenção
-              </p>
-            </Card>
+            <Kpi
+              tom="indigo"
+              Icone={IconePessoa}
+              titulo="Mecânicos"
+              valor={dashboard.profissionais.mecanicos}
+              dica="Aptos para manutenção"
+            />
           </div>
-        </div>
+        </Secao>
 
         {/* MÁQUINAS */}
-        <div>
-          <h2 className="text-xl font-bold text-[#4E342E] mb-3">
-            Máquinas
-          </h2>
+        <Secao titulo="Máquinas">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Kpi
+              tom="green"
+              Icone={IconeMaquina}
+              titulo="Ativas"
+              valor={dashboard.maquinas.ativas}
+              dica="Em operação"
+            />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card
-              title="Ativas"
-              value={dashboard.maquinas.ativas}
-            >
-              <p className="text-sm text-gray-500">
-                Em operação
-              </p>
-            </Card>
+            <Kpi
+              tom="slate"
+              Icone={IconeMaquina}
+              titulo="Desativadas"
+              valor={dashboard.maquinas.desativadas}
+              dica="Fora de uso"
+            />
 
-            <Card
-              title="Desativadas"
-              value={dashboard.maquinas.desativadas}
-            >
-              <p className="text-sm text-gray-500">
-                Fora de uso
-              </p>
-            </Card>
+            <Kpi
+              tom="amber"
+              Icone={IconeAlerta}
+              titulo="Manutenções em aberto"
+              valor={dashboard.maquinas.manutencaoPendente}
+              dica="Programadas ou em execução"
+            />
 
-            <Card
-              title="Manutenções em aberto"
-              value={dashboard.maquinas.manutencaoPendente}
-            >
-              <p className="text-sm text-gray-500">
-                Programadas ou em execução
-              </p>
-            </Card>
-
-            <Card
-              title="Manutenções atrasadas"
-              value={dashboard.maquinas.manutencoesAtrasadas}
-            >
-              <p className="text-sm text-gray-500">
-                Passaram do término previsto
-              </p>
-            </Card>
+            <Kpi
+              tom="red"
+              Icone={IconeAlerta}
+              titulo="Manutenções atrasadas"
+              valor={dashboard.maquinas.manutencoesAtrasadas}
+              dica="Passaram do término previsto"
+            />
           </div>
-        </div>
+        </Secao>
 
         {/* ESTOQUE */}
-        <div>
-          <h2 className="text-xl font-bold text-[#4E342E] mb-3">
-            Cadastros
-          </h2>
+        <Secao titulo="Cadastros">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <Kpi
+              tom="navy"
+              Icone={IconeMateria}
+              titulo="Matérias-primas"
+              valor={dashboard.estoque.materias}
+              dica="Itens ativos"
+            />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <Card
-              title="Matérias-primas"
-              value={dashboard.estoque.materias}
-            >
-              <p className="text-sm text-gray-500">
-                Itens ativos
-              </p>
-            </Card>
+            <Kpi
+              tom="red"
+              Icone={IconeAlerta}
+              titulo="Estoque baixo"
+              valor={dashboard.estoque.estoqueBaixo}
+              dica="Abaixo do mínimo"
+            />
 
-            <Card
-              title="Estoque baixo"
-              value={dashboard.estoque.estoqueBaixo}
-            >
-              <p className="text-sm text-gray-500">
-                Abaixo do mínimo
-              </p>
-            </Card>
+            <Kpi
+              tom="indigo"
+              Icone={IconePeca}
+              titulo="Peças"
+              valor={dashboard.estoque.pecas}
+              dica="Peças ativas"
+            />
 
-            <Card
-              title="Peças"
-              value={dashboard.estoque.pecas}
-            >
-              <p className="text-sm text-gray-500">
-                Peças ativas
-              </p>
-            </Card>
+            <Kpi
+              tom="navy"
+              Icone={IconeEquipamento}
+              titulo="Equipamentos"
+              valor={dashboard.estoque.equipamentos}
+              dica="Equipamentos ativos"
+            />
 
-            <Card
-              title="Equipamentos"
-              value={dashboard.estoque.equipamentos}
-            >
-              <p className="text-sm text-gray-500">
-                Equipamentos ativos
-              </p>
-            </Card>
-
-            <Card
-              title="Fornecedores"
-              value={dashboard.estoque.fornecedores}
-            >
-              <p className="text-sm text-gray-500">
-                Fornecedores ativos
-              </p>
-            </Card>
+            <Kpi
+              tom="green"
+              Icone={IconeFornecedor}
+              titulo="Fornecedores"
+              valor={dashboard.estoque.fornecedores}
+              dica="Fornecedores ativos"
+            />
           </div>
-        </div>
+        </Secao>
 
         {/* QUALIDADE */}
-        <div>
-          <h2 className="text-xl font-bold text-[#4E342E] mb-3">
-            Qualidade
-          </h2>
+        <Secao titulo="Qualidade">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <Kpi
+              tom="navy"
+              Icone={IconeCheck}
+              titulo="Inspeções"
+              valor={dashboard.qualidade.inspecoes}
+              dica="Ordens inspecionadas"
+            />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card
-              title="Inspeções"
-              value={dashboard.qualidade.inspecoes}
-            >
-              <p className="text-sm text-gray-500">
-                Ordens inspecionadas
-              </p>
-            </Card>
+            <Kpi
+              tom="indigo"
+              Icone={IconePeca}
+              titulo="Peças inspecionadas"
+              valor={dashboard.qualidade.inspecionado}
+              dica="Total produzido e conferido"
+            />
 
-            <Card
-              title="Peças inspecionadas"
-              value={dashboard.qualidade.inspecionado}
-            >
-              <p className="text-sm text-gray-500">
-                Total produzido e conferido
-              </p>
-            </Card>
-
-            <Card
-              title="Índice de rejeição"
-              value={
+            <Kpi
+              tom="red"
+              Icone={IconeTendencia}
+              titulo="Índice de rejeição"
+              valor={
                 dashboard.qualidade.indiceRejeicao === null
                   ? "não calculável"
                   : `${dashboard.qualidade.indiceRejeicao}%`
               }
-            >
-              <p className="text-sm text-gray-500">
-                Rejeitadas ÷ inspecionadas
-              </p>
-            </Card>
+              dica="Rejeitadas ÷ inspecionadas"
+            />
 
-            <Card
-              title="Peças aprovadas"
-              value={dashboard.qualidade.aprovadas}
-            >
-              <p className="text-sm text-gray-500">
-                Dentro da tolerância
-              </p>
-            </Card>
+            <Kpi
+              tom="green"
+              Icone={IconeCheck}
+              titulo="Peças aprovadas"
+              valor={dashboard.qualidade.aprovadas}
+              dica="Dentro da tolerância"
+            />
 
-            <Card
-              title="Peças rejeitadas"
-              value={dashboard.qualidade.rejeitadas}
-            >
-              <p className="text-sm text-gray-500">
-                Total rejeitado nas inspeções
-              </p>
-            </Card>
+            <Kpi
+              tom="red"
+              Icone={IconeAlerta}
+              titulo="Peças rejeitadas"
+              valor={dashboard.qualidade.rejeitadas}
+              dica="Total rejeitado nas inspeções"
+            />
 
-            <Card
-              title="Perdas x retrabalho"
-              value={`${dashboard.qualidade.perdas} / ${dashboard.qualidade.retrabalhos}`}
-            >
-              <p className="text-sm text-gray-500">
-                Refugo definitivo x peças recuperáveis
-              </p>
-            </Card>
+            <Kpi
+              tom="amber"
+              Icone={IconeTendencia}
+              titulo="Perdas x retrabalho"
+              valor={`${dashboard.qualidade.perdas} / ${dashboard.qualidade.retrabalhos}`}
+              dica="Refugo definitivo x peças recuperáveis"
+            />
           </div>
-        </div>
+        </Secao>
       </div>
     </div>
   );

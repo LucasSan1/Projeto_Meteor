@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import Swal from "sweetalert2";
 
+import { IconeX } from "./icones";
+
 // Conclusão é onde a ordem vira história, consumo, produção e inspeção saem daqui juntos
 export default function ModalConclusaoProducao({ ordem, onClose, onConfirm }) {
   const materiais = ordem.materiais || [];
@@ -221,195 +223,204 @@ export default function ModalConclusaoProducao({ ordem, onClose, onConfirm }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col gap-4">
-        <div>
-          <h2 className="text-lg font-bold text-[#4E342E]">
-            Concluir {ordem.codigo}
-          </h2>
-          <p className="text-sm text-gray-600">
-            {ordem.nomePeca} — {ordem.quantidadePlanejada} peças planejadas
-          </p>
-        </div>
-
-        {materiais.length === 0 ? (
-          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
-            Esta ordem é antiga e não tem matérias-primas vinculadas. O consumo
-            será registrado vazio; dá pra seguir só com a produção e a inspeção.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <h3 className="font-semibold text-[#4E342E]">Consumo efetivo</h3>
-
-            {materiais.map((material) => (
-              <div
-                key={material.fk_materiaID}
-                className="flex flex-col sm:flex-row sm:items-center gap-2 border-b pb-2"
-              >
-                <div className="flex-1">
-                  <p className="text-sm text-black">{material.materia}</p>
-                  <p className="text-xs text-gray-500">
-                    Planejado: {material.quantidadePrevista}{" "}
-                    {material.unidadeMedida} — disponível:{" "}
-                    {material.quantidadeEstoque} {material.unidadeMedida}
-                  </p>
-                </div>
-
-                <input
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  value={consumo[material.fk_materiaID] ?? ""}
-                  onChange={(e) =>
-                    atualizarConsumo(material.fk_materiaID, e.target.value)
-                  }
-                  className="border rounded p-2 w-full sm:w-40"
-                />
-              </div>
-            ))}
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[#334E7F]/10 flex-shrink-0">
+          <div>
+            <h2 className="text-base font-semibold text-[#11284F]">
+              Concluir {ordem.codigo}
+            </h2>
+            <p className="text-sm text-[#697385]">
+              {ordem.nomePeca} — {ordem.quantidadePlanejada} peças planejadas
+            </p>
           </div>
-        )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Campo label="Peças Produzidas">
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={formData.quantidadeProduzida}
-              onChange={(e) => atualizarProduzida(e.target.value)}
-              className="border rounded p-2"
-            />
-          </Campo>
-
-          <Campo label="Aprovadas">
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={formData.aprovadas}
-              onChange={(e) => atualizarCampo("aprovadas", e.target.value)}
-              className="border rounded p-2"
-            />
-          </Campo>
-
-          <Campo label="Rejeitadas">
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={formData.rejeitadas}
-              onChange={(e) => atualizarRejeitadas(e.target.value)}
-              className="border rounded p-2"
-            />
-          </Campo>
+          <button
+            onClick={onClose}
+            aria-label="Fechar"
+            className="text-[#697385] hover:text-[#11284F] transition-colors flex-shrink-0"
+          >
+            <IconeX size={18} />
+          </button>
         </div>
 
-        {Number(formData.rejeitadas) > 0 && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-[#4E342E]">
-                Motivos da rejeição
-              </h3>
+        <div className="p-5 flex flex-col gap-4 overflow-y-auto">
+          {materiais.length === 0 ? (
+            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              Esta ordem é antiga e não tem matérias-primas vinculadas. O consumo
+              será registrado vazio; dá pra seguir só com a produção e a inspeção.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <h3 className="font-semibold text-[#11284F]">Consumo efetivo</h3>
 
-              <button
-                type="button"
-                onClick={adicionarRejeicao}
-                className="text-sm bg-[#C69214] text-white px-3 py-1 rounded hover:brightness-110"
-              >
-                + Motivo
-              </button>
+              {materiais.map((material) => (
+                <div
+                  key={material.fk_materiaID}
+                  className="flex flex-col sm:flex-row sm:items-center gap-2 border-b border-[#334E7F]/10 pb-2"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#334E7F]">{material.materia}</p>
+                    <p className="text-xs text-[#697385]">
+                      Planejado: {material.quantidadePrevista}{" "}
+                      {material.unidadeMedida} — disponível:{" "}
+                      {material.quantidadeEstoque} {material.unidadeMedida}
+                    </p>
+                  </div>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    value={consumo[material.fk_materiaID] ?? ""}
+                    onChange={(e) =>
+                      atualizarConsumo(material.fk_materiaID, e.target.value)
+                    }
+                    className="campo w-full sm:w-40"
+                  />
+                </div>
+              ))}
             </div>
+          )}
 
-            {rejeicoes.map((rejeicao, index) => (
-              <div
-                key={index}
-                className="border rounded p-3 flex flex-col gap-2 bg-[#F9F7F4]"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <Campo label="Quantidade">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Campo label="Peças Produzidas">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={formData.quantidadeProduzida}
+                onChange={(e) => atualizarProduzida(e.target.value)}
+                className="campo"
+              />
+            </Campo>
+
+            <Campo label="Aprovadas">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={formData.aprovadas}
+                onChange={(e) => atualizarCampo("aprovadas", e.target.value)}
+                className="campo"
+              />
+            </Campo>
+
+            <Campo label="Rejeitadas">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={formData.rejeitadas}
+                onChange={(e) => atualizarRejeitadas(e.target.value)}
+                className="campo"
+              />
+            </Campo>
+          </div>
+
+          {Number(formData.rejeitadas) > 0 && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-[#11284F]">
+                  Motivos da rejeição
+                </h3>
+
+                <button
+                  type="button"
+                  onClick={adicionarRejeicao}
+                  className="text-sm bg-[#4A48A8] text-white px-3 py-1.5 rounded font-semibold hover:bg-[#3d3b8f] transition-colors"
+                >
+                  + Motivo
+                </button>
+              </div>
+
+              {rejeicoes.map((rejeicao, index) => (
+                <div
+                  key={index}
+                  className="border border-[#334E7F]/10 rounded-lg p-3 flex flex-col gap-2 bg-[#F7F8FC]"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Campo label="Quantidade">
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={rejeicao.quantidade}
+                        onChange={(e) =>
+                          atualizarRejeicao(index, "quantidade", e.target.value)
+                        }
+                        className="campo"
+                      />
+                    </Campo>
+
+                    <Campo label="Tipo">
+                      <select
+                        value={rejeicao.tipo}
+                        onChange={(e) =>
+                          atualizarRejeicao(index, "tipo", e.target.value)
+                        }
+                        className="campo"
+                      >
+                        <option value="Perda">Perda</option>
+                        <option value="Retrabalho">Retrabalho</option>
+                      </select>
+                    </Campo>
+
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        onClick={() => removerRejeicao(index)}
+                        className="bg-[#C94545] text-white px-3 py-2 rounded font-semibold hover:bg-[#AD3A3A] transition-colors w-full"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  </div>
+
+                  <Campo label="Motivo">
                     <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={rejeicao.quantidade}
+                      type="text"
+                      value={rejeicao.motivoRejeicao}
                       onChange={(e) =>
-                        atualizarRejeicao(index, "quantidade", e.target.value)
+                        atualizarRejeicao(index, "motivoRejeicao", e.target.value)
                       }
-                      className="border rounded p-2"
+                      className="campo"
                     />
                   </Campo>
 
-                  <Campo label="Tipo">
-                    <select
-                      value={rejeicao.tipo}
+                  <Campo label="Ações corretivas (opcional)">
+                    <input
+                      type="text"
+                      value={rejeicao.acoesCorretivas}
                       onChange={(e) =>
-                        atualizarRejeicao(index, "tipo", e.target.value)
+                        atualizarRejeicao(index, "acoesCorretivas", e.target.value)
                       }
-                      className="border rounded p-2"
-                    >
-                      <option value="Perda">Perda</option>
-                      <option value="Retrabalho">Retrabalho</option>
-                    </select>
+                      className="campo"
+                    />
                   </Campo>
-
-                  <div className="flex items-end">
-                    <button
-                      type="button"
-                      onClick={() => removerRejeicao(index)}
-                      className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 w-full"
-                    >
-                      Remover
-                    </button>
-                  </div>
                 </div>
+              ))}
+            </div>
+          )}
 
-                <Campo label="Motivo">
-                  <input
-                    type="text"
-                    value={rejeicao.motivoRejeicao}
-                    onChange={(e) =>
-                      atualizarRejeicao(index, "motivoRejeicao", e.target.value)
-                    }
-                    className="border rounded p-2"
-                  />
-                </Campo>
+          <Campo label="Observações da inspeção">
+            <textarea
+              value={formData.observacoes}
+              onChange={(e) => atualizarCampo("observacoes", e.target.value)}
+              rows={2}
+              className="campo"
+            />
+          </Campo>
+        </div>
 
-                <Campo label="Ações corretivas (opcional)">
-                  <input
-                    type="text"
-                    value={rejeicao.acoesCorretivas}
-                    onChange={(e) =>
-                      atualizarRejeicao(index, "acoesCorretivas", e.target.value)
-                    }
-                    className="border rounded p-2"
-                  />
-                </Campo>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <Campo label="Observações da inspeção">
-          <textarea
-            value={formData.observacoes}
-            onChange={(e) => atualizarCampo("observacoes", e.target.value)}
-            rows={2}
-            className="border rounded p-2"
-          />
-        </Campo>
-
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-          >
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-[#334E7F]/10 flex-shrink-0">
+          <button onClick={onClose} className="btn-secundario">
             Cancelar
           </button>
 
           <button
             onClick={handleConfirm}
-            className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+            className="px-4 py-2 rounded bg-[#2E9B5E] text-white font-semibold hover:bg-[#27844F] transition-colors"
           >
             Concluir Ordem
           </button>
@@ -422,7 +433,7 @@ export default function ModalConclusaoProducao({ ordem, onClose, onConfirm }) {
 function Campo({ label, children }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm text-black">{label}</label>
+      <label className="text-sm font-medium text-gray-700">{label}</label>
       {children}
     </div>
   );

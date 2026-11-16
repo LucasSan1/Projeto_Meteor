@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Header from "../../components/Header";
+import PageTitle from "../../components/pageTitle";
 import Card from "../../components/Card";
 import ModalStatus from "../../components/modalStatus";
 import ModalDesativados from "../../components/modalDesativados";
@@ -289,7 +290,7 @@ export default function OrdemServico() {
   }
 
   if (loading) {
-    return <p className="p-6">Carregando ordens...</p>;
+    return <p className="p-6 text-[#697385]">Carregando ordens...</p>;
   }
 
   // FILTROS
@@ -313,25 +314,25 @@ export default function OrdemServico() {
   const proximoCodigo = gerarProximoCodigoOrdem(ordens);
 
   return (
-    <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
+    <div className="min-h-screen bg-[#EBECF7] flex flex-col">
       <Header />
 
-      <div className="p-6 flex flex-col gap-6">
-        <div className="flex justify-end gap-2">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+        <PageTitle title="Ordens de Produção" subtitle="Planejamento e execução da produção">
           <button
             onClick={() => setShowConcluidas(true)}
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            className="px-4 py-2 rounded bg-[#334E7F] text-white hover:bg-[#28406b]"
           >
             Ver Concluídas
           </button>
 
           <button
             onClick={() => setShowCanceladas(true)}
-            className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+            className="px-4 py-2 rounded border border-[#334E7F]/30 bg-white text-[#334E7F] font-semibold hover:bg-[#334E7F]/10 transition-colors"
           >
             Ver Canceladas
           </button>
-        </div>
+        </PageTitle>
 
         <Section
           title="Ordens Pendentes"
@@ -363,12 +364,12 @@ export default function OrdemServico() {
             right-6
             w-14
             h-14
-            bg-green-600
+            bg-[#2E9B5E]
             text-white
             text-2xl
             rounded-full
             shadow-lg
-            hover:bg-green-700
+            hover:bg-[#27844F]
             flex
             items-center
             justify-center
@@ -486,46 +487,46 @@ function Section({
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between cursor-pointer select-none"
       >
-        <h2 className="text-xl font-bold text-[#4E342E]">
+        <h2 className="text-xl font-bold text-[#11284F]">
           {title} ({ordens.length})
         </h2>
 
-        <span className="text-lg text-black">{open ? "-" : "+"}</span>
+        <span className="w-7 h-7 rounded-full bg-white border border-[#334E7F]/15 text-[#334E7F] flex items-center justify-center text-base leading-none">{open ? "-" : "+"}</span>
       </div>
 
       {open && (
         <div className="flex flex-col gap-4">
           {ordens.map((ordem) => (
             <Card key={ordem.pk_ordemID} title={ordem.codigo}>
-              <p className="text-sm text-black">Peça: {ordem.nomePeca}</p>
+              <p className="text-sm text-[#334E7F]">Peça: {ordem.nomePeca}</p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Quantidade planejada: {ordem.quantidadePlanejada}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Especialização: {ordem.especializacao}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Operador: {ordem.operador}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Início planejado: {formatData(ordem.inicioPlanejado)}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Término planejado: {formatData(ordem.terminoPlanejado)}
               </p>
 
               {ordem.inicioEfetivo && (
-                <p className="text-sm text-black">
+                <p className="text-sm text-[#334E7F]">
                   Início efetivo: {formatDataHora(ordem.inicioEfetivo)}
                 </p>
               )}
 
-              <p className="text-sm text-black">Status: {ordem.status}</p>
+              <p className="text-sm text-[#334E7F]">Status: {ordem.status}</p>
 
               {ordem.atrasada && (
                 <p className="text-sm text-red-600 font-semibold">
@@ -537,14 +538,14 @@ function Section({
 
               {ordem.materiais?.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-sm font-semibold text-[#4E342E]">
+                  <p className="text-sm font-semibold text-[#11284F]">
                     Materiais
                   </p>
 
                   {ordem.materiais.map((material) => (
                     <p
                       key={material.fk_materiaID}
-                      className="text-sm text-black"
+                      className="text-sm text-[#334E7F]"
                     >
                       {material.materia}: {material.quantidadePrevista}{" "}
                       {material.unidadeMedida}
@@ -560,7 +561,7 @@ function Section({
                 {allowStatusChange && (
                   <button
                     onClick={() => onStatus(ordem)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                    className="bg-[#4A48A8] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#3d3b8f]"
                   >
                     {modoOperador
                       ? ordem.status === "Pendente"
@@ -573,7 +574,7 @@ function Section({
                 {allowEdit && (
                   <button
                     onClick={() => onEdit(ordem)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    className="bg-[#334E7F] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#28406b]"
                   >
                     Editar
                   </button>

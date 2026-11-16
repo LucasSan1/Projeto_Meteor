@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Header from "../../components/Header";
+import PageTitle from "../../components/pageTitle";
 import Card from "../../components/Card";
 import ModalIncluir from "../../components/modalIncluir";
 import ModalDesativados from "../../components/modalDesativados";
@@ -320,7 +321,7 @@ export default function ManutencoesProgramadas() {
   }
 
   if (loading) {
-    return <p className="p-6">Carregando manutenções...</p>;
+    return <p className="p-6 text-[#697385]">Carregando manutenções...</p>;
   }
 
   const isGestor = cargo === "gerente";
@@ -331,29 +332,29 @@ export default function ManutencoesProgramadas() {
   const canceladas = manutencoes.filter((m) => m.status === "Cancelada");
 
   return (
-    <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
+    <div className="min-h-screen bg-[#EBECF7] flex flex-col">
       <Header />
 
-      <div className="p-6 flex flex-col gap-6">
-        <div className="flex justify-end gap-2">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+        <PageTitle title="Manutenções Programadas" subtitle="Intervenções preventivas e corretivas">
           <button
             onClick={() => setShowConcluidas(true)}
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            className="px-4 py-2 rounded bg-[#334E7F] text-white hover:bg-[#28406b]"
           >
             Ver Concluídas
           </button>
 
           <button
             onClick={() => setShowCanceladas(true)}
-            className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+            className="px-4 py-2 rounded border border-[#334E7F]/30 bg-white text-[#334E7F] font-semibold hover:bg-[#334E7F]/10 transition-colors"
           >
             Ver Canceladas
           </button>
-        </div>
+        </PageTitle>
 
         {/* O mecânico só enxerga as manutenções atribuídas a ele */}
         {!isGestor && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[#697385]">
             Você está vendo apenas as manutenções atribuídas a você.
           </p>
         )}
@@ -393,12 +394,15 @@ export default function ManutencoesProgramadas() {
           right-6
           w-14
           h-14
-          bg-green-600
+          bg-[#2E9B5E]
           text-white
-          text-2xl
+          text-3xl
+          leading-none
           rounded-full
-          shadow-lg
-          hover:bg-green-700
+          shadow-xl
+          transition-all
+          hover:scale-105
+          hover:bg-[#27844F]
           flex
           items-center
           justify-center
@@ -503,11 +507,11 @@ function Section({
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between cursor-pointer select-none"
       >
-        <h2 className="text-xl font-bold text-[#4E342E]">
+        <h2 className="text-xl font-bold text-[#11284F]">
           {title} ({manutencoes.length})
         </h2>
 
-        <span className="text-lg text-black">{open ? "-" : "+"}</span>
+        <span className="w-7 h-7 rounded-full bg-white border border-[#334E7F]/15 text-[#334E7F] flex items-center justify-center text-base leading-none">{open ? "-" : "+"}</span>
       </div>
 
       {open && (
@@ -517,35 +521,35 @@ function Section({
               key={manutencao.pk_manutencaoID}
               title={manutencao.equipamento}
             >
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Máquina: {manutencao.maquina || "-"}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Tipo: {manutencao.tipoManutencao || "-"}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Descrição: {manutencao.descricao}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Especialização: {manutencao.especializacao}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Mecânico: {manutencao.mecanico}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Início previsto: {formatDataHora(manutencao.inicioPrevisto)}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Término previsto: {formatDataHora(manutencao.terminoPrevisto)}
               </p>
 
-              <p className="text-sm text-black">Status: {manutencao.status}</p>
+              <p className="text-sm text-[#334E7F]">Status: {manutencao.status}</p>
 
               {manutencao.atrasada && (
                 <p className="text-sm text-red-600 font-semibold">
@@ -559,7 +563,7 @@ function Section({
                 {podeIniciar && (
                   <button
                     onClick={() => onIniciar(manutencao)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                    className="bg-[#4A48A8] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#3d3b8f]"
                   >
                     Iniciar
                   </button>
@@ -568,7 +572,7 @@ function Section({
                 {onConcluir && (
                   <button
                     onClick={() => onConcluir(manutencao)}
-                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                    className="bg-[#2E9B5E] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#27844F]"
                   >
                     Concluir
                   </button>
@@ -577,7 +581,7 @@ function Section({
                 {podeEditar && (
                   <button
                     onClick={() => onEditar(manutencao)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    className="bg-[#334E7F] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#28406b]"
                   >
                     Editar
                   </button>
@@ -586,7 +590,7 @@ function Section({
                 {podeCancelar && (
                   <button
                     onClick={() => onCancelar(manutencao)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    className="bg-[#C94545] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#AD3A3A]"
                   >
                     Cancelar
                   </button>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import Header from "../../components/Header";
 import Card from "../../components/Card";
+import PageTitle from "../../components/pageTitle";
 import ModalIncluir from "../../components/modalIncluir";
 import ModalDesativados from "../../components/modalDesativados";
 
@@ -207,7 +208,7 @@ export default function Fornecedores() {
   }
 
   if (loading) {
-    return <p className="p-6">Carregando fornecedores...</p>;
+    return <p className="p-6 text-[#697385]">Carregando fornecedores...</p>;
   }
 
   // Filtros
@@ -217,18 +218,21 @@ export default function Fornecedores() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
+    <div className="min-h-screen bg-[#EBECF7] flex flex-col">
       <Header />
 
-      <div className="p-6 flex flex-col gap-8">
-        <div className="flex justify-end">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-8">
+        <PageTitle
+          title="Fornecedores"
+          subtitle="Parceiros de matéria-prima e suprimentos"
+        >
           <button
             onClick={() => setShowDesativados(true)}
-            className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+            className="px-4 py-2 rounded border border-[#334E7F]/30 bg-white text-[#334E7F] font-semibold hover:bg-[#334E7F]/10 transition-colors"
           >
             Mostrar desativados
           </button>
-        </div>
+        </PageTitle>
 
         <Section
           title="Fornecedores"
@@ -248,12 +252,15 @@ export default function Fornecedores() {
           right-6
           w-14
           h-14
-          bg-green-600
+          bg-[#2E9B5E]
           text-white
-          text-2xl
+          text-3xl
+          leading-none
           rounded-full
-          shadow-lg
-          hover:bg-green-700
+          shadow-xl
+          transition-all
+          hover:scale-105
+          hover:bg-[#27844F]
           flex
           items-center
           justify-center
@@ -334,7 +341,7 @@ function Section({ title, fornecedores, onDelete, onActivate, onEdit }) {
         onClick={() => setOpen(!open)}
         className="flex items-center justify-between cursor-pointer select-none"
       >
-        <h2 className="text-xl font-bold text-[#4E342E]">
+        <h2 className="text-xl font-bold text-[#11284F]">
           {title} ({fornecedores.length})
         </h2>
       </div>
@@ -346,35 +353,35 @@ function Section({ title, fornecedores, onDelete, onActivate, onEdit }) {
               key={fornecedor.pk_fornecedorID}
               title={fornecedor.nomeFornecedor}
             >
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 CNPJ: {fornecedor.cnpj}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Endereço: {fornecedor.endereco}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Contato: {fornecedor.contato}
               </p>
 
-              <p className="text-sm text-black">
+              <p className="text-sm text-[#334E7F]">
                 Avaliação: {fornecedor.avaliacao}
               </p>
 
-              <p className="text-sm text-black">Status: {fornecedor.status}</p>
+              <p className="text-sm text-[#334E7F]">Status: {fornecedor.status}</p>
 
               <div className="flex gap-2 mt-3 flex-wrap">
                 <button
                   onClick={() => onEdit(fornecedor)}
-                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                  className="bg-[#334E7F] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#28406b]"
                 >
                   Editar
                 </button>
 
                 <button
                   onClick={() => onDelete(fornecedor)}
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                  className="bg-[#C94545] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#AD3A3A]"
                 >
                   Desativar
                 </button>

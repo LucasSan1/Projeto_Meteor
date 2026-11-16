@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import Header from "../../components/Header";
+import PageTitle from "../../components/pageTitle";
 import ListaRegistros from "../../components/listaRegistros";
 
 import { getHistoricoOrdens } from "../../services/historicoOrdemService";
@@ -30,14 +31,16 @@ export default function HistoricoOrdens() {
   }, []);
 
   if (loading) {
-    return <p className="p-6">Carregando histórico de ordens...</p>;
+    return <p className="p-6 text-[#697385]">Carregando histórico de ordens...</p>;
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F7F4] flex flex-col">
+    <div className="min-h-screen bg-[#EBECF7] flex flex-col">
       <Header />
 
-      <div className="p-6 flex flex-col gap-6">
+      <div className="w-full max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+        <PageTitle title="Histórico de Ordens" subtitle="Ordens concluídas e seus registros" />
+
         <ListaRegistros
           title="Histórico de Ordens"
           items={historicos}

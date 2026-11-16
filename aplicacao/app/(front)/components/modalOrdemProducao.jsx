@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import Swal from "sweetalert2";
 
+import { IconeX } from "./icones";
+
 // Modal próprio da ordem porque ele tem uma lista dinâmica de materiais
 // O ModalIncluir genérico não dá conta de linhas que vão e voltam
 export default function ModalOrdemProducao({
@@ -158,186 +160,195 @@ export default function ModalOrdemProducao({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col gap-4">
-        <h2 className="text-lg font-bold text-[#4E342E]">{title}</h2>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#334E7F]/10 flex-shrink-0">
+          <h2 className="text-base font-semibold text-[#11284F]">{title}</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Campo label="Código da Ordem">
-            <input
-              type="text"
-              value={formData.codigo}
-              onChange={(e) => atualizarCampo("codigo", e.target.value)}
-              readOnly={codigoAutomatico}
-              className={`border rounded p-2 ${
-                codigoAutomatico ? "bg-gray-100 text-gray-600" : ""
-              }`}
-            />
-
-            {codigoAutomatico && (
-              <span className="text-xs text-gray-500">
-                Gerado automaticamente no padrão OP-ano-sequencial
-              </span>
-            )}
-          </Campo>
-
-          <Campo label="Peça">
-            <select
-              value={formData.pecaID}
-              onChange={(e) => atualizarCampo("pecaID", e.target.value)}
-              className="border rounded p-2"
-            >
-              <option value="">Selecione...</option>
-              {pecas.map((peca) => (
-                <option key={peca.value} value={peca.value}>
-                  {peca.label}
-                </option>
-              ))}
-            </select>
-          </Campo>
-
-          <Campo label="Quantidade Planejada">
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={formData.quantidadePlanejada}
-              onChange={(e) =>
-                atualizarCampo("quantidadePlanejada", e.target.value)
-              }
-              className="border rounded p-2"
-            />
-          </Campo>
-
-          <Campo label="Especialização Exigida">
-            <input
-              type="text"
-              value={formData.especializacao}
-              onChange={(e) => atualizarCampo("especializacao", e.target.value)}
-              className="border rounded p-2"
-            />
-          </Campo>
-
-          <Campo label="Operador">
-            <select
-              value={formData.operadorID}
-              onChange={(e) => atualizarCampo("operadorID", e.target.value)}
-              className="border rounded p-2"
-            >
-              <option value="">Selecione...</option>
-              {operadores.map((operador) => (
-                <option key={operador.value} value={operador.value}>
-                  {operador.label}
-                </option>
-              ))}
-            </select>
-          </Campo>
-
-          <Campo label="Início Planejado">
-            <input
-              type="date"
-              value={formData.inicioPlanejado}
-              onClick={abrirCalendario}
-              onChange={(e) =>
-                atualizarCampo("inicioPlanejado", e.target.value)
-              }
-              className="border rounded p-2"
-            />
-          </Campo>
-
-          <Campo label="Término Planejado">
-            <input
-              type="date"
-              value={formData.terminoPlanejado}
-              onClick={abrirCalendario}
-              onChange={(e) =>
-                atualizarCampo("terminoPlanejado", e.target.value)
-              }
-              className="border rounded p-2"
-            />
-          </Campo>
+          <button
+            onClick={onClose}
+            aria-label="Fechar"
+            className="text-[#697385] hover:text-[#11284F] transition-colors"
+          >
+            <IconeX size={18} />
+          </button>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-[#4E342E]">
-              Matérias-primas
-            </h3>
+        <div className="p-5 flex flex-col gap-4 overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Campo label="Código da Ordem">
+              <input
+                type="text"
+                value={formData.codigo}
+                onChange={(e) => atualizarCampo("codigo", e.target.value)}
+                readOnly={codigoAutomatico}
+                className={`campo ${
+                  codigoAutomatico ? "bg-[#DFE1EF]/60 text-[#697385]" : ""
+                }`}
+              />
 
-            <button
-              type="button"
-              onClick={adicionarMaterial}
-              className="text-sm bg-[#C69214] text-white px-3 py-1 rounded hover:brightness-110"
-            >
-              + Material
-            </button>
+              {codigoAutomatico && (
+                <span className="text-xs text-[#697385]">
+                  Gerado automaticamente no padrão OP-ano-sequencial
+                </span>
+              )}
+            </Campo>
+
+            <Campo label="Peça">
+              <select
+                value={formData.pecaID}
+                onChange={(e) => atualizarCampo("pecaID", e.target.value)}
+                className="campo"
+              >
+                <option value="">Selecione...</option>
+                {pecas.map((peca) => (
+                  <option key={peca.value} value={peca.value}>
+                    {peca.label}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+
+            <Campo label="Quantidade Planejada">
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={formData.quantidadePlanejada}
+                onChange={(e) =>
+                  atualizarCampo("quantidadePlanejada", e.target.value)
+                }
+                className="campo"
+              />
+            </Campo>
+
+            <Campo label="Especialização Exigida">
+              <input
+                type="text"
+                value={formData.especializacao}
+                onChange={(e) => atualizarCampo("especializacao", e.target.value)}
+                className="campo"
+              />
+            </Campo>
+
+            <Campo label="Operador">
+              <select
+                value={formData.operadorID}
+                onChange={(e) => atualizarCampo("operadorID", e.target.value)}
+                className="campo"
+              >
+                <option value="">Selecione...</option>
+                {operadores.map((operador) => (
+                  <option key={operador.value} value={operador.value}>
+                    {operador.label}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+
+            <Campo label="Início Planejado">
+              <input
+                type="date"
+                value={formData.inicioPlanejado}
+                onClick={abrirCalendario}
+                onChange={(e) =>
+                  atualizarCampo("inicioPlanejado", e.target.value)
+                }
+                className="campo"
+              />
+            </Campo>
+
+            <Campo label="Término Planejado">
+              <input
+                type="date"
+                value={formData.terminoPlanejado}
+                onClick={abrirCalendario}
+                onChange={(e) =>
+                  atualizarCampo("terminoPlanejado", e.target.value)
+                }
+                className="campo"
+              />
+            </Campo>
           </div>
 
-          {materiais.map((material, index) => (
-            <div
-              key={index}
-              className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end border-b pb-2"
-            >
-              <div className="flex-1">
-                <Campo label="Matéria-prima">
-                  <select
-                    value={material.materiaID}
-                    onChange={(e) =>
-                      atualizarMaterial(index, "materiaID", e.target.value)
-                    }
-                    className="border rounded p-2 w-full"
-                  >
-                    <option value="">Selecione...</option>
-                    {materias.map((materia) => (
-                      <option key={materia.value} value={materia.value}>
-                        {materia.label}
-                      </option>
-                    ))}
-                  </select>
-                </Campo>
-              </div>
-
-              <div className="w-full sm:w-40">
-                <Campo label="Quantidade">
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={material.quantidadePrevista}
-                    onChange={(e) =>
-                      atualizarMaterial(
-                        index,
-                        "quantidadePrevista",
-                        e.target.value,
-                      )
-                    }
-                    className="border rounded p-2 w-full"
-                  />
-                </Campo>
-              </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-[#11284F]">
+                Matérias-primas
+              </h3>
 
               <button
                 type="button"
-                onClick={() => removerMaterial(index)}
-                className="bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+                onClick={adicionarMaterial}
+                className="text-sm bg-[#4A48A8] text-white px-3 py-1.5 rounded font-semibold hover:bg-[#3d3b8f] transition-colors"
               >
-                Remover
+                + Material
               </button>
             </div>
-          ))}
+
+            {materiais.map((material, index) => (
+              <div
+                key={index}
+                className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end border-b border-[#334E7F]/10 pb-2"
+              >
+                <div className="flex-1">
+                  <Campo label="Matéria-prima">
+                    <select
+                      value={material.materiaID}
+                      onChange={(e) =>
+                        atualizarMaterial(index, "materiaID", e.target.value)
+                      }
+                      className="campo"
+                    >
+                      <option value="">Selecione...</option>
+                      {materias.map((materia) => (
+                        <option key={materia.value} value={materia.value}>
+                          {materia.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Campo>
+                </div>
+
+                <div className="w-full sm:w-40">
+                  <Campo label="Quantidade">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={material.quantidadePrevista}
+                      onChange={(e) =>
+                        atualizarMaterial(
+                          index,
+                          "quantidadePrevista",
+                          e.target.value,
+                        )
+                      }
+                      className="campo"
+                    />
+                  </Campo>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removerMaterial(index)}
+                  className="bg-[#C94545] text-white px-3 py-2 rounded font-semibold hover:bg-[#AD3A3A] transition-colors"
+                >
+                  Remover
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="flex justify-end gap-2 mt-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-          >
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-[#334E7F]/10 flex-shrink-0">
+          <button onClick={onClose} className="btn-secundario">
             Cancelar
           </button>
 
           <button
             onClick={handleConfirm}
-            className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+            className="px-4 py-2 rounded bg-[#4A48A8] text-white font-semibold hover:bg-[#3d3b8f] transition-colors"
           >
             Salvar
           </button>
@@ -350,7 +361,7 @@ export default function ModalOrdemProducao({
 function Campo({ label, children }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm text-black">{label}</label>
+      <label className="text-sm font-medium text-gray-700">{label}</label>
       {children}
     </div>
   );
