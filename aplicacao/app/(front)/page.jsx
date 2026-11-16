@@ -18,7 +18,7 @@ import {
   IconeTendencia,
 } from "./components/icones";
 
-import Swal from "sweetalert2";
+import { apiFetch } from "./services/api";
 
 // Tons das caixinhas de KPI, no mesmo espírito do painel do Cosmo
 const TONS = {
@@ -69,33 +69,14 @@ export default function Home() {
 
   async function carregarDashboard() {
     try {
-      const token = localStorage.getItem("token");
+      // O apiFetch centraliza o tratamento de 401
+      const response = await apiFetch("/api/dashboard");
 
-      const response = await fetch("/api/dashboard", {
-        headers: {
-          Authorization: token
-            ? `Bearer ${token}`
-            : "",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message);
+      if (response) {
+        setDashboard(response.data);
       }
-
-      setDashboard(data.data);
-
     } catch (err) {
       console.error("Erro ao carregar dashboard:", err);
-
-      Swal.fire({
-        icon: "error",
-        title: "Erro",
-        text: "Não foi possível carregar o dashboard.",
-      });
-
     } finally {
       setLoading(false);
     }
