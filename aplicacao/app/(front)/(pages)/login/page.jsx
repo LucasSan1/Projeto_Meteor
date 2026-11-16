@@ -16,9 +16,12 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [carregando, setCarregando] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (carregando) return;
 
     if (!email || !senha) {
       Swal.fire({
@@ -30,30 +33,36 @@ export default function Login() {
       return;
     }
 
-    const response = await loginService({
-      email,
-      senha,
-    });
+    setCarregando(true);
 
-    if (!response) return;
+    try {
+      const response = await loginService({
+        email,
+        senha,
+      });
 
-    localStorage.setItem("token", response.token);
-    localStorage.setItem("cargo", response.cargo);
-    localStorage.setItem("usuario", response.usuario);
+      if (!response) return;
 
-    Swal.fire({
-      icon: "success",
-      title: "Login realizado!",
-    });
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("cargo", response.cargo);
+      localStorage.setItem("usuario", response.usuario);
 
-    // Cada perfil cai na tela que realmente usa
-    const homePorCargo = {
-      gerente: "/",
-      operador: "/ordemServico",
-      mecanico: "/manutencoesProgramadas",
-    };
+      Swal.fire({
+        icon: "success",
+        title: "Login realizado!",
+      });
 
-    router.push(homePorCargo[response.cargo] || "/");
+      // Cada perfil cai na tela que realmente usa
+      const homePorCargo = {
+        gerente: "/",
+        operador: "/ordemServico",
+        mecanico: "/manutencoesProgramadas",
+      };
+
+      router.push(homePorCargo[response.cargo] || "/");
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
@@ -188,6 +197,8 @@ export default function Login() {
 
             <button
               type="submit"
+              disabled={carregando}
+              aria-busy={carregando}
               className="
               w-full
               rounded-full
@@ -200,9 +211,18 @@ export default function Login() {
               tracking-[0.14em]
               hover:bg-[#1c2947]
               transition-colors
+              disabled:opacity-60
+              disabled:cursor-not-allowed
               "
             >
-              ENTRAR
+              {carregando ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                  ENTRANDO...
+                </span>
+              ) : (
+                "ENTRAR"
+              )}
             </button>
 
             <Link
