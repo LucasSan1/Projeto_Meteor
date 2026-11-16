@@ -16,10 +16,7 @@ const MENUS_POR_CARGO = {
     },
     {
       secao: "Pessoas",
-      itens: [
-        { href: "/usuarios", label: "Usuários" },
-        { href: "/profissionais", label: "Profissionais" },
-      ],
+      itens: [{ href: "/usuarios", label: "Usuários" }],
     },
     {
       secao: "Cadastros",
@@ -49,7 +46,6 @@ const MENUS_POR_CARGO = {
       secao: "Consultas",
       itens: [
         { href: "/movimentacoesEstoque", label: "Movimentações de Estoque" },
-        { href: "/ordemMateriais", label: "Materiais por Ordem" },
         { href: "/historicoOrdens", label: "Histórico de Ordens" },
         { href: "/historicoManutencao", label: "Histórico de Manutenção" },
         { href: "/auditoria", label: "Auditoria" },

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
 import { autorizarGestor } from "../../utils/authMiddleware";
+import { getDataBrasilia } from "../../utils/Datetime";
 import { ajustarEstoque } from "./estoque";
 
 // Lista o livro-razão do estoque com os nomes já resolvidos
@@ -126,6 +127,12 @@ export async function POST(request) {
     );
 
     await ajustarEstoque(connection, materia, tipo, quantidade, 1);
+
+    // Toda entrada carimba a data da última compra no cadastro da matéria-prima
+    await connection.query(
+      "UPDATE materiasPrimas SET dataUltimaCompra = ? WHERE pk_materiaID = ?",
+      [getDataBrasilia().slice(0, 10), materia],
+    );
 
     await connection.commit();
 

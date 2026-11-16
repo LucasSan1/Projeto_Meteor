@@ -1,18 +1,64 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
-import { checkAuthPosition } from "../../utils/authChecker";
+import { checkAuthPosition, CARGOS } from "../../utils/authChecker";
 import { hashPass } from "../../utils/hash";
+import { papeisDoCargo } from "../../utils/papeisProfissional";
 
-// Lista os usuários do sistema 
+const CARGOS_VALIDOS = Object.values(CARGOS);
+
+// Lista a equipe inteira já com o vínculo profissional e a disponibilidade
 export async function GET(request) {
   try {
-    await checkAuthPosition(request);
+    const usuarioLogado = await checkAuthPosition(request);
 
-    const [result] = await pool.query(
-      "SELECT id, nome, email, cargo, status FROM usuarios ORDER BY nome",
+    const [result] = await pool.query(`
+      SELECT
+        u.id,
+        u.nome,
+        u.email,
+        u.cargo,
+        u.status,
+        p.pk_profissionalID,
+        p.ehOperador,
+        p.ehMecanico,
+        p.especializacao,
+        p.telefone,
+        p.status AS statusProfissional,
+        EXISTS (
+          SELECT 1
+          FROM ordensProducao op
+          WHERE op.fk_operadorID = p.pk_profissionalID
+            AND op.status = 'Em Produção'
+        ) AS emProducao,
+        EXISTS (
+          SELECT 1
+          FROM manutencoesProgramadas mp
+          WHERE mp.fk_mecanicoID = p.pk_profissionalID
+            AND mp.status = 'Em Execução'
+        ) AS emManutencao
+      FROM usuarios u
+      LEFT JOIN profissionais p ON p.fk_usuarioID = u.id
+      ORDER BY u.nome
+    `);
+
+    // gestor só enxerga a própria conta na seção de gestores
+    const data = result.filter(
+      (usuario) =>
+        usuario.cargo !== CARGOS.GERENTE ||
+        Number(usuario.id) === Number(usuarioLogado.id),
     );
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    return NextResponse.json(
+      {
+        data,
+        usuarioLogado: {
+          id: usuarioLogado.id,
+          nome: usuarioLogado.nome,
+          email: usuarioLogado.email,
+        },
+      },
+      { status: 200 },
+    );
   } catch (err) {
     console.log("Usuarios GET : ", err);
 
@@ -30,16 +76,28 @@ export async function GET(request) {
   }
 }
 
-// Cria um usuário novo com a senha já criptografada
+// Cria a conta e o vínculo profissional de uma vez
 export async function POST(request) {
   const body = await request.json();
-  const { nome, email, cargo, senha } = body;
+  const {
+    nome,
+    email,
+    cargo,
+    ehOperador,
+    ehMecanico,
+    especializacao,
+    telefone,
+  } = body;
 
   try {
     await checkAuthPosition(request);
 
-    if (!nome?.trim() || !email?.trim() || !cargo || !senha?.trim()) {
-      throw { status: 400, message: "Preencha todos os campos!" };
+    if (!nome?.trim() || !email?.trim() || !cargo) {
+      throw { status: 400, message: "Preencha nome, e-mail e cargo!" };
+    }
+
+    if (!CARGOS_VALIDOS.includes(cargo)) {
+      throw { status: 400, message: "Cargo inválido!" };
     }
 
     const [exist] = await pool.query(
@@ -51,17 +109,55 @@ export async function POST(request) {
       throw { status: 409, message: "Já existe um usuário com esse e-mail!" };
     }
 
-    const senhaCript = await hashPass(senha);
+    if (!process.env.PATTERN_PASS) {
+      throw {
+        status: 500,
+        message: "Senha padrão não configurada no ambiente!",
+      };
+    }
 
-    const [result] = await pool.query(
-      "INSERT INTO usuarios (nome, email, cargo, senha) VALUES (?, ?, ?, ?)",
-      [nome, email, cargo, senhaCript],
-    );
+    const senhaCript = await hashPass(process.env.PATTERN_PASS);
+    const papeis = papeisDoCargo(cargo, ehOperador, ehMecanico);
 
-    return NextResponse.json({
-      message: "Usuário cadastrado com sucesso!",
-      id: result.insertId,
-    });
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      const [result] = await connection.query(
+        "INSERT INTO usuarios (nome, email, cargo, senha) VALUES (?, ?, ?, ?)",
+        [nome.trim(), email.trim(), cargo, senhaCript],
+      );
+
+      const usuarioID = result.insertId;
+
+      if (cargo !== "gerente") {
+        await connection.query(
+          `INSERT INTO profissionais
+            (fk_usuarioID, ehOperador, ehMecanico, especializacao, telefone)
+           VALUES (?, ?, ?, ?, ?)`,
+          [
+            usuarioID,
+            papeis.operador,
+            papeis.mecanico,
+            especializacao || null,
+            telefone || null,
+          ],
+        );
+      }
+
+      await connection.commit();
+
+      return NextResponse.json({
+        message: "Usuário cadastrado com sucesso!",
+        id: usuarioID,
+      });
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
   } catch (err) {
     console.log("Usuarios POST : ", err);
 

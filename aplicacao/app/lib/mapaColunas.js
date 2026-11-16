@@ -4,9 +4,6 @@
 //  O schema do Postgres foi criado sem aspas, então o banco guarda tudo
 //  em minúsculas (fk_ordemid, nomepeca, ehoperador). O app inteiro, que
 //  nasceu no MySQL, lê camelCase (fk_ordemID, nomePeca, ehOperador)
-//
-//  Esse dicionário devolve os nomes originais depois de cada SELECT
-//  Sem ele, listagem e checagem de permissão viram "undefined" em todo lugar
 // ============================================================
 
 const mapaColunas = {
@@ -82,6 +79,8 @@ const mapaColunas = {
   nomepeca: "nomePeca",
   rejeitadasinspecao: "rejeitadasInspecao",
   statusprofissional: "statusProfissional",
+  emproducao: "emProducao",
+  emmanutencao: "emManutencao",
 };
 
 export default mapaColunas;

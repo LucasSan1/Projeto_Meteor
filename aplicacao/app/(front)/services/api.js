@@ -1,4 +1,7 @@
 import Swal from "sweetalert2";
+import { limparSessao } from "../../utils/sessao";
+
+let redirecionando = false;
 
 export async function apiFetch(url, options = {}) {
   const token = localStorage.getItem("token");
@@ -40,14 +43,17 @@ export async function apiFetch(url, options = {}) {
         return null;
       }
 
+      limparSessao();
+
+      if (redirecionando) return null;
+
+      redirecionando = true;
+
       await Swal.fire({
         icon: "warning",
         title: "Sessão expirada",
         text: data?.message || "Faça login novamente.",
       });
-
-      localStorage.removeItem("token");
-      localStorage.removeItem("cargo");
 
       window.location.href = "/login";
 
