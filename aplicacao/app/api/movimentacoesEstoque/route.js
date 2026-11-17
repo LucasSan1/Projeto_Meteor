@@ -88,7 +88,10 @@ export async function POST(request) {
     }
 
     const [mat] = await pool.query(
-      "SELECT * FROM materiasPrimas WHERE pk_materiaID = ?",
+      `SELECT m.*, f.status AS fornecedorStatus
+         FROM materiasPrimas m
+         INNER JOIN fornecedores f ON m.fk_fornecedor = f.pk_fornecedorID
+        WHERE m.pk_materiaID = ?`,
       [materia],
     );
 
@@ -100,6 +103,14 @@ export async function POST(request) {
       throw {
         status: 400,
         message: "Matéria-prima inativa não pode receber novas entradas!",
+      };
+    }
+
+    if (mat[0].fornecedorStatus !== "Ativo") {
+      throw {
+        status: 409,
+        message:
+          "A matéria-prima está sem fornecedor ativo. Escolha um fornecedor ativo antes de lançar entrada de estoque!",
       };
     }
 
