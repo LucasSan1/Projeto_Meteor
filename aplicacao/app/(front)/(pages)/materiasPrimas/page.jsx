@@ -77,7 +77,25 @@ export default function MateriasPrimas() {
   ];
 
   // A última compra é atualizada pela entrada de estoque, não pela edição do cadastro
-  const camposEdicao = materiaFields;
+  const fornecedorAtualDesativado =
+    materiaSelecionada?.fornecedorStatus &&
+    materiaSelecionada.fornecedorStatus !== "Ativo";
+
+  const fornecedoresEdicao = fornecedorAtualDesativado
+    ? [
+        ...fornecedores,
+        {
+          value: materiaSelecionada.fk_fornecedor,
+          label: `${materiaSelecionada.fornecedor} (desativado)`,
+        },
+      ]
+    : fornecedores;
+
+  const camposEdicao = materiaFields.map((field) =>
+    field.name === "fornecedor"
+      ? { ...field, options: fornecedoresEdicao }
+      : field,
+  );
 
   // Entrada manual no estoque, a unidade vem da matéria-prima escolhida
   const camposEntrada = [
@@ -315,11 +333,23 @@ export default function MateriasPrimas() {
                   Number(materia.quantidadeEstoque) <=
                   Number(materia.estoqueMinimo);
 
+                const semFornecedorAtivo =
+                  Boolean(materia.fornecedorStatus) &&
+                  materia.fornecedorStatus !== "Ativo";
+
                 return (
                   <Card key={materia.pk_materiaID} title={materia.materia}>
                     <p className="text-sm text-[#334E7F]">
                       Fornecedor: {materia.fornecedor}
+                      {semFornecedorAtivo ? " (desativado)" : ""}
                     </p>
+
+                    {semFornecedorAtivo && (
+                      <p className="text-sm font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                        Sem fornecedor ativo: este insumo não tem fornecedor
+                        disponível para novas compras!
+                      </p>
+                    )}
 
                     <p className="text-sm text-[#334E7F]">
                       Unidade: {materia.unidadeMedida}

@@ -9,6 +9,7 @@ import ModalIncluir from "../../components/modalIncluir";
 import ModalDesativados from "../../components/modalDesativados";
 import ModalConclusaoManutencao from "../../components/modalConclusaoManutencao";
 import {
+  getDataBrasilia,
   formatDataHora,
   paraInputDatetime,
 } from "../../../utils/Datetime";
@@ -234,9 +235,9 @@ export default function ManutencoesProgramadas() {
   }
 
   async function handleIniciar(manutencao) {
-    const inicioPrevisto = new Date(manutencao.inicioPrevisto);
-    const antecipado =
-      !Number.isNaN(inicioPrevisto.getTime()) && new Date() < inicioPrevisto;
+    const inicioPrevisto = paraInputDatetime(manutencao.inicioPrevisto);
+    const agora = getDataBrasilia().slice(0, 16).replace(" ", "T");
+    const antecipado = Boolean(inicioPrevisto) && agora < inicioPrevisto;
 
     const result = await Swal.fire({
       title: "Iniciar manutenção?",

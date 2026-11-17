@@ -5,6 +5,7 @@ import { useState } from "react";
 import Swal from "sweetalert2";
 
 import { IconeX } from "./icones";
+import { getDataBrasilia, paraInputDate } from "../../utils/Datetime";
 
 export default function ModalStatus({
   ordem,
@@ -20,16 +21,14 @@ export default function ModalStatus({
   const [observacao, setObservacao] = useState("");
 
   // Operador pode começar antes do planejado, mas precisa justificar
-  const inicioPlanejado = ordem?.inicioPlanejado
-    ? new Date(ordem.inicioPlanejado)
-    : null;
+  const diaPlanejado = paraInputDate(ordem?.inicioPlanejado);
+  const hoje = getDataBrasilia().slice(0, 10);
 
   const iniciandoAntecipado =
     permitirAntecipacao &&
     statusSelecionado === "Em Produção" &&
-    inicioPlanejado &&
-    !Number.isNaN(inicioPlanejado.getTime()) &&
-    new Date() < inicioPlanejado;
+    Boolean(diaPlanejado) &&
+    hoje < diaPlanejado;
 
   async function handleConfirm() {
     if (statusSelecionado === ordem.status) {

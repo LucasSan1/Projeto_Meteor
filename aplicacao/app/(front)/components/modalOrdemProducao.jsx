@@ -142,13 +142,9 @@ export default function ModalOrdemProducao({
         pecaID: Number(formData.pecaID),
         operadorID: Number(formData.operadorID),
         quantidadePlanejada: Number(formData.quantidadePlanejada),
-        // Planejamento por dia: começa 00:00 e termina 23:59, sem exigir horário
-        inicioPlanejado: formData.inicioPlanejado
-          ? `${formData.inicioPlanejado}T00:00`
-          : "",
-        terminoPlanejado: formData.terminoPlanejado
-          ? `${formData.terminoPlanejado}T23:59`
-          : "",
+     
+        inicioPlanejado: formData.inicioPlanejado,
+        terminoPlanejado: formData.terminoPlanejado,
         materiais: materiaisValidos.map((material) => ({
           materiaID: Number(material.materiaID),
           quantidadePrevista: Number(material.quantidadePrevista),
