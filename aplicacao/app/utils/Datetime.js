@@ -21,62 +21,67 @@ export function getDataBrasilia() {
 
 }
 
-export function formatData(data) {
-    if (!data) return "-";
+function partesData(data) {
+  if (!data) return null;
 
-    return new Date(data).toLocaleDateString(
-      "pt-BR",
-      {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }
-    );
+  const texto = String(data).trim().replace("T", " ");
+  const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ ](\d{2}):(\d{2}))?/);
+
+  if (match) {
+    return {
+      dia: `${match[1]}-${match[2]}-${match[3]}`,
+      hora: match[4] ? `${match[4]}:${match[5]}` : "",
+    };
+  }
+
+  const date = new Date(data);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  const pad = (n) => String(n).padStart(2, "0");
+
+  return {
+    dia: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    hora: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+  };
+}
+
+export function formatData(data) {
+    const partes = partesData(data);
+
+    if (!partes) return "-";
+
+    const [ano, mes, dia] = partes.dia.split("-");
+
+    return `${dia}/${mes}/${ano}`;
 }
 
 // Mesma ideia da formatData, mas com hora junto pra logs e históricos
 export function formatDataHora(data) {
-    if (!data) return "-";
+    const partes = partesData(data);
 
-    return new Date(data).toLocaleString(
-      "pt-BR",
-      {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    );
+    if (!partes) return "-";
+
+    const [ano, mes, dia] = partes.dia.split("-");
+    const dataFormatada = `${dia}/${mes}/${ano}`;
+
+    return partes.hora
+      ? `${dataFormatada} ${partes.hora}`
+      : dataFormatada;
 }
 
-// Converte o valor que vem do MySQL/input pro formato aceito no datetime-local
+// Converte o valor que vem do banco/input pro formato aceito no datetime-local
 export function paraInputDatetime(data) {
-    if (!data) return "";
+    const partes = partesData(data);
 
-    const date = new Date(data);
+    if (!partes) return "";
 
-    if (Number.isNaN(date.getTime())) return "";
-
-    const pad = (n) => String(n).padStart(2, "0");
-
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    return `${partes.dia}T${partes.hora || "00:00"}`;
 }
 
 // Mesma ideia, mas só o dia, planejamento de ordem não exige horário
 export function paraInputDate(data) {
-    if (!data) return "";
+    const partes = partesData(data);
 
-    // Se já veio só o dia, devolve direto pra não escorregar no fuso
-    if (typeof data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
-        return data;
-    }
-
-    const date = new Date(data);
-
-    if (Number.isNaN(date.getTime())) return "";
-
-    const pad = (n) => String(n).padStart(2, "0");
-
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    return partes ? partes.dia : "";
 }

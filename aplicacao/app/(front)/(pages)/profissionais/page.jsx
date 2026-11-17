@@ -19,6 +19,8 @@ import {
 } from "../../services/profissionalService";
 
 import { getUsuarios } from "../../services/usuarioService";
+import { mascararTelefone } from "../../../utils/mascaras";
+import { avisarDuplicado } from "../../../utils/avisoDuplicado";
 
 export default function Profissionais() {
   const [profissionais, setProfissionais] = useState([]);
@@ -59,6 +61,7 @@ export default function Profissionais() {
       name: "telefone",
       label: "Telefone",
       type: "text",
+      mask: "telefone",
     },
   ];
 
@@ -110,8 +113,21 @@ export default function Profissionais() {
     carregar();
   }, []);
 
+  function telefoneJaExiste(telefone, ignorarID = null) {
+    return avisarDuplicado({
+      registros: profissionais,
+      valor: telefone,
+      campo: "telefone",
+      campoID: "pk_profissionalID",
+      nome: "nome",
+      ignorarID,
+    });
+  }
+
   async function handleCreateProfissional(data) {
     try {
+      if (await telefoneJaExiste(data.telefone)) return;
+
       const response = await createProfissional(data);
 
       if (!response) return;
@@ -135,6 +151,15 @@ export default function Profissionais() {
 
   async function handleEditProfissional(data) {
     try {
+      if (
+        await telefoneJaExiste(
+          data.telefone,
+          profissionalSelecionado.pk_profissionalID,
+        )
+      ) {
+        return;
+      }
+
       const response = await updateProfissional(
         profissionalSelecionado.pk_profissionalID,
         data,
@@ -283,7 +308,7 @@ export default function Profissionais() {
                 </p>
 
                 <p className="text-sm text-[#334E7F]">
-                  Telefone: {profissional.telefone || "-"}
+                  Telefone: {mascararTelefone(profissional.telefone) || "-"}
                 </p>
 
                 <p className="text-sm text-[#334E7F]">

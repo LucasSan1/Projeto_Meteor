@@ -78,13 +78,14 @@ CREATE TABLE profissionais (
     ehOperador          SMALLINT NOT NULL DEFAULT 0,
     ehMecanico          SMALLINT NOT NULL DEFAULT 0,
     especializacao      VARCHAR(100),
-    telefone            VARCHAR(50),
+    telefone            VARCHAR(50),                              
     status              status_registro NOT NULL DEFAULT 'Ativo',
 
     PRIMARY KEY (pk_profissionalID),
     UNIQUE (fk_usuarioID),
     FOREIGN KEY (fk_usuarioID) REFERENCES usuarios(id),
-    CONSTRAINT chkProfissionalFuncao CHECK (ehOperador = 1 OR ehMecanico = 1)
+    CONSTRAINT chkProfissionalFuncao CHECK (ehOperador = 1 OR ehMecanico = 1),
+    CONSTRAINT uqProfissionalTelefone UNIQUE (telefone)
 );
 
 
@@ -128,7 +129,7 @@ CREATE TABLE movimentacoesEstoque (
     unidadeMedida       VARCHAR(20) NOT NULL,
     fk_usuarioID        INT NOT NULL,                             -- responsável pela operação
     fk_ordemID          INT NULL,                                 -- preenchido nas saídas (conclusão da ordem)
-    dataMovimentacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataMovimentacao    TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
     observacao          VARCHAR(300),
 
     PRIMARY KEY (pk_movimentacaoID),
@@ -159,9 +160,9 @@ CREATE TABLE ordensProducao (
     quantidadePlanejada     INT NOT NULL,
     especializacao          VARCHAR(100) NOT NULL,             
     fk_operadorID           INT NOT NULL,                      
-    inicioPlanejado         TIMESTAMP NOT NULL,
-    terminoPlanejado        TIMESTAMP NOT NULL,
-    inicioEfetivo           TIMESTAMP NULL,                    
+    inicioPlanejado         DATE NOT NULL,                       
+    terminoPlanejado        DATE NOT NULL,                       
+    inicioEfetivo           TIMESTAMP NULL,                     
     conclusaoEfetiva        TIMESTAMP NULL,                     
     status                  status_ordem_producao NOT NULL DEFAULT 'Pendente',
 
@@ -170,7 +171,7 @@ CREATE TABLE ordensProducao (
     FOREIGN KEY (fk_pecaID)      REFERENCES pecas(pk_pecaID),
     FOREIGN KEY (fk_operadorID)  REFERENCES profissionais(pk_profissionalID),
     CONSTRAINT chkOrdemQtd       CHECK (quantidadePlanejada > 0),
-    CONSTRAINT chkOrdemPlanejado CHECK (terminoPlanejado > inicioPlanejado),
+    CONSTRAINT chkOrdemPlanejado CHECK (terminoPlanejado >= inicioPlanejado),
     -- A conclusão não pode chegar antes do início
     -- Por ordem da compania viagem no tempo é expressamente proibida
     CONSTRAINT chkOrdemEfetivo   CHECK (conclusaoEfetiva IS NULL OR inicioEfetivo IS NULL OR conclusaoEfetiva >= inicioEfetivo)
@@ -203,7 +204,7 @@ CREATE TABLE historicoOrdens (
     fk_usuarioID    INT NOT NULL,
     statusAnterior  VARCHAR(50),
     statusNovo      VARCHAR(50),
-    dataAlteracao   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataAlteracao   TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
     observacao      VARCHAR(300),
 
     PRIMARY KEY (pk_historicoID),
@@ -220,7 +221,7 @@ CREATE TABLE inspecoes (
     totalProduzido  INT NOT NULL,
     aprovadas       INT NOT NULL DEFAULT 0,
     rejeitadas      INT NOT NULL DEFAULT 0,
-    dataInspecao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataInspecao    TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
     observacoes     VARCHAR(300),
 
     PRIMARY KEY (pk_inspecaoID),
@@ -240,7 +241,7 @@ CREATE TABLE rejeicoes (
     tipo            tipo_rejeicao NOT NULL DEFAULT 'Perda',
     acoesCorretivas VARCHAR(300),
     status          status_rejeicao NOT NULL DEFAULT 'Pendente', -- acompanha a conclusão do retrabalho
-    dataRejeicao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataRejeicao    TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
 
     PRIMARY KEY (pk_rejeicaoID),
     FOREIGN KEY (fk_inspecaoID) REFERENCES inspecoes(pk_inspecaoID),
@@ -282,9 +283,9 @@ CREATE TABLE manutencoesProgramadas (
     descricao           VARCHAR(300) NOT NULL,
     especializacao      VARCHAR(100) NOT NULL,
     fk_mecanicoID       INT NOT NULL,                           
-    inicioPrevisto      TIMESTAMP NOT NULL,
-    terminoPrevisto     TIMESTAMP NOT NULL,
-    inicioEfetivo       TIMESTAMP NULL,                        
+    inicioPrevisto      TIMESTAMP NOT NULL,                      
+    terminoPrevisto     TIMESTAMP NOT NULL,                     
+    inicioEfetivo       TIMESTAMP NULL,                         
     conclusaoEfetiva    TIMESTAMP NULL,                         
     servicosRealizados  VARCHAR(500) NULL,                      
     status              status_manutencao NOT NULL DEFAULT 'Programada',
@@ -293,7 +294,7 @@ CREATE TABLE manutencoesProgramadas (
     FOREIGN KEY (fk_equipamentoID) REFERENCES equipamentos(pk_equipamentoID),
     FOREIGN KEY (fk_maquinaID)     REFERENCES maquinas(pk_maquinaID),
     FOREIGN KEY (fk_mecanicoID)    REFERENCES profissionais(pk_profissionalID),
-    CONSTRAINT chkManutPrevisto CHECK (terminoPrevisto > inicioPrevisto),
+    CONSTRAINT chkManutPrevisto CHECK (terminoPrevisto >= inicioPrevisto),
     CONSTRAINT chkManutEfetivo  CHECK (conclusaoEfetiva IS NULL OR inicioEfetivo IS NULL OR conclusaoEfetiva >= inicioEfetivo)
 );
 
@@ -352,7 +353,7 @@ CREATE TABLE auditoria (
     dadosAnteriores JSONB NULL,
     dadosNovos      JSONB NULL,
     observacao      VARCHAR(300),
-    dataAcao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataAcao        TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
 
     PRIMARY KEY (pk_auditoriaID),
     FOREIGN KEY (fk_usuarioID) REFERENCES usuarios(id)

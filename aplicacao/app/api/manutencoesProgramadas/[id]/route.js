@@ -87,18 +87,18 @@ export async function PATCH(request, { params }) {
 
     const mecanicoFinal = mecanico || manutencao.fk_mecanicoID;
 
-    const inicio = inicioPrevisto
-      ? toSqlDatetime(inicioPrevisto)
-      : manutencao.inicioPrevisto;
+    const inicio = toSqlDatetime(
+      inicioPrevisto || manutencao.inicioPrevisto,
+    );
 
-    const termino = terminoPrevisto
-      ? toSqlDatetime(terminoPrevisto)
-      : manutencao.terminoPrevisto;
+    const termino = toSqlDatetime(
+      terminoPrevisto || manutencao.terminoPrevisto,
+    );
 
-    if (new Date(termino) <= new Date(inicio)) {
+    if (termino <= inicio) {
       throw {
         status: 400,
-        message: "O término previsto deve ser depois do início!",
+        message: "O término previsto precisa ser depois do início!",
       };
     }
 
@@ -296,7 +296,10 @@ export async function PUT(request, { params }) {
         manutencao.inicioPrevisto,
         manutencao.terminoPrevisto,
         "manutenção",
-        { permitirAntecipacao: usuarioLogado.cargo === CARGOS.MECANICO },
+        {
+          permitirAntecipacao: usuarioLogado.cargo === CARGOS.MECANICO,
+          comHora: true,
+        },
       );
 
       inicioAntecipado = janela.inicioAntecipado;

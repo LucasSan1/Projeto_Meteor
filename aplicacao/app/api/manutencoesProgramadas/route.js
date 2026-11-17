@@ -46,7 +46,7 @@ export async function GET(request) {
         mp.status,
         CASE
           WHEN mp.status IN ('Programada', 'Em Execução')
-           AND mp.terminoPrevisto < NOW()
+           AND mp.terminoPrevisto < (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
           THEN 1 ELSE 0
         END AS atrasada,
         e.nomeEquipamento AS equipamento,
@@ -137,10 +137,10 @@ export async function POST(request) {
     const inicio = toSqlDatetime(inicioPrevisto);
     const termino = toSqlDatetime(terminoPrevisto);
 
-    if (new Date(termino) <= new Date(inicio)) {
+    if (termino <= inicio) {
       throw {
         status: 400,
-        message: "O término previsto deve ser depois do início!",
+        message: "O término previsto precisa ser depois do início!",
       };
     }
 

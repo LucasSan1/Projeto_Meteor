@@ -2,6 +2,7 @@
 
 import { IconeX } from "./icones";
 import { formatData, formatDataHora } from "../../utils/Datetime";
+import { mascararCnpj, mascararTelefone } from "../../utils/mascaras";
 
 export default function ModalDesativados({
   title = "Registros Desativados",
@@ -51,6 +52,10 @@ export default function ModalDesativados({
                     valor = formatData(valor);
                   } else if (field.type === "datetime") {
                     valor = formatDataHora(valor);
+                  } else if (field.type === "cnpj") {
+                    valor = mascararCnpj(valor);
+                  } else if (field.type === "telefone") {
+                    valor = mascararTelefone(valor);
                   }
 
                   return (

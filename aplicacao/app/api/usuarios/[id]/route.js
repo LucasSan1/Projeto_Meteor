@@ -3,6 +3,8 @@ import pool from "../../../lib/connSql";
 import { checkAuthPosition, CARGOS } from "../../../utils/authChecker";
 import { hashPass } from "../../../utils/hash";
 import { papeisDoCargo } from "../../../utils/papeisProfissional";
+import { normalizarTelefone } from "../../../utils/mascaras";
+import { ehDuplicadoDe } from "../../../utils/erroDuplicado";
 
 const CARGOS_VALIDOS = Object.values(CARGOS);
 
@@ -161,7 +163,9 @@ export async function PATCH(request, { params }) {
         : profissional?.especializacao ?? null;
 
     const telFinal =
-      telefone !== undefined ? telefone : profissional?.telefone ?? null;
+      telefone !== undefined
+        ? normalizarTelefone(telefone)
+        : profissional?.telefone ?? null;
 
     // Senha só muda se vier algo; senão mantém o hash atual
     const senhaFinal = senha?.trim() ? await hashPass(senha) : usuario.senha;
@@ -227,6 +231,14 @@ export async function PATCH(request, { params }) {
     console.log("Usuarios PATCH : ", err);
 
     if (err.code === "ER_DUP_ENTRY") {
+
+      if (ehDuplicadoDe(err, "telefone")) {
+        return NextResponse.json(
+          { message: "Já existe um profissional com esse telefone!" },
+          { status: 409 },
+        );
+      }
+
       return NextResponse.json(
         { message: "Já existe um usuário com esse e-mail!" },
         { status: 409 },

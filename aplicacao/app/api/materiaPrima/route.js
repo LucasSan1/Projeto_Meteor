@@ -18,7 +18,8 @@ export async function GET(request) {
         m.quantidadeEstoque,
         m.dataUltimaCompra,
         m.status,
-        f.nomeFornecedor AS fornecedor
+        f.nomeFornecedor AS fornecedor,
+        f.status AS fornecedorStatus
       FROM materiasPrimas m
       INNER JOIN fornecedores f ON m.fk_fornecedor = f.pk_fornecedorID
       ORDER BY m.materia

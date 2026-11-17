@@ -91,13 +91,19 @@ export async function PATCH(request, { params }) {
     // A data da última compra é carimbada pela entrada de estoque
     const dataFinal = atual.dataUltimaCompra;
 
-    const [forn] = await pool.query(
-      "SELECT pk_fornecedorID FROM fornecedores WHERE pk_fornecedorID = ? AND status = 'Ativo'",
-      [fornecedorFinal],
-    );
+    // Se o fornecedor atual foi desativado, a matéria-prima pode continuar com ele até alguém escolher um substituto
+    const fornecedorMudou =
+      Number(fornecedorFinal) !== Number(atual.fk_fornecedor);
 
-    if (forn.length === 0) {
-      throw { status: 404, message: "Fornecedor inválido!" };
+    if (fornecedorMudou) {
+      const [forn] = await pool.query(
+        "SELECT pk_fornecedorID FROM fornecedores WHERE pk_fornecedorID = ? AND status = 'Ativo'",
+        [fornecedorFinal],
+      );
+
+      if (forn.length === 0) {
+        throw { status: 404, message: "Fornecedor inválido ou inativo!" };
+      }
     }
 
     const [result] = await pool.query(

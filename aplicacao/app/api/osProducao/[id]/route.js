@@ -8,7 +8,7 @@ import {
   garantirTitularidade,
 } from "../../../utils/authMiddleware";
 import { getDataBrasilia } from "../../../utils/Datetime";
-import { toSqlDatetime } from "../../../utils/datetimeSql";
+import { toSqlDate } from "../../../utils/datetimeSql";
 import {
   especializacaoCompativel,
   validarAgendaOperador,
@@ -425,13 +425,13 @@ export async function PATCH(request, { params }) {
 
     const operadorFinal = operadorID || ordem.fk_operadorID;
 
-    const inicio = inicioPlanejado
-      ? toSqlDatetime(inicioPlanejado)
-      : ordem.inicioPlanejado;
+    const inicio = toSqlDate(
+      inicioPlanejado || ordem.inicioPlanejado,
+    );
 
-    const termino = terminoPlanejado
-      ? toSqlDatetime(terminoPlanejado)
-      : ordem.terminoPlanejado;
+    const termino = toSqlDate(
+      terminoPlanejado || ordem.terminoPlanejado,
+    );
 
     if (!Number.isInteger(quantidadeFinal) || quantidadeFinal <= 0) {
       throw {
@@ -440,10 +440,10 @@ export async function PATCH(request, { params }) {
       };
     }
 
-    if (new Date(termino) <= new Date(inicio)) {
+    if (termino < inicio) {
       throw {
         status: 400,
-        message: "O término planejado deve ser depois do início!",
+        message: "O término planejado não pode ser antes do início!",
       };
     }
 
