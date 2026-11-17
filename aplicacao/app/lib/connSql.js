@@ -34,6 +34,9 @@ const { Pool, types } = pg;
 // Sem isso o dashboard começaria a receber "5" em vez de 5 no JSON
 types.setTypeParser(20, (valor) => Number(valor));
 
+// DATE é dia puro, sem hora
+types.setTypeParser(1082, (valor) => valor);
+
 // Aceita tanto uma DATABASE_URL quanto as variáveis soltas do .env
 const connectionString = process.env.DATABASE_URL;
 

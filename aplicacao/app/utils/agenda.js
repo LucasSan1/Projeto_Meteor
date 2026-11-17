@@ -25,6 +25,18 @@ export function diaDe(valor) {
   return data ? data.slice(0, 10) : null;
 }
 
+export function inicioDoDia(valor) {
+  const dia = diaDe(valor);
+
+  return dia ? `${dia} 00:00:00` : null;
+}
+
+export function fimDoDia(valor) {
+  const dia = diaDe(valor);
+
+  return dia ? `${dia} 23:59:59` : null;
+}
+
 // Lista todos os dias entre duas datas (inclusive), sem cair em fuso horário
 export function listarDias(inicio, termino) {
   const diaInicio = diaDe(inicio);
@@ -86,8 +98,10 @@ export function validarJanelaExecucao(
   { permitirAntecipacao = false } = {},
 ) {
   const agora = getDataBrasilia();
-  const inicio = normalizarDataHora(inicioPrevisto);
-  const termino = normalizarDataHora(terminoPrevisto);
+
+  const diaInicio = diaDe(inicioPrevisto);
+  const inicio = inicioDoDia(inicioPrevisto);
+  const termino = fimDoDia(terminoPrevisto);
 
   if (agora < inicio) {
     if (permitirAntecipacao) {
@@ -96,7 +110,7 @@ export function validarJanelaExecucao(
 
     throw {
       status: 400,
-      message: `A ${entidade} só pode ser iniciada a partir de ${inicio}!`,
+      message: `A ${entidade} só pode ser iniciada a partir de ${formatarDia(diaInicio)}!`,
     };
   }
 
@@ -233,11 +247,47 @@ export async function validarAgendaOperador(
   }
 }
 
-// Mecânico, várias intervenções no dia, desde que não se sobreponham
+
+function diasDaManutencao(manutencao) {
+  const dias = new Set();
+
+  if (manutencao.status === "Concluída") {
+    if (manutencao.inicioEfetivo) {
+      listarDias(
+        manutencao.inicioEfetivo,
+        manutencao.conclusaoEfetiva || manutencao.inicioEfetivo,
+      ).forEach((dia) => dias.add(dia));
+    }
+
+    return dias;
+  }
+
+  listarDias(manutencao.inicioPrevisto, manutencao.terminoPrevisto).forEach(
+    (dia) => dias.add(dia),
+  );
+
+  if (manutencao.status === "Em Execução" && manutencao.inicioEfetivo) {
+    const fimEfetivo = manutencao.conclusaoEfetiva || getDataBrasilia();
+
+    listarDias(manutencao.inicioEfetivo, fimEfetivo).forEach((dia) =>
+      dias.add(dia),
+    );
+  }
+
+  return dias;
+}
+
+
 export async function validarAgendaMecanico(
   connection,
   { profissionalID, inicio, termino, ignorarManutencaoID = null },
 ) {
+  const diasPedido = listarDias(inicio, termino);
+
+  if (diasPedido.length === 0) {
+    throw { status: 400, message: "Período inválido para a agenda!" };
+  }
+
   const [manutencoes] = await connection.query(
     `SELECT pk_manutencaoID, descricao, inicioPrevisto, terminoPrevisto,
             inicioEfetivo, conclusaoEfetiva, status
@@ -251,32 +301,18 @@ export async function validarAgendaMecanico(
       continue;
     }
 
-    // Concluída usa o período real; os demais usam efetivo (se iniciado) ou previsto
-    const concluida = manutencao.status === "Concluída";
+    const diasOcupados = diasDaManutencao(manutencao);
+    const conflito = diasPedido.find((dia) => diasOcupados.has(dia));
 
-    const inicioOcupado = concluida
-      ? manutencao.inicioEfetivo || manutencao.inicioPrevisto
-      : manutencao.status === "Em Execução" && manutencao.inicioEfetivo
-        ? manutencao.inicioEfetivo
-        : manutencao.inicioPrevisto;
-
-    const terminoOcupado = concluida
-      ? manutencao.conclusaoEfetiva || manutencao.terminoPrevisto
-      : manutencao.status === "Em Execução" && manutencao.inicioEfetivo
-        ? manutencao.conclusaoEfetiva || manutencao.terminoPrevisto
-        : manutencao.terminoPrevisto;
-
-    if (sobrepoe(inicio, termino, inicioOcupado, terminoOcupado)) {
+    if (conflito) {
       throw {
         status: 409,
-        message: `O mecânico já tem a manutenção "${manutencao.descricao}" nesse horário. Escolha outro período!`,
+        message: `O mecânico já tem a manutenção "${manutencao.descricao}" em ${formatarDia(conflito)}. Cada mecânico só pode ter uma atividade por dia!`,
       };
     }
   }
 
   // Se a pessoa também é operador e tem produção no dia não cabe manutenção
-  const diasPedido = listarDias(inicio, termino);
-
   const [ordens] = await connection.query(
     `SELECT pk_ordemID, codigo, inicioPlanejado, terminoPlanejado,
             inicioEfetivo, conclusaoEfetiva, status

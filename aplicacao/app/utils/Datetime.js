@@ -24,6 +24,12 @@ export function getDataBrasilia() {
 export function formatData(data) {
     if (!data) return "-";
 
+    if (typeof data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(data)) {
+      const [ano, mes, dia] = data.split("-");
+
+      return `${dia}/${mes}/${ano}`;
+    }
+
     return new Date(data).toLocaleDateString(
       "pt-BR",
       {

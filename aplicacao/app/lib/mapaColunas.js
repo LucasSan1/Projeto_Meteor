@@ -81,6 +81,7 @@ const mapaColunas = {
   statusprofissional: "statusProfissional",
   emproducao: "emProducao",
   emmanutencao: "emManutencao",
+  fornecedorstatus: "fornecedorStatus",
 };
 
 export default mapaColunas;
