@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { IconeX } from "./icones";
+import { mascararTelefone } from "../../utils/mascaras";
 
 const CARGOS = [
   { value: "gerente", label: "Gerente" },
@@ -43,7 +44,7 @@ export default function ModalUsuario({
     ehOperador: textoFlag(initialData?.ehOperador),
     ehMecanico: textoFlag(initialData?.ehMecanico),
     especializacao: initialData?.especializacao ?? "",
-    telefone: initialData?.telefone ?? "",
+    telefone: mascararTelefone(initialData?.telefone),
   }));
 
   function handleChange(name, value) {
@@ -202,7 +203,9 @@ export default function ModalUsuario({
                 <input
                   type="text"
                   value={formData.telefone}
-                  onChange={(e) => handleChange("telefone", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("telefone", mascararTelefone(e.target.value))
+                  }
                   className="campo"
                 />
               </Campo>

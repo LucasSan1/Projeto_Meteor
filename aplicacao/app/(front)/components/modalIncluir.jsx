@@ -3,6 +3,18 @@
 import { useState } from "react";
 
 import { IconeX } from "./icones";
+import { mascararCnpj, mascararTelefone } from "../../utils/mascaras";
+
+const MASCARAS = {
+  cnpj: mascararCnpj,
+  telefone: mascararTelefone,
+};
+
+function aplicarMascara(tipo, valor) {
+  const mascara = MASCARAS[tipo];
+
+  return mascara ? mascara(valor) : valor;
+}
 
 export default function ModalIncluir({
   title = "Incluir Registro",
@@ -19,16 +31,22 @@ export default function ModalIncluir({
     fields.forEach((field) => {
       // Se tiver initialData, usa ela
       // Senão, deixa vazio (?? evita transformar 0 em "")
-      data[field.name] = initialData?.[field.name] ?? "";
+      const valor = initialData?.[field.name] ?? "";
+
+      data[field.name] = field.mask
+        ? aplicarMascara(field.mask, valor)
+        : valor;
     });
 
     return data;
   });
 
   function handleChange(name, value) {
+    const field = fields.find((item) => item.name === name);
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: field?.mask ? aplicarMascara(field.mask, value) : value,
     }));
   }
 

@@ -17,6 +17,8 @@ import {
   deleteUsuario,
   activateUsuario,
 } from "../../services/usuarioService";
+import { mascararTelefone } from "../../../utils/mascaras";
+import { avisarDuplicado } from "../../../utils/avisoDuplicado";
 
 const CARGO_LABEL = {
   gerente: "Gestor",
@@ -98,7 +100,7 @@ function SecaoUsuarios({
                   </p>
 
                   <p className="text-sm text-[#334E7F]">
-                    Telefone: {usuario.telefone || "-"}
+                    Telefone: {mascararTelefone(usuario.telefone) || "-"}
                   </p>
 
                   <p
@@ -167,8 +169,21 @@ export default function Usuarios() {
     carregar();
   }, []);
 
+  function telefoneJaExiste(telefone, ignorarID = null) {
+    return avisarDuplicado({
+      registros: usuarios,
+      valor: telefone,
+      campo: "telefone",
+      campoID: "id",
+      nome: "nome",
+      ignorarID,
+    });
+  }
+
   async function handleCreateUsuario(data) {
     try {
+      if (await telefoneJaExiste(data.telefone)) return;
+
       const response = await createUsuario(data);
 
       if (!response) return;
@@ -192,6 +207,8 @@ export default function Usuarios() {
 
   async function handleEditUsuario(data) {
     try {
+      if (await telefoneJaExiste(data.telefone, usuarioSelecionado.id)) return;
+
       const response = await updateUsuario(usuarioSelecionado.id, data);
 
       if (!response) return;

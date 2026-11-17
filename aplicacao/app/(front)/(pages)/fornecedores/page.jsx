@@ -17,6 +17,8 @@ import {
   deleteFornecedor,
   activateFornecedor,
 } from "../../services/fornecedoreServices";
+import { mascararCnpj } from "../../../utils/mascaras";
+import { avisarDuplicado } from "../../../utils/avisoDuplicado";
 
 export default function Fornecedores() {
   const [fornecedores, setFornecedores] = useState([]);
@@ -38,8 +40,9 @@ export default function Fornecedores() {
     },
     {
       name: "cnpj",
-      label: "CNPJ (somente números)",
+      label: "CNPJ",
       type: "text",
+      mask: "cnpj",
     },
     {
       name: "endereco",
@@ -77,9 +80,23 @@ export default function Fornecedores() {
     carregar();
   }, []);
 
+  function cnpjJaExiste(cnpj, ignorarID = null) {
+    return avisarDuplicado({
+      registros: fornecedores,
+      valor: cnpj,
+      campo: "cnpj",
+      campoID: "pk_fornecedorID",
+      nome: "nomeFornecedor",
+      tipo: "cnpj",
+      ignorarID,
+    });
+  }
+
   // Adicionar novo fornecedor
   async function handleCreateFornecedor(data) {
     try {
+      if (await cnpjJaExiste(data.cnpj)) return;
+
       const response = await createFornecedor(data);
 
       if (!response) return;
@@ -110,6 +127,12 @@ export default function Fornecedores() {
   // Editar fornecedor
   async function handleEditFornecedor(data) {
     try {
+      if (
+        await cnpjJaExiste(data.cnpj, fornecedorSelecionado.pk_fornecedorID)
+      ) {
+        return;
+      }
+
       const response = await updateFornecedor(
         fornecedorSelecionado.pk_fornecedorID,
         data,
@@ -144,7 +167,7 @@ export default function Fornecedores() {
   async function handleDeleteFornecedor(fornecedor) {
     const result = await Swal.fire({
       title: "Desativar fornecedor?",
-      text: `Deseja desativar "${fornecedor.nomeFornecedor}"?`,
+      text: `Deseja desativar "${fornecedor.nomeFornecedor}"? As matérias-primas vinculadas ficarão marcadas sem fornecedor ativo.`,
       icon: "warning",
 
       showCancelButton: true,
@@ -306,7 +329,8 @@ export default function Fornecedores() {
             }, 
             {
               label: "CNPJ",
-              value: "cnpj"
+              value: "cnpj",
+              type: "cnpj"
             },
             {
               label: "Endereço",
@@ -354,7 +378,7 @@ function Section({ title, fornecedores, onDelete, onActivate, onEdit }) {
               title={fornecedor.nomeFornecedor}
             >
               <p className="text-sm text-[#334E7F]">
-                CNPJ: {fornecedor.cnpj}
+                CNPJ: {mascararCnpj(fornecedor.cnpj)}
               </p>
 
               <p className="text-sm text-[#334E7F]">
