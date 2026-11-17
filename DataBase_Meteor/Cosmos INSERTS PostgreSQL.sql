@@ -188,14 +188,14 @@ BEGIN
   INSERT INTO manutencoesProgramadas
     (pk_manutencaoID, fk_equipamentoID, fk_maquinaID, tipoManutencao, descricao, especializacao, fk_mecanicoID, inicioPrevisto, terminoPrevisto, inicioEfetivo, conclusaoEfetiva, servicosRealizados, status)
   VALUES
-  (1, 1, 1, 'Preventiva', 'Troca de correia e lubrificação geral', 'Mecânica', p_serjao, '2026-09-15', '2026-09-15', '2026-09-15 08:00:00', '2026-09-15 11:30:00', 'Correia trocada e fusos lubrificados', 'Concluída'),
-  (2, 2, 2, 'Corretiva', 'Substituição do rolamento do eixo principal', 'Mecânica', p_serjao, '2026-08-20', '2026-08-20', '2026-08-20 08:10:00', '2026-08-20 16:40:00', 'Rolamento substituído e eixo balanceado', 'Concluída'),
-  (3, 3, 3, 'Preventiva', 'Revisão do sistema hidráulico', 'Hidráulica', p_serjao, '2026-07-05', '2026-07-05', '2026-07-05 08:00:00', '2026-07-05 15:30:00', 'Óleo hidráulico e vedações trocados', 'Concluída'),
-  (4, 4, 4, 'Preventiva', 'Limpeza e troca de filtros', 'Mecânica', p_serjao, '2026-09-28', '2026-09-28', '2026-09-28 09:00:00', '2026-09-28 11:45:00', 'Filtros de ar e óleo substituídos', 'Concluída'),
-  (5, 5, 5, 'Corretiva', 'Reparo da resistência de aquecimento', 'Elétrica', p_galo, '2026-06-12', '2026-06-12', '2026-06-12 08:15:00', '2026-06-12 16:20:00', 'Resistência substituída e forno testado', 'Concluída'),
-  (6, 2, 2, 'Corretiva', 'Ajuste do sistema de refrigeração', 'Mecânica', p_serjao, '2026-11-04', '2026-11-04', '2026-11-04 08:30:00', NULL, NULL, 'Em Execução'),
-  (7, 1, 1, 'Preventiva', 'Lubrificação geral e inspeção de fusos', 'Mecânica', p_serjao, '2026-11-10', '2026-11-10', NULL, NULL, NULL, 'Programada'),
-  (8, 4, NULL, 'Preditiva', 'Análise de vibração do compressor', 'Elétrica', p_galo, '2026-10-25', '2026-10-25', NULL, NULL, NULL, 'Cancelada')
+  (1, 1, 1, 'Preventiva', 'Troca de correia e lubrificação geral', 'Mecânica', p_serjao, '2026-09-15 08:00:00', '2026-09-15 12:00:00', '2026-09-15 08:00:00', '2026-09-15 11:30:00', 'Correia trocada e fusos lubrificados', 'Concluída'),
+  (2, 2, 2, 'Corretiva', 'Substituição do rolamento do eixo principal', 'Mecânica', p_serjao, '2026-08-20 08:00:00', '2026-08-20 17:00:00', '2026-08-20 08:10:00', '2026-08-20 16:40:00', 'Rolamento substituído e eixo balanceado', 'Concluída'),
+  (3, 3, 3, 'Preventiva', 'Revisão do sistema hidráulico', 'Hidráulica', p_serjao, '2026-07-05 08:00:00', '2026-07-05 16:00:00', '2026-07-05 08:00:00', '2026-07-05 15:30:00', 'Óleo hidráulico e vedações trocados', 'Concluída'),
+  (4, 4, 4, 'Preventiva', 'Limpeza e troca de filtros', 'Mecânica', p_serjao, '2026-09-28 09:00:00', '2026-09-28 12:00:00', '2026-09-28 09:00:00', '2026-09-28 11:45:00', 'Filtros de ar e óleo substituídos', 'Concluída'),
+  (5, 5, 5, 'Corretiva', 'Reparo da resistência de aquecimento', 'Elétrica', p_galo, '2026-06-12 08:00:00', '2026-06-12 17:00:00', '2026-06-12 08:15:00', '2026-06-12 16:20:00', 'Resistência substituída e forno testado', 'Concluída'),
+  (6, 2, 2, 'Corretiva', 'Ajuste do sistema de refrigeração', 'Mecânica', p_serjao, '2026-11-04 08:00:00', '2026-11-04 17:00:00', '2026-11-04 08:30:00', NULL, NULL, 'Em Execução'),
+  (7, 1, 1, 'Preventiva', 'Lubrificação geral e inspeção de fusos', 'Mecânica', p_serjao, '2026-11-10 08:00:00', '2026-11-10 12:00:00', NULL, NULL, NULL, 'Programada'),
+  (8, 4, NULL, 'Preditiva', 'Análise de vibração do compressor', 'Elétrica', p_galo, '2026-10-25 09:00:00', '2026-10-25 11:00:00', NULL, NULL, NULL, 'Cancelada')
   ON CONFLICT DO NOTHING;
 
   INSERT INTO historicoManutencao

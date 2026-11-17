@@ -129,7 +129,7 @@ CREATE TABLE movimentacoesEstoque (
     unidadeMedida       VARCHAR(20) NOT NULL,
     fk_usuarioID        INT NOT NULL,                             -- responsável pela operação
     fk_ordemID          INT NULL,                                 -- preenchido nas saídas (conclusão da ordem)
-    dataMovimentacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataMovimentacao    TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
     observacao          VARCHAR(300),
 
     PRIMARY KEY (pk_movimentacaoID),
@@ -204,7 +204,7 @@ CREATE TABLE historicoOrdens (
     fk_usuarioID    INT NOT NULL,
     statusAnterior  VARCHAR(50),
     statusNovo      VARCHAR(50),
-    dataAlteracao   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataAlteracao   TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
     observacao      VARCHAR(300),
 
     PRIMARY KEY (pk_historicoID),
@@ -221,7 +221,7 @@ CREATE TABLE inspecoes (
     totalProduzido  INT NOT NULL,
     aprovadas       INT NOT NULL DEFAULT 0,
     rejeitadas      INT NOT NULL DEFAULT 0,
-    dataInspecao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataInspecao    TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
     observacoes     VARCHAR(300),
 
     PRIMARY KEY (pk_inspecaoID),
@@ -241,7 +241,7 @@ CREATE TABLE rejeicoes (
     tipo            tipo_rejeicao NOT NULL DEFAULT 'Perda',
     acoesCorretivas VARCHAR(300),
     status          status_rejeicao NOT NULL DEFAULT 'Pendente', -- acompanha a conclusão do retrabalho
-    dataRejeicao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataRejeicao    TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
 
     PRIMARY KEY (pk_rejeicaoID),
     FOREIGN KEY (fk_inspecaoID) REFERENCES inspecoes(pk_inspecaoID),
@@ -283,8 +283,8 @@ CREATE TABLE manutencoesProgramadas (
     descricao           VARCHAR(300) NOT NULL,
     especializacao      VARCHAR(100) NOT NULL,
     fk_mecanicoID       INT NOT NULL,                           
-    inicioPrevisto      DATE NOT NULL,                           
-    terminoPrevisto     DATE NOT NULL,                           
+    inicioPrevisto      TIMESTAMP NOT NULL,                      
+    terminoPrevisto     TIMESTAMP NOT NULL,                     
     inicioEfetivo       TIMESTAMP NULL,                         
     conclusaoEfetiva    TIMESTAMP NULL,                         
     servicosRealizados  VARCHAR(500) NULL,                      
@@ -353,7 +353,7 @@ CREATE TABLE auditoria (
     dadosAnteriores JSONB NULL,
     dadosNovos      JSONB NULL,
     observacao      VARCHAR(300),
-    dataAcao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dataAcao        TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
 
     PRIMARY KEY (pk_auditoriaID),
     FOREIGN KEY (fk_usuarioID) REFERENCES usuarios(id)

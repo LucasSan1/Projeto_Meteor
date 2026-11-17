@@ -8,7 +8,7 @@ import {
   garantirTitularidade,
 } from "../../../utils/authMiddleware";
 import { getDataBrasilia } from "../../../utils/Datetime";
-import { toSqlDate } from "../../../utils/datetimeSql";
+import { toSqlDatetime } from "../../../utils/datetimeSql";
 import {
   especializacaoCompativel,
   validarAgendaMecanico,
@@ -87,18 +87,18 @@ export async function PATCH(request, { params }) {
 
     const mecanicoFinal = mecanico || manutencao.fk_mecanicoID;
 
-    const inicio = toSqlDate(
+    const inicio = toSqlDatetime(
       inicioPrevisto || manutencao.inicioPrevisto,
     );
 
-    const termino = toSqlDate(
+    const termino = toSqlDatetime(
       terminoPrevisto || manutencao.terminoPrevisto,
     );
 
-    if (termino < inicio) {
+    if (termino <= inicio) {
       throw {
         status: 400,
-        message: "O término previsto não pode ser antes do início!",
+        message: "O término previsto precisa ser depois do início!",
       };
     }
 
@@ -296,7 +296,10 @@ export async function PUT(request, { params }) {
         manutencao.inicioPrevisto,
         manutencao.terminoPrevisto,
         "manutenção",
-        { permitirAntecipacao: usuarioLogado.cargo === CARGOS.MECANICO },
+        {
+          permitirAntecipacao: usuarioLogado.cargo === CARGOS.MECANICO,
+          comHora: true,
+        },
       );
 
       inicioAntecipado = janela.inicioAntecipado;

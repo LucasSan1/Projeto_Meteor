@@ -43,7 +43,7 @@ export async function GET(request) {
         `SELECT COUNT(*) AS total
          FROM ordensProducao
          WHERE status IN ('Pendente', 'Em Produção')
-           AND terminoPlanejado < CURRENT_DATE`,
+           AND terminoPlanejado < (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date`,
       ),
       pool.query(
         "SELECT COUNT(*) AS total FROM profissionais WHERE status = 'Ativo' AND ehOperador = 1",
@@ -64,7 +64,7 @@ export async function GET(request) {
         `SELECT COUNT(*) AS total
          FROM manutencoesProgramadas
          WHERE status IN ('Programada', 'Em Execução')
-           AND terminoPrevisto < CURRENT_DATE`,
+           AND terminoPrevisto < (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')`,
       ),
       pool.query("SELECT COUNT(*) AS total FROM pecas WHERE status = 'Ativo'"),
       pool.query(

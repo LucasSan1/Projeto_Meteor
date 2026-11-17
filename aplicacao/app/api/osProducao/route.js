@@ -48,7 +48,7 @@ export async function GET(request) {
           op.status,
           CASE
             WHEN op.status IN ('Pendente', 'Em Produção')
-             AND op.terminoPlanejado < CURRENT_DATE
+             AND op.terminoPlanejado < (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date
             THEN 1 ELSE 0
           END AS atrasada
         FROM ordensProducao op

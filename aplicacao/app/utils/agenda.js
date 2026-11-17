@@ -79,6 +79,13 @@ export function formatarDia(dia) {
   return `${data}/${mes}/${ano}`;
 }
 
+function formatarQuando(valor, comHora) {
+  const data = normalizarDataHora(valor);
+  const dia = formatarDia(diaDe(data));
+
+  return comHora ? `${dia} às ${data.slice(11, 16)}` : dia;
+}
+
 // Aptidão por especialização
 export function especializacaoCompativel(exigida, doProfissional) {
   const requerida = String(exigida || "").trim().toLowerCase();
@@ -95,13 +102,17 @@ export function validarJanelaExecucao(
   inicioPrevisto,
   terminoPrevisto,
   entidade,
-  { permitirAntecipacao = false } = {},
+  { permitirAntecipacao = false, comHora = false } = {},
 ) {
   const agora = getDataBrasilia();
 
-  const diaInicio = diaDe(inicioPrevisto);
-  const inicio = inicioDoDia(inicioPrevisto);
-  const termino = fimDoDia(terminoPrevisto);
+  const inicio = comHora
+    ? normalizarDataHora(inicioPrevisto)
+    : inicioDoDia(inicioPrevisto);
+
+  const termino = comHora
+    ? normalizarDataHora(terminoPrevisto)
+    : fimDoDia(terminoPrevisto);
 
   if (agora < inicio) {
     if (permitirAntecipacao) {
@@ -110,7 +121,7 @@ export function validarJanelaExecucao(
 
     throw {
       status: 400,
-      message: `A ${entidade} só pode ser iniciada a partir de ${formatarDia(diaInicio)}!`,
+      message: `A ${entidade} só pode ser iniciada a partir de ${formatarQuando(inicio, comHora)}!`,
     };
   }
 
@@ -248,43 +259,25 @@ export async function validarAgendaOperador(
 }
 
 
-function diasDaManutencao(manutencao) {
-  const dias = new Set();
-
-  if (manutencao.status === "Concluída") {
-    if (manutencao.inicioEfetivo) {
-      listarDias(
-        manutencao.inicioEfetivo,
-        manutencao.conclusaoEfetiva || manutencao.inicioEfetivo,
-      ).forEach((dia) => dias.add(dia));
-    }
-
-    return dias;
-  }
-
-  listarDias(manutencao.inicioPrevisto, manutencao.terminoPrevisto).forEach(
-    (dia) => dias.add(dia),
-  );
-
-  if (manutencao.status === "Em Execução" && manutencao.inicioEfetivo) {
-    const fimEfetivo = manutencao.conclusaoEfetiva || getDataBrasilia();
-
-    listarDias(manutencao.inicioEfetivo, fimEfetivo).forEach((dia) =>
-      dias.add(dia),
-    );
-  }
-
-  return dias;
+function janelaDaManutencao(manutencao) {
+  return {
+    inicio: normalizarDataHora(
+      manutencao.inicioEfetivo || manutencao.inicioPrevisto,
+    ),
+    termino: normalizarDataHora(
+      manutencao.conclusaoEfetiva || manutencao.terminoPrevisto,
+    ),
+  };
 }
-
 
 export async function validarAgendaMecanico(
   connection,
   { profissionalID, inicio, termino, ignorarManutencaoID = null },
 ) {
-  const diasPedido = listarDias(inicio, termino);
+  const inicioPedido = normalizarDataHora(inicio);
+  const terminoPedido = normalizarDataHora(termino);
 
-  if (diasPedido.length === 0) {
+  if (!inicioPedido || !terminoPedido) {
     throw { status: 400, message: "Período inválido para a agenda!" };
   }
 
@@ -301,13 +294,13 @@ export async function validarAgendaMecanico(
       continue;
     }
 
-    const diasOcupados = diasDaManutencao(manutencao);
-    const conflito = diasPedido.find((dia) => diasOcupados.has(dia));
+    const janela = janelaDaManutencao(manutencao);
 
-    if (conflito) {
+    // Mais de uma manutenção no mesmo dia só não pode se sobrepor no horário
+    if (sobrepoe(inicioPedido, terminoPedido, janela.inicio, janela.termino)) {
       throw {
         status: 409,
-        message: `O mecânico já tem a manutenção "${manutencao.descricao}" em ${formatarDia(conflito)}. Cada mecânico só pode ter uma atividade por dia!`,
+        message: `O mecânico já tem a manutenção "${manutencao.descricao}" das ${janela.inicio.slice(11, 16)} às ${janela.termino.slice(11, 16)} de ${formatarDia(janela.inicio.slice(0, 10))}. Escolha outro horário!`,
       };
     }
   }
@@ -320,6 +313,8 @@ export async function validarAgendaMecanico(
      WHERE fk_operadorID = ? AND status IN ('Pendente', 'Em Produção', 'Concluída')`,
     [profissionalID],
   );
+
+  const diasPedido = listarDias(inicioPedido, terminoPedido);
 
   for (const ordem of ordens) {
     const diasOcupados = diasDaOrdem(ordem);
