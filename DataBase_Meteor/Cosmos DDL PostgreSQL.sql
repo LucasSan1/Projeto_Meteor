@@ -78,13 +78,14 @@ CREATE TABLE profissionais (
     ehOperador          SMALLINT NOT NULL DEFAULT 0,
     ehMecanico          SMALLINT NOT NULL DEFAULT 0,
     especializacao      VARCHAR(100),
-    telefone            VARCHAR(50),
+    telefone            VARCHAR(50),                              
     status              status_registro NOT NULL DEFAULT 'Ativo',
 
     PRIMARY KEY (pk_profissionalID),
     UNIQUE (fk_usuarioID),
     FOREIGN KEY (fk_usuarioID) REFERENCES usuarios(id),
-    CONSTRAINT chkProfissionalFuncao CHECK (ehOperador = 1 OR ehMecanico = 1)
+    CONSTRAINT chkProfissionalFuncao CHECK (ehOperador = 1 OR ehMecanico = 1),
+    CONSTRAINT uqProfissionalTelefone UNIQUE (telefone)
 );
 
 
@@ -159,9 +160,9 @@ CREATE TABLE ordensProducao (
     quantidadePlanejada     INT NOT NULL,
     especializacao          VARCHAR(100) NOT NULL,             
     fk_operadorID           INT NOT NULL,                      
-    inicioPlanejado         TIMESTAMP NOT NULL,
-    terminoPlanejado        TIMESTAMP NOT NULL,
-    inicioEfetivo           TIMESTAMP NULL,                    
+    inicioPlanejado         DATE NOT NULL,                       
+    terminoPlanejado        DATE NOT NULL,                       
+    inicioEfetivo           TIMESTAMP NULL,                     
     conclusaoEfetiva        TIMESTAMP NULL,                     
     status                  status_ordem_producao NOT NULL DEFAULT 'Pendente',
 
@@ -170,7 +171,7 @@ CREATE TABLE ordensProducao (
     FOREIGN KEY (fk_pecaID)      REFERENCES pecas(pk_pecaID),
     FOREIGN KEY (fk_operadorID)  REFERENCES profissionais(pk_profissionalID),
     CONSTRAINT chkOrdemQtd       CHECK (quantidadePlanejada > 0),
-    CONSTRAINT chkOrdemPlanejado CHECK (terminoPlanejado > inicioPlanejado),
+    CONSTRAINT chkOrdemPlanejado CHECK (terminoPlanejado >= inicioPlanejado),
     -- A conclusão não pode chegar antes do início
     -- Por ordem da compania viagem no tempo é expressamente proibida
     CONSTRAINT chkOrdemEfetivo   CHECK (conclusaoEfetiva IS NULL OR inicioEfetivo IS NULL OR conclusaoEfetiva >= inicioEfetivo)
@@ -282,9 +283,9 @@ CREATE TABLE manutencoesProgramadas (
     descricao           VARCHAR(300) NOT NULL,
     especializacao      VARCHAR(100) NOT NULL,
     fk_mecanicoID       INT NOT NULL,                           
-    inicioPrevisto      TIMESTAMP NOT NULL,
-    terminoPrevisto     TIMESTAMP NOT NULL,
-    inicioEfetivo       TIMESTAMP NULL,                        
+    inicioPrevisto      DATE NOT NULL,                           
+    terminoPrevisto     DATE NOT NULL,                           
+    inicioEfetivo       TIMESTAMP NULL,                         
     conclusaoEfetiva    TIMESTAMP NULL,                         
     servicosRealizados  VARCHAR(500) NULL,                      
     status              status_manutencao NOT NULL DEFAULT 'Programada',
@@ -293,7 +294,7 @@ CREATE TABLE manutencoesProgramadas (
     FOREIGN KEY (fk_equipamentoID) REFERENCES equipamentos(pk_equipamentoID),
     FOREIGN KEY (fk_maquinaID)     REFERENCES maquinas(pk_maquinaID),
     FOREIGN KEY (fk_mecanicoID)    REFERENCES profissionais(pk_profissionalID),
-    CONSTRAINT chkManutPrevisto CHECK (terminoPrevisto > inicioPrevisto),
+    CONSTRAINT chkManutPrevisto CHECK (terminoPrevisto >= inicioPrevisto),
     CONSTRAINT chkManutEfetivo  CHECK (conclusaoEfetiva IS NULL OR inicioEfetivo IS NULL OR conclusaoEfetiva >= inicioEfetivo)
 );
 

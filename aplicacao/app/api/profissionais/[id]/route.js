@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql";
 import { checkAuthPosition } from "../../../utils/authChecker";
+import { normalizarTelefone } from "../../../utils/mascaras";
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -78,7 +79,10 @@ export async function PATCH(request, { params }) {
     const espFinal =
       especializacao !== undefined ? especializacao : profissional.especializacao;
 
-    const telFinal = telefone !== undefined ? telefone : profissional.telefone;
+    const telFinal =
+      telefone !== undefined
+        ? normalizarTelefone(telefone)
+        : profissional.telefone;
 
     const [result] = await pool.query(
       "UPDATE profissionais SET ehOperador = ?, ehMecanico = ?, especializacao = ?, telefone = ? WHERE pk_profissionalID = ?",
@@ -95,6 +99,14 @@ export async function PATCH(request, { params }) {
     );
   } catch (err) {
     console.log("Profissionais PATCH : ", err);
+
+    if (err.code === "ER_DUP_ENTRY") {
+   
+      return NextResponse.json(
+        { message: "Já existe um profissional com esse telefone!" },
+        { status: 409 },
+      );
+    }
 
     if (err.status) {
       return NextResponse.json(

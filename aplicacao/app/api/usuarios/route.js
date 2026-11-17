@@ -3,6 +3,8 @@ import pool from "../../lib/connSql";
 import { checkAuthPosition, CARGOS } from "../../utils/authChecker";
 import { hashPass } from "../../utils/hash";
 import { papeisDoCargo } from "../../utils/papeisProfissional";
+import { normalizarTelefone } from "../../utils/mascaras";
+import { ehDuplicadoDe } from "../../utils/erroDuplicado";
 
 const CARGOS_VALIDOS = Object.values(CARGOS);
 
@@ -141,7 +143,7 @@ export async function POST(request) {
             papeis.operador,
             papeis.mecanico,
             especializacao || null,
-            telefone || null,
+            normalizarTelefone(telefone),
           ],
         );
       }
@@ -162,6 +164,14 @@ export async function POST(request) {
     console.log("Usuarios POST : ", err);
 
     if (err.code === "ER_DUP_ENTRY") {
+  
+      if (ehDuplicadoDe(err, "telefone")) {
+        return NextResponse.json(
+          { message: "Já existe um profissional com esse telefone!" },
+          { status: 409 },
+        );
+      }
+
       return NextResponse.json(
         { message: "Já existe um usuário com esse e-mail!" },
         { status: 409 },

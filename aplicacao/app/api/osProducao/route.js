@@ -6,7 +6,7 @@ import {
   CARGOS,
   exigirPerfilOperador,
 } from "../../utils/authMiddleware";
-import { toSqlDatetime } from "../../utils/datetimeSql";
+import { toSqlDate } from "../../utils/datetimeSql";
 import {
   especializacaoCompativel,
   validarAgendaOperador,
@@ -48,7 +48,7 @@ export async function GET(request) {
           op.status,
           CASE
             WHEN op.status IN ('Pendente', 'Em Produção')
-             AND op.terminoPlanejado < NOW()
+             AND op.terminoPlanejado < CURRENT_DATE
             THEN 1 ELSE 0
           END AS atrasada
         FROM ordensProducao op
@@ -149,13 +149,13 @@ export async function POST(request) {
       };
     }
 
-    const inicio = toSqlDatetime(inicioPlanejado);
-    const termino = toSqlDatetime(terminoPlanejado);
+    const inicio = toSqlDate(inicioPlanejado);
+    const termino = toSqlDate(terminoPlanejado);
 
-    if (new Date(termino) <= new Date(inicio)) {
+    if (termino < inicio) {
       throw {
         status: 400,
-        message: "O término planejado deve ser depois do início!",
+        message: "O término planejado não pode ser antes do início!",
       };
     }
 

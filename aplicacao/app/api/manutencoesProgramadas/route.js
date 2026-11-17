@@ -6,7 +6,7 @@ import {
   exigirPerfilMecanico,
   garantirTitularidade,
 } from "../../utils/authMiddleware";
-import { toSqlDatetime } from "../../utils/datetimeSql";
+import { toSqlDate } from "../../utils/datetimeSql";
 import {
   especializacaoCompativel,
   validarAgendaMecanico,
@@ -46,7 +46,7 @@ export async function GET(request) {
         mp.status,
         CASE
           WHEN mp.status IN ('Programada', 'Em Execução')
-           AND mp.terminoPrevisto < NOW()
+           AND mp.terminoPrevisto < CURRENT_DATE
           THEN 1 ELSE 0
         END AS atrasada,
         e.nomeEquipamento AS equipamento,
@@ -134,13 +134,14 @@ export async function POST(request) {
       );
     }
 
-    const inicio = toSqlDatetime(inicioPrevisto);
-    const termino = toSqlDatetime(terminoPrevisto);
+    const inicio = toSqlDate(inicioPrevisto);
+    const termino = toSqlDate(terminoPrevisto);
 
-    if (new Date(termino) <= new Date(inicio)) {
+    // Mesmo dia é permitido; só inverteu a ordem quando fica menor
+    if (termino < inicio) {
       throw {
         status: 400,
-        message: "O término previsto deve ser depois do início!",
+        message: "O término previsto não pode ser antes do início!",
       };
     }
 

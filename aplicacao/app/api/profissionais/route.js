@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
 import { autorizar, CARGOS } from "../../utils/authMiddleware";
+import { normalizarTelefone } from "../../utils/mascaras";
+import { ehDuplicadoDe } from "../../utils/erroDuplicado";
 
 // Lista os profissionais junto com os dados de login (nome, e-mail, cargo)
 // Gestor vê todo mundo; operador/mecânico só vê o próprio cadastro
@@ -106,7 +108,13 @@ export async function POST(request) {
 
     const [result] = await pool.query(
       "INSERT INTO profissionais (fk_usuarioID, ehOperador, ehMecanico, especializacao, telefone) VALUES (?, ?, ?, ?, ?)",
-      [usuario, operador, mecanico, especializacao, telefone],
+      [
+        usuario,
+        operador,
+        mecanico,
+        especializacao,
+        normalizarTelefone(telefone),
+      ],
     );
 
     return NextResponse.json({
@@ -117,6 +125,14 @@ export async function POST(request) {
     console.log("Profissionais POST : ", err);
 
     if (err.code === "ER_DUP_ENTRY") {
+
+      if (ehDuplicadoDe(err, "telefone")) {
+        return NextResponse.json(
+          { message: "Já existe um profissional com esse telefone!" },
+          { status: 409 },
+        );
+      }
+
       return NextResponse.json(
         { message: "Esse usuário já é um profissional!" },
         { status: 409 },

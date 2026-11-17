@@ -48,22 +48,22 @@ BEGIN
   -- Uma linha por pessoa, com as flags dos papéis
   -- Ninguém aqui é operador E mecânico ao mesmo tempo, pra manter o exemplo simples
   INSERT INTO profissionais (fk_usuarioID, ehOperador, ehMecanico, especializacao, telefone, status)
-  VALUES (u_irinel, 1, 0, 'Usinagem', '(11) 98888-1001', 'Ativo')
+  VALUES (u_irinel, 1, 0, 'Usinagem', '11988881001', 'Ativo')
   ON CONFLICT (fk_usuarioID) DO NOTHING;
   SELECT pk_profissionalID INTO p_irinel FROM profissionais WHERE fk_usuarioID = u_irinel;
 
   INSERT INTO profissionais (fk_usuarioID, ehOperador, ehMecanico, especializacao, telefone, status)
-  VALUES (u_fulano, 1, 0, 'Montagem', '(11) 98888-1002', 'Ativo')
+  VALUES (u_fulano, 1, 0, 'Montagem', '11988881002', 'Ativo')
   ON CONFLICT (fk_usuarioID) DO NOTHING;
   SELECT pk_profissionalID INTO p_fulano FROM profissionais WHERE fk_usuarioID = u_fulano;
 
   INSERT INTO profissionais (fk_usuarioID, ehOperador, ehMecanico, especializacao, telefone, status)
-  VALUES (u_serjao, 0, 1, 'Mecânica', '(11) 98888-1003', 'Ativo')
+  VALUES (u_serjao, 0, 1, 'Mecânica', '11988881003', 'Ativo')
   ON CONFLICT (fk_usuarioID) DO NOTHING;
   SELECT pk_profissionalID INTO p_serjao FROM profissionais WHERE fk_usuarioID = u_serjao;
 
   INSERT INTO profissionais (fk_usuarioID, ehOperador, ehMecanico, especializacao, telefone, status)
-  VALUES (u_galo, 0, 1, 'Elétrica', '(11) 98888-1004', 'Ativo')
+  VALUES (u_galo, 0, 1, 'Elétrica', '11988881004', 'Ativo')
   ON CONFLICT (fk_usuarioID) DO NOTHING;
   SELECT pk_profissionalID INTO p_galo FROM profissionais WHERE fk_usuarioID = u_galo;
 
@@ -102,14 +102,14 @@ BEGIN
   INSERT INTO ordensProducao
     (pk_ordemID, codigo, fk_pecaID, quantidadePlanejada, especializacao, fk_operadorID, inicioPlanejado, terminoPlanejado, inicioEfetivo, conclusaoEfetiva, status)
   VALUES
-  (1, 'OP-2026-001', 1, 100, 'Usinagem', p_irinel, '2026-09-01 08:00:00', '2026-09-05 17:00:00', '2026-09-01 08:10:00', '2026-09-04 16:40:00', 'Concluída'),
-  (2, 'OP-2026-002', 2, 50, 'Usinagem', p_irinel, '2026-09-08 08:00:00', '2026-09-12 17:00:00', '2026-09-08 08:00:00', '2026-09-11 17:20:00', 'Concluída'),
-  (3, 'OP-2026-003', 3, 200, 'Montagem', p_fulano, '2026-10-12 08:00:00', '2026-10-18 17:00:00', '2026-10-12 08:05:00', NULL, 'Em Produção'),
-  (4, 'OP-2026-004', 4, 75, 'Montagem', p_fulano, '2026-10-20 08:00:00', '2026-10-25 17:00:00', NULL, NULL, 'Pendente'),
-  (5, 'OP-2026-005', 5, 30, 'Usinagem', p_irinel, '2026-09-15 08:00:00', '2026-09-19 17:00:00', '2026-09-15 08:00:00', '2026-09-18 17:10:00', 'Concluída'),
-  (6, 'OP-2026-006', 3, 120, 'Montagem', p_fulano, '2026-09-22 08:00:00', '2026-09-28 17:00:00', '2026-09-22 08:15:00', '2026-09-27 15:50:00', 'Concluída'),
-  (7, 'OP-2026-007', 1, 80, 'Usinagem', p_irinel, '2026-09-29 08:00:00', '2026-10-03 17:00:00', '2026-09-29 08:00:00', '2026-10-02 16:30:00', 'Concluída'),
-  (8, 'OP-2026-008', 2, 40, 'Usinagem', p_irinel, '2026-10-05 08:00:00', '2026-10-09 17:00:00', NULL, NULL, 'Cancelada')
+  (1, 'OP-2026-001', 1, 100, 'Usinagem', p_irinel, '2026-09-01', '2026-09-05', '2026-09-01 08:10:00', '2026-09-04 16:40:00', 'Concluída'),
+  (2, 'OP-2026-002', 2, 50, 'Usinagem', p_irinel, '2026-09-08', '2026-09-12', '2026-09-08 08:00:00', '2026-09-11 17:20:00', 'Concluída'),
+  (3, 'OP-2026-003', 3, 200, 'Montagem', p_fulano, '2026-10-12', '2026-10-18', '2026-10-12 08:05:00', NULL, 'Em Produção'),
+  (4, 'OP-2026-004', 4, 75, 'Montagem', p_fulano, '2026-10-20', '2026-10-25', NULL, NULL, 'Pendente'),
+  (5, 'OP-2026-005', 5, 30, 'Usinagem', p_irinel, '2026-09-15', '2026-09-19', '2026-09-15 08:00:00', '2026-09-18 17:10:00', 'Concluída'),
+  (6, 'OP-2026-006', 3, 120, 'Montagem', p_fulano, '2026-09-22', '2026-09-28', '2026-09-22 08:15:00', '2026-09-27 15:50:00', 'Concluída'),
+  (7, 'OP-2026-007', 1, 80, 'Usinagem', p_irinel, '2026-09-29', '2026-10-03', '2026-09-29 08:00:00', '2026-10-02 16:30:00', 'Concluída'),
+  (8, 'OP-2026-008', 2, 40, 'Usinagem', p_irinel, '2026-10-05', '2026-10-09', NULL, NULL, 'Cancelada')
   ON CONFLICT DO NOTHING;
 
   -- Materiais previstos/consumidos pelas ordens
@@ -188,14 +188,14 @@ BEGIN
   INSERT INTO manutencoesProgramadas
     (pk_manutencaoID, fk_equipamentoID, fk_maquinaID, tipoManutencao, descricao, especializacao, fk_mecanicoID, inicioPrevisto, terminoPrevisto, inicioEfetivo, conclusaoEfetiva, servicosRealizados, status)
   VALUES
-  (1, 1, 1, 'Preventiva', 'Troca de correia e lubrificação geral', 'Mecânica', p_serjao, '2026-09-15 08:00:00', '2026-09-15 12:00:00', '2026-09-15 08:00:00', '2026-09-15 11:30:00', 'Correia trocada e fusos lubrificados', 'Concluída'),
-  (2, 2, 2, 'Corretiva', 'Substituição do rolamento do eixo principal', 'Mecânica', p_serjao, '2026-08-20 08:00:00', '2026-08-20 17:00:00', '2026-08-20 08:10:00', '2026-08-20 16:40:00', 'Rolamento substituído e eixo balanceado', 'Concluída'),
-  (3, 3, 3, 'Preventiva', 'Revisão do sistema hidráulico', 'Hidráulica', p_serjao, '2026-07-05 08:00:00', '2026-07-05 16:00:00', '2026-07-05 08:00:00', '2026-07-05 15:30:00', 'Óleo hidráulico e vedações trocados', 'Concluída'),
-  (4, 4, 4, 'Preventiva', 'Limpeza e troca de filtros', 'Mecânica', p_serjao, '2026-09-28 09:00:00', '2026-09-28 12:00:00', '2026-09-28 09:00:00', '2026-09-28 11:45:00', 'Filtros de ar e óleo substituídos', 'Concluída'),
-  (5, 5, 5, 'Corretiva', 'Reparo da resistência de aquecimento', 'Elétrica', p_galo, '2026-06-12 08:00:00', '2026-06-12 17:00:00', '2026-06-12 08:15:00', '2026-06-12 16:20:00', 'Resistência substituída e forno testado', 'Concluída'),
-  (6, 2, 2, 'Corretiva', 'Ajuste do sistema de refrigeração', 'Mecânica', p_serjao, '2026-11-04 08:00:00', '2026-11-04 17:00:00', '2026-11-04 08:30:00', NULL, NULL, 'Em Execução'),
-  (7, 1, 1, 'Preventiva', 'Lubrificação geral e inspeção de fusos', 'Mecânica', p_serjao, '2026-11-10 08:00:00', '2026-11-10 12:00:00', NULL, NULL, NULL, 'Programada'),
-  (8, 4, NULL, 'Preditiva', 'Análise de vibração do compressor', 'Elétrica', p_galo, '2026-10-25 09:00:00', '2026-10-25 11:00:00', NULL, NULL, NULL, 'Cancelada')
+  (1, 1, 1, 'Preventiva', 'Troca de correia e lubrificação geral', 'Mecânica', p_serjao, '2026-09-15', '2026-09-15', '2026-09-15 08:00:00', '2026-09-15 11:30:00', 'Correia trocada e fusos lubrificados', 'Concluída'),
+  (2, 2, 2, 'Corretiva', 'Substituição do rolamento do eixo principal', 'Mecânica', p_serjao, '2026-08-20', '2026-08-20', '2026-08-20 08:10:00', '2026-08-20 16:40:00', 'Rolamento substituído e eixo balanceado', 'Concluída'),
+  (3, 3, 3, 'Preventiva', 'Revisão do sistema hidráulico', 'Hidráulica', p_serjao, '2026-07-05', '2026-07-05', '2026-07-05 08:00:00', '2026-07-05 15:30:00', 'Óleo hidráulico e vedações trocados', 'Concluída'),
+  (4, 4, 4, 'Preventiva', 'Limpeza e troca de filtros', 'Mecânica', p_serjao, '2026-09-28', '2026-09-28', '2026-09-28 09:00:00', '2026-09-28 11:45:00', 'Filtros de ar e óleo substituídos', 'Concluída'),
+  (5, 5, 5, 'Corretiva', 'Reparo da resistência de aquecimento', 'Elétrica', p_galo, '2026-06-12', '2026-06-12', '2026-06-12 08:15:00', '2026-06-12 16:20:00', 'Resistência substituída e forno testado', 'Concluída'),
+  (6, 2, 2, 'Corretiva', 'Ajuste do sistema de refrigeração', 'Mecânica', p_serjao, '2026-11-04', '2026-11-04', '2026-11-04 08:30:00', NULL, NULL, 'Em Execução'),
+  (7, 1, 1, 'Preventiva', 'Lubrificação geral e inspeção de fusos', 'Mecânica', p_serjao, '2026-11-10', '2026-11-10', NULL, NULL, NULL, 'Programada'),
+  (8, 4, NULL, 'Preditiva', 'Análise de vibração do compressor', 'Elétrica', p_galo, '2026-10-25', '2026-10-25', NULL, NULL, NULL, 'Cancelada')
   ON CONFLICT DO NOTHING;
 
   INSERT INTO historicoManutencao
