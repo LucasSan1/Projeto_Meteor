@@ -11,6 +11,7 @@ const mapaColunas = {
   fk_usuarioid: "fk_usuarioID",
   ehoperador: "ehOperador",
   ehmecanico: "ehMecanico",
+  tokenversao: "tokenVersao",
   pk_fornecedorid: "pk_fornecedorID",
   nomefornecedor: "nomeFornecedor",
   pk_materiaid: "pk_materiaID",

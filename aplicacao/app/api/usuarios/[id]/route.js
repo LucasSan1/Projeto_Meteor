@@ -170,14 +170,27 @@ export async function PATCH(request, { params }) {
     // Senha só muda se vier algo; senão mantém o hash atual
     const senhaFinal = senha?.trim() ? await hashPass(senha) : usuario.senha;
 
+    // Troca de senha ou mudança de status derruba as sessões abertas do usuário
+    const renovarSessao = Boolean(senha?.trim()) || usuario.status !== statusFinal;
+
     const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
 
       const [result] = await connection.query(
-        "UPDATE usuarios SET nome = ?, email = ?, cargo = ?, senha = ?, status = ? WHERE id = ?",
-        [nomeFinal, emailFinal, cargoFinal, senhaFinal, statusFinal, id],
+        `UPDATE usuarios
+            SET nome = ?, email = ?, cargo = ?, senha = ?, status = ?, tokenVersao = tokenVersao + ?
+          WHERE id = ?`,
+        [
+          nomeFinal,
+          emailFinal,
+          cargoFinal,
+          senhaFinal,
+          statusFinal,
+          renovarSessao ? 1 : 0,
+          id,
+        ],
       );
 
       if (result.affectedRows === 0) {

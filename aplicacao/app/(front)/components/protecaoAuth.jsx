@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { limparSessao, tokenExpirado } from "../../utils/sessao";
 
 // Rotas que não exigem login (se proteger a própria /login vira loop de redirect)
-const ROTAS_PUBLICAS = ["/login"];
+const ROTAS_PUBLICAS = ["/login", "/esqueciSenha", "/redefinirSenha"];
 
 // O gestor manda em tudo, operador e mecânico só têm o que precisam pro trabalho
 const ROTAS_POR_CARGO = {

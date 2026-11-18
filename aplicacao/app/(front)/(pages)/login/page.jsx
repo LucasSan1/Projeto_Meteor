@@ -226,7 +226,7 @@ export default function Login() {
             </button>
 
             <Link
-              href="/forgot"
+              href="/esqueciSenha"
               className="
               text-center
               text-[13px]

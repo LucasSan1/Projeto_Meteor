@@ -3,6 +3,7 @@ import  pool  from "../../../lib/connSql";
 import bcrypt from "bcrypt"
 import { generateToken } from "../../../utils/jwt"
 import { hashPass } from "../../../utils/hash"
+import { validarSenhaForte } from "../../../utils/senha"
 import { autenticar } from "../../../utils/authMiddleware"
 
 export async function POST(request) {
@@ -12,7 +13,7 @@ export async function POST(request) {
         const { email, senha } = body;
 
         const [result]  = await pool.query(
-            "SELECT email, senha, nome, cargo, status FROM usuarios WHERE email = ?",
+            "SELECT email, senha, nome, cargo, status, tokenVersao FROM usuarios WHERE email = ?",
             [email]
         )
 
@@ -29,7 +30,7 @@ export async function POST(request) {
             )
         }
 
-        const token = generateToken(user.email, user.cargo)
+        const token = generateToken(user.email, user.cargo, user.tokenVersao)
 
         return NextResponse.json(
             { token: token, cargo: user.cargo, usuario: user.nome },
@@ -56,6 +57,12 @@ export async function PUT(request){
 
         if(!senhaAtual || !novaSenha?.trim()){
             throw { status: 400, message: "Informe a senha atual e a nova senha!" };
+        }
+
+        const erroSenha = validarSenhaForte(novaSenha);
+
+        if(erroSenha){
+            throw { status: 400, message: erroSenha };
         }
 
         const [user] = await pool.query(
@@ -88,7 +95,7 @@ export async function PUT(request){
         const hashedPass = await hashPass(novaSenha);
 
         await pool.query(
-            "UPDATE usuarios SET senha = ? WHERE email = ?",
+            "UPDATE usuarios SET senha = ?, tokenVersao = tokenVersao + 1 WHERE email = ?",
             [hashedPass, usuarioLogado.email]
         )
 
