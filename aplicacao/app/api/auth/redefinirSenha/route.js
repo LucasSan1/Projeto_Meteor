@@ -121,7 +121,7 @@ export async function PUT(request) {
     }
 
     await connection.query(
-      "UPDATE usuarios SET senha = ?, tokenVersao = tokenVersao + 1 WHERE id = ?",
+      "UPDATE usuarios SET senha = ?, primeiroAcesso = false, tokenVersao = tokenVersao + 1 WHERE id = ?",
       [senhaCript, pedido.fk_usuarioID],
     );
 

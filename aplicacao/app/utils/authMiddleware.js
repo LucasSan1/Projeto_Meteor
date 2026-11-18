@@ -10,7 +10,7 @@ export const CARGOS = {
 
 // Lê o token, valida assinatura/expiração e recarrega o usuário no banco
 // Recarregar do banco é o que impede um token antigo de continuar valendo depois que a conta foi desativada ou o cargo mudou
-export async function autenticar(request) {
+export async function autenticar(request, opcoes = {}) {
   const authHeader = request.headers.get("authorization");
 
   if (!authHeader) {
@@ -35,6 +35,7 @@ export async function autenticar(request) {
        u.cargo,
        u.status,
        u.tokenVersao,
+       u.primeiroAcesso,
        p.pk_profissionalID,
        p.ehOperador,
        p.ehMecanico,
@@ -61,6 +62,13 @@ export async function autenticar(request) {
   // Token de antes da troca de senha não entra mais
   if (Number(payload.versao ?? 0) !== Number(usuario.tokenVersao ?? 0)) {
     throw { status: 401, message: "Sessão expirada! Faça login novamente." };
+  }
+
+  if (usuario.primeiroAcesso && !opcoes.permitirPrimeiroAcesso) {
+    throw {
+      status: 403,
+      message: "Troca de senha obrigatória no primeiro acesso!",
+    };
   }
 
   return {

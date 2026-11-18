@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { limparSessao, tokenExpirado } from "../../utils/sessao";
+import { HOME_POR_CARGO } from "../../utils/homePorCargo";
 
 // Rotas que não exigem login (se proteger a própria /login vira loop de redirect)
 const ROTAS_PUBLICAS = ["/login", "/esqueciSenha", "/redefinirSenha"];
@@ -33,12 +34,6 @@ const ROTAS_POR_CARGO = {
   mecanico: ["/manutencoesProgramadas", "/trocarSenha"],
 };
 
-// Pra onde cada perfil vai quando tenta abrir uma tela que não é dele
-const HOME_POR_CARGO = {
-  gerente: "/",
-  operador: "/ordemServico",
-  mecanico: "/manutencoesProgramadas",
-};
 
 // Remove barra sobrando pra comparar direitinho
 function normalizarRota(pathname) {
@@ -89,6 +84,15 @@ export default function ProtecaoAuth({ children }) {
 
       setLiberado(false);
       router.replace("/login");
+      return;
+    }
+
+    if (
+      localStorage.getItem("primeiroAcesso") === "1" &&
+      rota !== "/trocarSenha"
+    ) {
+      setLiberado(false);
+      router.replace("/trocarSenha");
       return;
     }
 

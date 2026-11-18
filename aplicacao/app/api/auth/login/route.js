@@ -13,7 +13,7 @@ export async function POST(request) {
         const { email, senha } = body;
 
         const [result]  = await pool.query(
-            "SELECT email, senha, nome, cargo, status, tokenVersao FROM usuarios WHERE email = ?",
+            "SELECT email, senha, nome, cargo, status, tokenVersao, primeiroAcesso FROM usuarios WHERE email = ?",
             [email]
         )
 
@@ -33,7 +33,12 @@ export async function POST(request) {
         const token = generateToken(user.email, user.cargo, user.tokenVersao)
 
         return NextResponse.json(
-            { token: token, cargo: user.cargo, usuario: user.nome },
+            {
+                token: token,
+                cargo: user.cargo,
+                usuario: user.nome,
+                primeiroAcesso: Boolean(user.primeiroAcesso),
+            },
             { status: 200}
         )
         
@@ -50,13 +55,16 @@ export async function POST(request) {
 // Rota para atualizar senha
 export async function PUT(request){
     try{
-        const usuarioLogado = await autenticar(request);
+       
+        const usuarioLogado = await autenticar(request, {
+            permitirPrimeiroAcesso: true,
+        });
 
         const body = await request.json();
         const { senhaAtual, novaSenha } = body;
 
-        if(!senhaAtual || !novaSenha?.trim()){
-            throw { status: 400, message: "Informe a senha atual e a nova senha!" };
+        if(!novaSenha?.trim()){
+            throw { status: 400, message: "Informe a nova senha!" };
         }
 
         const erroSenha = validarSenhaForte(novaSenha);
@@ -65,42 +73,65 @@ export async function PUT(request){
             throw { status: 400, message: erroSenha };
         }
 
-        const [user] = await pool.query(
-            "SELECT senha FROM usuarios WHERE email = ?",
-            [usuarioLogado.email]
-        )
+        if(!usuarioLogado.primeiroAcesso){
+            if(!senhaAtual){
+                throw { status: 400, message: "Informe a senha atual e a nova senha!" };
+            }
 
-        // Verifica se o usuario existe e retorna msg generica (mensagem correta no console da api)
-        if(user.length === 0){
-            console.log("usuario não encontrado")
-
-            return NextResponse.json(
-                { message: "Não foi possivel atualizar a senha" },
-                { status: 404 }
+            const [user] = await pool.query(
+                "SELECT senha FROM usuarios WHERE email = ?",
+                [usuarioLogado.email]
             )
-        }
 
-        const senhaBanco = user[0].senha;
+            // Verifica se o usuario existe e retorna msg generica (mensagem correta no console da api)
+            if(user.length === 0){
+                console.log("usuario não encontrado")
 
-        const senhaValida = await bcrypt.compare(senhaAtual, senhaBanco);
+                return NextResponse.json(
+                    { message: "Não foi possivel atualizar a senha" },
+                    { status: 404 }
+                )
+            }
 
-        if(!senhaValida){
-            console.log("Senha antiga invalida")
-            return NextResponse.json(
-                { message: "Não foi possivel atualizar a senha" },
-                { status: 401 }
-            )
+            const senhaBanco = user[0].senha;
+
+            const senhaValida = await bcrypt.compare(senhaAtual, senhaBanco);
+
+            if(!senhaValida){
+                console.log("Senha antiga invalida")
+
+                return NextResponse.json(
+                    { message: "Senha atual incorreta!" },
+                    { status: 400 }
+                )
+            }
         }
 
         const hashedPass = await hashPass(novaSenha);
 
+        const versaoNova = Number(usuarioLogado.tokenVersao ?? 0) + 1;
+
         await pool.query(
-            "UPDATE usuarios SET senha = ?, tokenVersao = tokenVersao + 1 WHERE email = ?",
-            [hashedPass, usuarioLogado.email]
+            `UPDATE usuarios
+                SET senha = ?, primeiroAcesso = false, tokenVersao = ?
+              WHERE email = ?`,
+            [hashedPass, versaoNova, usuarioLogado.email]
+        )
+
+        const token = generateToken(
+            usuarioLogado.email,
+            usuarioLogado.cargo,
+            versaoNova
         )
 
         return NextResponse.json(
-            { message: "Senha atualizada" },
+            {
+                message: "Senha atualizada",
+                token,
+                cargo: usuarioLogado.cargo,
+                usuario: usuarioLogado.nome,
+                primeiroAcesso: false,
+            },
             { status: 200 }
         )
 

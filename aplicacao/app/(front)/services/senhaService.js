@@ -16,3 +16,10 @@ export function redefinirSenhaService(data) {
     skipAuth: true,
   });
 }
+
+export function trocarSenhaService(data) {
+  return apiFetch("/api/auth/login", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}

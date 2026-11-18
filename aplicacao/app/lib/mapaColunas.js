@@ -12,6 +12,7 @@ const mapaColunas = {
   ehoperador: "ehOperador",
   ehmecanico: "ehMecanico",
   tokenversao: "tokenVersao",
+  primeiroacesso: "primeiroAcesso",
   pk_fornecedorid: "pk_fornecedorID",
   nomefornecedor: "nomeFornecedor",
   pk_materiaid: "pk_materiaID",
