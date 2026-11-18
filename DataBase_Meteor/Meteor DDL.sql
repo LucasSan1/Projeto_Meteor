@@ -7,6 +7,7 @@ USE meteor;
 -- Desliga a checagem de FK pra dropar em qualquer ordem sem o MySQL reclamar.
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS recuperacaoSenha;
 DROP TABLE IF EXISTS auditoria;
 DROP TABLE IF EXISTS historicoProducao;
 DROP TABLE IF EXISTS historicoManutencao;
@@ -16,15 +17,15 @@ DROP TABLE IF EXISTS equipamentos;
 DROP TABLE IF EXISTS movimentacoesEstoque;
 DROP TABLE IF EXISTS historicoOrdens;
 DROP TABLE IF EXISTS rejeicoes;
-DROP TABLE IF EXISTS aceitacoes;      -- Remover
+-- DROP TABLE IF EXISTS aceitacoes;
 DROP TABLE IF EXISTS inspecoes;
 DROP TABLE IF EXISTS ordemMateriais;
 DROP TABLE IF EXISTS ordensProducao;
 DROP TABLE IF EXISTS pecas;
 DROP TABLE IF EXISTS materiasPrimas;
 DROP TABLE IF EXISTS fornecedores;
-DROP TABLE IF EXISTS operadores;     -- Remover
-DROP TABLE IF EXISTS mecanico;       -- Remover
+-- DROP TABLE IF EXISTS operadores;
+-- DROP TABLE IF EXISTS mecanico;
 DROP TABLE IF EXISTS profissionais;
 DROP TABLE IF EXISTS usuarios;
 
@@ -42,8 +43,28 @@ CREATE TABLE usuarios (
     email   VARCHAR(200) UNIQUE NOT NULL,
     cargo   ENUM('gerente', 'operador', 'mecanico') NOT NULL DEFAULT 'operador',
     senha   VARCHAR(200) NOT NULL, 
-    status  ENUM('Ativo', 'Desativado') NOT NULL DEFAULT 'Ativo'
+    status  ENUM('Ativo', 'Desativado') NOT NULL DEFAULT 'Ativo',
+   
+    tokenVersao INT NOT NULL DEFAULT 0,
+
+    primeiroAcesso TINYINT(1) NOT NULL DEFAULT 1
 );
+
+
+CREATE TABLE recuperacaoSenha (
+    pk_recuperacaoID  INT NOT NULL AUTO_INCREMENT,
+    fk_usuarioID      INT NOT NULL,
+    codigoHash        VARCHAR(200) NOT NULL,
+    expiraEm          DATETIME NOT NULL,
+    tentativas        SMALLINT NOT NULL DEFAULT 0,
+    consumidoEm       DATETIME NULL,
+    criadoEm          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (pk_recuperacaoID),
+    FOREIGN KEY (fk_usuarioID) REFERENCES usuarios(id)
+);
+
+CREATE INDEX idxRecuperacaoAtiva ON recuperacaoSenha (fk_usuarioID, consumidoEm);
 
 -- Profissionais alocáveis: UMA linha por pessoa, com flags dos papéis.
 -- Quem é operador E mecânico tem identidade única, então o limite de
@@ -61,7 +82,8 @@ CREATE TABLE profissionais (
     PRIMARY KEY (pk_profissionalID),
     UNIQUE (fk_usuarioID),
     FOREIGN KEY (fk_usuarioID) REFERENCES usuarios(id),
-    CONSTRAINT chkProfissionalFuncao CHECK (ehOperador = 1 OR ehMecanico = 1)
+    CONSTRAINT chkProfissionalFuncao CHECK (ehOperador = 1 OR ehMecanico = 1),
+    CONSTRAINT uqProfissionalTelefone UNIQUE (telefone)
 );
 
 
@@ -144,8 +166,8 @@ CREATE TABLE ordensProducao (
     quantidadePlanejada     INT NOT NULL,
     especializacao          VARCHAR(100) NOT NULL,              -- especialização exigida
     fk_operadorID           INT NOT NULL,                       -- vem de profissionais
-    inicioPlanejado         DATETIME NOT NULL,
-    terminoPlanejado        DATETIME NOT NULL,
+    inicioPlanejado         DATE NOT NULL,
+    terminoPlanejado        DATE NOT NULL,
     inicioEfetivo           DATETIME NULL,                      -- preenchido automático ao iniciar
     conclusaoEfetiva        DATETIME NULL,                      -- preenchido automático ao concluir
     status                  ENUM('Pendente', 'Em Produção', 'Concluída', 'Cancelada') NOT NULL DEFAULT 'Pendente',
@@ -155,15 +177,15 @@ CREATE TABLE ordensProducao (
     FOREIGN KEY (fk_pecaID)      REFERENCES pecas(pk_pecaID),
     FOREIGN KEY (fk_operadorID)  REFERENCES profissionais(pk_profissionalID),
     CONSTRAINT chkOrdemQtd       CHECK (quantidadePlanejada > 0),
-    CONSTRAINT chkOrdemPlanejado CHECK (terminoPlanejado > inicioPlanejado),
+    CONSTRAINT chkOrdemPlanejado CHECK (terminoPlanejado >= inicioPlanejado),
     -- A conclusão não pode chegar antes do início. 
     -- Por ordem da compania viagem no tempo é expressamente proibida.
-    CONSTRAINT chkOrdemEfetivo   CHECK (conclusaoEfetiva IS NULL OR inicioEfetivo IS NULL OR conclusaoEfetiva >= inicioEfetivo),
-
-    -- Índices pro calendário e a checagem de agenda
-    INDEX idxOrdemOperadorPeriodo (fk_operadorID, inicioPlanejado, terminoPlanejado),
-    INDEX idxOrdemStatus (status)
+    CONSTRAINT chkOrdemEfetivo   CHECK (conclusaoEfetiva IS NULL OR inicioEfetivo IS NULL OR conclusaoEfetiva >= inicioEfetivo)
 );
+
+-- Índices pro calendário e a checagem de agenda
+CREATE INDEX idxOrdemOperadorPeriodo ON ordensProducao (fk_operadorID, inicioPlanejado, terminoPlanejado);
+CREATE INDEX idxOrdemStatus ON ordensProducao (status);
 
 -- Materiais de cada ordem: previsto na criação, consumido efetivo na conclusão (RF04, RF09)
 CREATE TABLE ordemMateriais (
@@ -284,13 +306,13 @@ CREATE TABLE manutencoesProgramadas (
     FOREIGN KEY (fk_equipamentoID) REFERENCES equipamentos(pk_equipamentoID),
     FOREIGN KEY (fk_maquinaID)     REFERENCES maquinas(pk_maquinaID),
     FOREIGN KEY (fk_mecanicoID)    REFERENCES profissionais(pk_profissionalID),
-    CONSTRAINT chkManutPrevisto CHECK (terminoPrevisto > inicioPrevisto),
-    CONSTRAINT chkManutEfetivo  CHECK (conclusaoEfetiva IS NULL OR inicioEfetivo IS NULL OR conclusaoEfetiva >= inicioEfetivo),
-
-    -- Índice pra checar sobreposição de horário do mecânico
-    INDEX idxManutMecanicoPeriodo (fk_mecanicoID, inicioPrevisto, terminoPrevisto),
-    INDEX idxManutStatus (status)
+    CONSTRAINT chkManutPrevisto CHECK (terminoPrevisto >= inicioPrevisto),
+    CONSTRAINT chkManutEfetivo  CHECK (conclusaoEfetiva IS NULL OR inicioEfetivo IS NULL OR conclusaoEfetiva >= inicioEfetivo)
 );
+
+-- Índice pra checar sobreposição de horário do mecânico
+CREATE INDEX idxManutMecanicoPeriodo ON manutencoesProgramadas (fk_mecanicoID, inicioPrevisto, terminoPrevisto);
+CREATE INDEX idxManutStatus ON manutencoesProgramadas (status);
 
 -- Um histórico por manutenção concluída. 
 -- Agora com PK própria e a FK separada, em vez do historicoID fazendo dupla jornada de PK + FK.
@@ -346,6 +368,7 @@ CREATE TABLE auditoria (
     dataAcao        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (pk_auditoriaID),
-    FOREIGN KEY (fk_usuarioID) REFERENCES usuarios(id),
-    INDEX idxAuditoriaEntidade (entidade, entidadeID)
+    FOREIGN KEY (fk_usuarioID) REFERENCES usuarios(id)
 );
+
+CREATE INDEX idxAuditoriaEntidade ON auditoria (entidade, entidadeID);

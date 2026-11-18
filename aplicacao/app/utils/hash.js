@@ -9,5 +9,7 @@ export async function hashPass(password){
 
     } catch(err){
         console.log("Erro ao criptografar senha: ", err)
+
+        throw err
     }
 }

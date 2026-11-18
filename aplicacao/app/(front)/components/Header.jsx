@@ -47,6 +47,13 @@ export default function Header() {
             </span>
           </span>
 
+          <Link
+            href="/trocarSenha"
+            className="text-[#4A48A8] hover:text-[#3d3b8f] text-sm font-semibold transition-colors flex-shrink-0"
+          >
+            Trocar senha
+          </Link>
+
           <button
             onClick={logout}
             className="bg-[#4A48A8] hover:bg-[#3d3b8f] text-white px-3 py-1.5 rounded text-sm font-bold transition-colors flex-shrink-0"

@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 
 import { BrandLogo, CosmoMarca } from "@/app/(front)/components/marca";
 import { loginService } from "@/app/(front)/services/loginService";
+import { HOME_POR_CARGO } from "@/app/utils/homePorCargo";
 
 export default function Login() {
   const router = useRouter();
@@ -47,19 +48,28 @@ export default function Login() {
       localStorage.setItem("cargo", response.cargo);
       localStorage.setItem("usuario", response.usuario);
 
+      if (response.primeiroAcesso) {
+        localStorage.setItem("primeiroAcesso", "1");
+
+        Swal.fire({
+          icon: "info",
+          title: "Primeiro acesso",
+          text: "Defina sua nova senha pra continuar.",
+        });
+
+        router.push("/trocarSenha");
+        return;
+      }
+
+      localStorage.removeItem("primeiroAcesso");
+
       Swal.fire({
         icon: "success",
         title: "Login realizado!",
       });
 
       // Cada perfil cai na tela que realmente usa
-      const homePorCargo = {
-        gerente: "/",
-        operador: "/ordemServico",
-        mecanico: "/manutencoesProgramadas",
-      };
-
-      router.push(homePorCargo[response.cargo] || "/");
+      router.push(HOME_POR_CARGO[response.cargo] || "/");
     } finally {
       setCarregando(false);
     }
@@ -226,7 +236,7 @@ export default function Login() {
             </button>
 
             <Link
-              href="/forgot"
+              href="/esqueciSenha"
               className="
               text-center
               text-[13px]

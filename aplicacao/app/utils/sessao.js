@@ -6,6 +6,7 @@ export function limparSessao() {
   localStorage.removeItem("token");
   localStorage.removeItem("cargo");
   localStorage.removeItem("usuario");
+  localStorage.removeItem("primeiroAcesso");
 }
 
 export function tokenExpirado(token) {

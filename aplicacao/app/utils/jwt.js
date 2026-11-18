@@ -3,8 +3,8 @@ import jwt from "jsonwebtoken"
 const secretKey = process.env.JWT_SECRET || "LoginJWT"
 
 // Função geradora de tokens de acesso (validos por 12hrs)
-export function generateToken(email, cargo){
-    return jwt.sign({ email, cargo }, secretKey, { algorithm: "HS256", expiresIn: "12h" } )
+export function generateToken(email, cargo, versao = 0){
+    return jwt.sign({ email, cargo, versao }, secretKey, { algorithm: "HS256", expiresIn: "12h" } )
 }
 
 // Função para verificar assinatura e tempo do token

@@ -283,7 +283,17 @@ export default function MateriasPrimas() {
     }
   }
 
-  function abrirEntradaEstoque(materia) {
+  async function abrirEntradaEstoque(materia) {
+    if (materia.fornecedorStatus && materia.fornecedorStatus !== "Ativo") {
+      await Swal.fire({
+        icon: "warning",
+        title: "Sem fornecedor ativo",
+        text: `"${materia.materia}" está vinculada a ${materia.fornecedor}, que está desativado. Troque o fornecedor antes de adicionar estoque!`,
+      });
+
+      return;
+    }
+
     setMateriaEntrada(materia);
     setModalEntradaOpen(true);
   }
