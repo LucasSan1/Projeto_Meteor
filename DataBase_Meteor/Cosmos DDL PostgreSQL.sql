@@ -67,8 +67,10 @@ CREATE TABLE usuarios (
     cargo   cargo_usuario NOT NULL DEFAULT 'operador',
     senha   VARCHAR(200) NOT NULL,
     status  status_registro NOT NULL DEFAULT 'Ativo',
-  
-    tokenVersao INT NOT NULL DEFAULT 0
+    
+    tokenVersao INT NOT NULL DEFAULT 0,
+
+    primeiroAcesso BOOLEAN NOT NULL DEFAULT true
 );
 
 

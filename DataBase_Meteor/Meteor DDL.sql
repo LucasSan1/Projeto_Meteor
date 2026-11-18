@@ -44,8 +44,10 @@ CREATE TABLE usuarios (
     cargo   ENUM('gerente', 'operador', 'mecanico') NOT NULL DEFAULT 'operador',
     senha   VARCHAR(200) NOT NULL, 
     status  ENUM('Ativo', 'Desativado') NOT NULL DEFAULT 'Ativo',
+   
+    tokenVersao INT NOT NULL DEFAULT 0,
 
-    tokenVersao INT NOT NULL DEFAULT 0
+    primeiroAcesso TINYINT(1) NOT NULL DEFAULT 1
 );
 
 
