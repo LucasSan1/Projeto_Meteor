@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql";
 import { checkAuthPosition } from "../../../utils/authChecker";
 import { validarQuantidade } from "../../../utils/quantidade";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -15,7 +16,7 @@ export async function PATCH(request, { params }) {
   } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM materiasPrimas WHERE pk_materiaID = ? AND status = 'Ativo'",
@@ -125,6 +126,26 @@ export async function PATCH(request, { params }) {
       throw { status: 400, message: "Não foi possível atualizar o cadastro!" };
     }
 
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "materiaPrima",
+      entidadeID: id,
+      acao: "edicao",
+      dadosAnteriores: {
+        materia: atual.materia,
+        fornecedor: atual.fk_fornecedor,
+        unidadeMedida: atual.unidadeMedida,
+        estoqueMinimo: atual.estoqueMinimo,
+      },
+      dadosNovos: {
+        materia: materiaFinal,
+        fornecedor: fornecedorFinal,
+        unidadeMedida: unidadeFinal,
+        estoqueMinimo: minimoFinal,
+      },
+      observacao: "Edição do cadastro da matéria-prima",
+    });
+
     return NextResponse.json(
       { message: `Matéria-prima ${materiaFinal} atualizada!` },
       { status: 200 },
@@ -150,7 +171,7 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM materiasPrimas WHERE pk_materiaID = ?",
@@ -191,6 +212,16 @@ export async function DELETE(request, { params }) {
       );
     }
 
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "materiaPrima",
+      entidadeID: id,
+      acao: "desativacao",
+      dadosAnteriores: { status: exist[0].status },
+      dadosNovos: { status: "Desativado" },
+      observacao: "Desativação da matéria-prima",
+    });
+
     return NextResponse.json(
       { message: "Matéria-prima desativada com sucesso!" },
       { status: 200 },
@@ -216,7 +247,7 @@ export async function PUT(request, { params }) {
   const { id } = await params;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM materiasPrimas WHERE pk_materiaID = ?",
@@ -238,6 +269,16 @@ export async function PUT(request, { params }) {
         { status: 200 },
       );
     }
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "materiaPrima",
+      entidadeID: id,
+      acao: "ativacao",
+      dadosAnteriores: { status: exist[0].status },
+      dadosNovos: { status: "Ativo" },
+      observacao: "Reativação da matéria-prima",
+    });
 
     return NextResponse.json(
       { message: "Matéria-prima ativada com sucesso!" },

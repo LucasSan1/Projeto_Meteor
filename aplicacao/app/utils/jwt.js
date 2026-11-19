@@ -1,14 +1,24 @@
 import jwt from "jsonwebtoken"
 
-const secretKey = process.env.JWT_SECRET || "LoginJWT"
+function getSecretKey() {
+    const secretKey = process.env.JWT_SECRET
+
+    if (!secretKey) {
+        throw new Error("JWT_SECRET não configurado no ambiente!")
+    }
+
+    return secretKey
+}
 
 // Função geradora de tokens de acesso (validos por 12hrs)
 export function generateToken(email, cargo, versao = 0){
-    return jwt.sign({ email, cargo, versao }, secretKey, { algorithm: "HS256", expiresIn: "12h" } )
+    return jwt.sign({ email, cargo, versao }, getSecretKey(), { algorithm: "HS256", expiresIn: "12h" } )
 }
 
 // Função para verificar assinatura e tempo do token
 export function isvalid(token){
+    const secretKey = getSecretKey()
+
     try{
         
         const replacedToken = token.replace("Bearer ", "")

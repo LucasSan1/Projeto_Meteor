@@ -22,12 +22,12 @@ import {
   validarQualidade,
 } from "../../../utils/producao";
 import { ajustarEstoque } from "../../movimentacoesEstoque/estoque";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
-// Fluxo permitido de status (ordem concluída/cancelada não volta atrás).
-// Cancelar só vale a partir de Pendente
+
 const TRANSICOES = {
-  Pendente: ["Em Produção", "Cancelada"],
-  "Em Produção": ["Concluída"],
+  Pendente: ["Cancelada"],
+  "Em Produção": [],
   Concluída: [],
   Cancelada: [],
 };
@@ -292,7 +292,7 @@ async function concluirOrdem(connection, ordem, body, agora, usuarioLogado) {
     );
 
     if (consumo.quantidade > 0) {
-      await connection.query(
+      const [movimento] = await connection.query(
         `INSERT INTO movimentacoesEstoque
           (fk_materiaID, tipo, quantidade, unidadeMedida, fk_usuarioID, fk_ordemID, observacao)
          VALUES (?, 'Saida', ?, ?, ?, ?, ?)`,
@@ -313,6 +313,21 @@ async function concluirOrdem(connection, ordem, body, agora, usuarioLogado) {
         consumo.quantidade,
         1,
       );
+
+      await registrarAuditoria(connection, {
+        usuarioID: usuarioLogado.id,
+        entidade: "estoque",
+        entidadeID: movimento.insertId,
+        acao: "saidaAutomatica",
+        dadosNovos: {
+          materia: consumo.materiaID,
+          tipo: "Saida",
+          quantidade: consumo.quantidade,
+          unidadeMedida: consumo.unidadeMedida,
+          ordem: ordem.pk_ordemID,
+        },
+        observacao: `Consumo da ${ordem.codigo}`,
+      });
     }
   }
 

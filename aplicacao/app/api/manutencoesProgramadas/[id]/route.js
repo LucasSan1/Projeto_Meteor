@@ -16,9 +16,10 @@ import {
   validarJanelaExecucao,
 } from "../../../utils/agenda";
 
+
 const TRANSICOES = {
-  Programada: ["Em Execução", "Cancelada"],
-  "Em Execução": ["Concluída"],
+  Programada: ["Cancelada"],
+  "Em Execução": [],
   Concluída: [],
   Cancelada: [],
 };

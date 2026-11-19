@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 // Lista as rejeições com a inspeção/ordem/peça de origem
 export async function GET(request) {
   try {
     await checkAuthPosition(request);
 
-    const [result] = await pool.query(`
+    const paginacao = lerPaginacao(request);
+
+    const [result] = await pool.query(
+      comPaginacao(
+        `
       SELECT
         r.pk_rejeicaoID,
         r.fk_inspecaoID,
@@ -25,9 +37,26 @@ export async function GET(request) {
       INNER JOIN ordensProducao op ON i.fk_ordemID = op.pk_ordemID
       INNER JOIN pecas p ON op.fk_pecaID = p.pk_pecaID
       ORDER BY r.dataRejeicao DESC, r.pk_rejeicaoID DESC
-    `);
+    `,
+        paginacao,
+      ),
+      paramsComPaginacao([], paginacao),
+    );
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          `SELECT COUNT(*) AS total
+             FROM rejeicoes r
+             INNER JOIN inspecoes i ON r.fk_inspecaoID = i.pk_inspecaoID
+             INNER JOIN ordensProducao op ON i.fk_ordemID = op.pk_ordemID
+             INNER JOIN pecas p ON op.fk_pecaID = p.pk_pecaID`,
+        )
+      : null;
+
+    return NextResponse.json(respostaLista(result, paginacao, total), {
+      status: 200,
+    });
   } catch (err) {
     console.log("Rejeicoes GET : ", err);
 
@@ -50,7 +79,7 @@ export async function POST(request) {
   const { inspecao, quantidade, motivoRejeicao, tipo, acoesCorretivas } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     if (!inspecao || !quantidade || !motivoRejeicao?.trim()) {
       throw {
@@ -100,6 +129,21 @@ export async function POST(request) {
         acoesCorretivas || null,
       ],
     );
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "rejeicao",
+      entidadeID: result.insertId,
+      acao: "criacao",
+      dadosNovos: {
+        inspecao,
+        quantidade,
+        motivoRejeicao,
+        tipo: tipo || "Perda",
+        acoesCorretivas: acoesCorretivas || null,
+      },
+      observacao: "Rejeição registrada",
+    });
 
     return NextResponse.json({
       message: "Rejeição registrada com sucesso!",

@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 export async function POST(request) {
   const body = await request.json();
   const { peca, peso, dimensoes } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     if (!peca?.trim()) {
       throw { status: 400, message: "O nome da peça é obrigatório!" };
@@ -17,6 +25,15 @@ export async function POST(request) {
       "INSERT INTO pecas (peca, peso, dimensoes) VALUES (?,?,?)",
       [peca, peso, dimensoes],
     );
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "peca",
+      entidadeID: result.insertId,
+      acao: "criacao",
+      dadosNovos: { peca, peso, dimensoes },
+      observacao: "Peça cadastrada",
+    });
 
     return NextResponse.json({
       message: "Peça cadastrada com sucesso!",
@@ -43,7 +60,11 @@ export async function GET(request) {
   try {
     await checkAuthPosition(request);
 
-    const [result] = await pool.query(`
+    const paginacao = lerPaginacao(request);
+
+    const [result] = await pool.query(
+      comPaginacao(
+        `
         SELECT
             p.pk_pecaID,
             p.peca,
@@ -52,9 +73,19 @@ export async function GET(request) {
             p.status
         FROM pecas p
         ORDER BY p.peca
-    `);
+      `,
+        paginacao,
+      ),
+      paramsComPaginacao([], paginacao),
+    );
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    const total = paginacao
+      ? await contarLinhas(pool, "SELECT COUNT(*) AS total FROM pecas")
+      : null;
+
+    return NextResponse.json(respostaLista(result, paginacao, total), {
+      status: 200,
+    });
   } catch (err) {
     console.log("Peçãs GET: ", err);
 

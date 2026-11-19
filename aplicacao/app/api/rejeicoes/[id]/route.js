@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql";
 import { checkAuthPosition } from "../../../utils/authChecker";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -8,7 +9,7 @@ export async function PATCH(request, { params }) {
   const { quantidade, motivoRejeicao, tipo, acoesCorretivas, status } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM rejeicoes WHERE pk_rejeicaoID = ?",
@@ -106,6 +107,30 @@ export async function PATCH(request, { params }) {
       throw { status: 400, message: "Não foi possível atualizar a rejeição!" };
     }
 
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "rejeicao",
+      entidadeID: id,
+      acao: "edicao",
+      dadosAnteriores: {
+        quantidade: atual.quantidade,
+        motivoRejeicao: atual.motivoRejeicao,
+        tipo: atual.tipo,
+        acoesCorretivas: atual.acoesCorretivas,
+        status: atual.status,
+      },
+      dadosNovos: {
+        quantidade: quantidadeFinal,
+        motivoRejeicao: motivoRejeicao?.trim()
+          ? motivoRejeicao
+          : atual.motivoRejeicao,
+        tipo: tipoFinal,
+        acoesCorretivas: acoesCorretivas ?? atual.acoesCorretivas,
+        status: statusFinal,
+      },
+      observacao: "Edição da rejeição",
+    });
+
     return NextResponse.json(
       { message: "Rejeição atualizada!" },
       { status: 200 },
@@ -131,7 +156,7 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM rejeicoes WHERE pk_rejeicaoID = ?",
@@ -158,6 +183,22 @@ export async function DELETE(request, { params }) {
     }
 
     await pool.query("DELETE FROM rejeicoes WHERE pk_rejeicaoID = ?", [id]);
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "rejeicao",
+      entidadeID: id,
+      acao: "exclusao",
+      dadosAnteriores: {
+        inspecao: exist[0].fk_inspecaoID,
+        quantidade: exist[0].quantidade,
+        motivoRejeicao: exist[0].motivoRejeicao,
+        tipo: exist[0].tipo,
+        acoesCorretivas: exist[0].acoesCorretivas,
+        status: exist[0].status,
+      },
+      observacao: "Exclusão da rejeição",
+    });
 
     return NextResponse.json(
       { message: "Rejeição excluída!" },

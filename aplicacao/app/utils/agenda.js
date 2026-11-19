@@ -135,12 +135,25 @@ export function validarJanelaExecucao(
   return { inicioAntecipado: false };
 }
 
+async function travarProfissional(connection, profissionalID) {
+  if (!profissionalID) {
+    throw { status: 400, message: "Profissional não informado para a agenda!" };
+  }
+
+  await connection.query(
+    "SELECT pk_profissionalID FROM profissionais WHERE pk_profissionalID = ? FOR UPDATE",
+    [profissionalID],
+  );
+}
+
 // Nenhuma pessoa pode iniciar outra atividade com uma execução aberta
 export async function validarExecucaoAberta(
   connection,
   profissionalID,
   { ignorarOrdemID = null, ignorarManutencaoID = null } = {},
 ) {
+  await travarProfissional(connection, profissionalID);
+
   const [ordens] = await connection.query(
     `SELECT codigo
      FROM ordensProducao
@@ -196,6 +209,8 @@ export async function validarAgendaOperador(
   connection,
   { profissionalID, inicio, termino, ignorarOrdemID = null },
 ) {
+  await travarProfissional(connection, profissionalID);
+
   const diasPedido = listarDias(inicio, termino);
 
   if (diasPedido.length === 0) {
@@ -260,20 +275,31 @@ export async function validarAgendaOperador(
 
 
 function janelaDaManutencao(manutencao) {
-  return {
-    inicio: normalizarDataHora(
-      manutencao.inicioEfetivo || manutencao.inicioPrevisto,
-    ),
-    termino: normalizarDataHora(
-      manutencao.conclusaoEfetiva || manutencao.terminoPrevisto,
-    ),
-  };
+  const inicio = normalizarDataHora(
+    manutencao.inicioEfetivo || manutencao.inicioPrevisto,
+  );
+
+  let termino = normalizarDataHora(
+    manutencao.conclusaoEfetiva || manutencao.terminoPrevisto,
+  );
+
+  if (manutencao.status === "Em Execução" && !manutencao.conclusaoEfetiva) {
+    const agora = getDataBrasilia();
+
+    if (termino && agora > termino) {
+      termino = agora;
+    }
+  }
+
+  return { inicio, termino };
 }
 
 export async function validarAgendaMecanico(
   connection,
   { profissionalID, inicio, termino, ignorarManutencaoID = null },
 ) {
+  await travarProfissional(connection, profissionalID);
+
   const inicioPedido = normalizarDataHora(inicio);
   const terminoPedido = normalizarDataHora(termino);
 

@@ -3,6 +3,7 @@ import { randomInt } from "node:crypto";
 
 import pool from "../../../lib/connSql";
 import { hashPass } from "../../../utils/hash";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 const VALIDADE_MINUTOS = 10;
 
@@ -46,11 +47,20 @@ export async function POST(request) {
       [usuario.id],
     );
 
-    await pool.query(
+    const [pedido] = await pool.query(
       `INSERT INTO recuperacaoSenha (fk_usuarioID, codigoHash, expiraEm)
        VALUES (?, ?, ${AGORA} + INTERVAL '${VALIDADE_MINUTOS} minutes')`,
       [usuario.id, codigoHash],
     );
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "usuario",
+      entidadeID: usuario.id,
+      acao: "solicitacaoRecuperacao",
+      dadosNovos: { recuperacaoID: pedido.insertId },
+      observacao: "Código de recuperação de senha solicitado",
+    });
 
     const resposta = { message: MENSAGEM_GENERICA };
 

@@ -5,6 +5,14 @@ import { hashPass } from "../../utils/hash";
 import { papeisDoCargo } from "../../utils/papeisProfissional";
 import { normalizarTelefone } from "../../utils/mascaras";
 import { ehDuplicadoDe } from "../../utils/erroDuplicado";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 const CARGOS_VALIDOS = Object.values(CARGOS);
 
@@ -13,7 +21,15 @@ export async function GET(request) {
   try {
     const usuarioLogado = await checkAuthPosition(request);
 
-    const [result] = await pool.query(`
+    const paginacao = lerPaginacao(request);
+
+    // Filtro no SQL pra paginação contar certo, gestor só vê a própria conta
+    const filtro = "WHERE (u.cargo <> 'gerente' OR u.id = ?)";
+    const paramsFiltro = [usuarioLogado.id];
+
+    const [result] = await pool.query(
+      comPaginacao(
+        `
       SELECT
         u.id,
         u.nome,
@@ -40,19 +56,32 @@ export async function GET(request) {
         ) AS emManutencao
       FROM usuarios u
       LEFT JOIN profissionais p ON p.fk_usuarioID = u.id
+      ${filtro}
       ORDER BY u.nome
-    `);
+    `,
+        paginacao,
+      ),
+      paramsComPaginacao(paramsFiltro, paginacao),
+    );
 
-    // gestor só enxerga a própria conta na seção de gestores
+    // Mantém o filtro em memória como cinto de segurança
     const data = result.filter(
       (usuario) =>
         usuario.cargo !== CARGOS.GERENTE ||
         Number(usuario.id) === Number(usuarioLogado.id),
     );
 
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          `SELECT COUNT(*) AS total FROM usuarios u ${filtro}`,
+          paramsFiltro,
+        )
+      : null;
+
     return NextResponse.json(
       {
-        data,
+        ...respostaLista(data, paginacao, total),
         usuarioLogado: {
           id: usuarioLogado.id,
           nome: usuarioLogado.nome,
@@ -92,7 +121,7 @@ export async function POST(request) {
   } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuarioLogado = await checkAuthPosition(request);
 
     if (!nome?.trim() || !email?.trim() || !cargo) {
       throw { status: 400, message: "Preencha nome, e-mail e cargo!" };
@@ -147,6 +176,23 @@ export async function POST(request) {
           ],
         );
       }
+
+      await registrarAuditoria(connection, {
+        usuarioID: usuarioLogado.id,
+        entidade: "usuario",
+        entidadeID: usuarioID,
+        acao: "criacao",
+        dadosNovos: {
+          nome: nome.trim(),
+          email: email.trim(),
+          cargo,
+          ehOperador: papeis.operador,
+          ehMecanico: papeis.mecanico,
+          especializacao: especializacao || null,
+          telefone: normalizarTelefone(telefone),
+        },
+        observacao: "Usuário cadastrado",
+      });
 
       await connection.commit();
 

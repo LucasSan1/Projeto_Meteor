@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql";
 import { checkAuthPosition } from "../../../utils/authChecker";
 import { normalizarTelefone } from "../../../utils/mascaras";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -9,7 +10,7 @@ export async function PATCH(request, { params }) {
   const { ehOperador, ehMecanico, especializacao, telefone } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM profissionais WHERE pk_profissionalID = ?",
@@ -93,6 +94,26 @@ export async function PATCH(request, { params }) {
       throw { status: 400, message: "Não foi possível atualizar o profissional!" };
     }
 
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "profissional",
+      entidadeID: id,
+      acao: "edicao",
+      dadosAnteriores: {
+        ehOperador: profissional.ehOperador,
+        ehMecanico: profissional.ehMecanico,
+        especializacao: profissional.especializacao,
+        telefone: profissional.telefone,
+      },
+      dadosNovos: {
+        ehOperador: operador,
+        ehMecanico: mecanico,
+        especializacao: espFinal,
+        telefone: telFinal,
+      },
+      observacao: "Edição do cadastro do profissional",
+    });
+
     return NextResponse.json(
       { message: "Profissional atualizado!" },
       { status: 200 },
@@ -126,7 +147,7 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM profissionais WHERE pk_profissionalID = ?",
@@ -178,6 +199,16 @@ export async function DELETE(request, { params }) {
       );
     }
 
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "profissional",
+      entidadeID: id,
+      acao: "desativacao",
+      dadosAnteriores: { status: exist[0].status },
+      dadosNovos: { status: "Desativado" },
+      observacao: "Desativação do profissional",
+    });
+
     return NextResponse.json(
       { message: "Profissional desativado com sucesso!" },
       { status: 200 },
@@ -203,7 +234,7 @@ export async function PUT(request, { params }) {
   const { id } = await params;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM profissionais WHERE pk_profissionalID = ?",
@@ -225,6 +256,16 @@ export async function PUT(request, { params }) {
         { status: 200 },
       );
     }
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "profissional",
+      entidadeID: id,
+      acao: "ativacao",
+      dadosAnteriores: { status: exist[0].status },
+      dadosNovos: { status: "Ativo" },
+      observacao: "Reativação do profissional",
+    });
 
     return NextResponse.json(
       { message: "Profissional ativado com sucesso!" },

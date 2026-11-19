@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql"
 import { checkAuth, checkAuthPosition } from "../../../utils/authChecker";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 export async function PATCH(request, { params }) {
     const { id } = await params;
@@ -9,7 +10,7 @@ export async function PATCH(request, { params }) {
 
     try{
 
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         const[exist] = await pool.query(
             "SELECT * FROM equipamentos WHERE pk_equipamentoID = ? AND status = 'Ativo'",
@@ -38,6 +39,20 @@ export async function PATCH(request, { params }) {
             )
         }
 
+        await registrarAuditoria(pool, {
+            usuarioID: usuario.id,
+            entidade: "equipamento",
+            entidadeID: id,
+            acao: "edicao",
+            dadosAnteriores: {
+                nome: equip.nomeEquipamento,
+                descricao: equip.descricao,
+                vidaUtil: equip.vidaUtilRestante,
+            },
+            dadosNovos: { nome, descricao, vidaUtil },
+            observacao: "Edição do cadastro do equipamento",
+        });
+
         return NextResponse.json(
             { message: `Equipamento ${ nome } atualizado!`},
             { status: 200 }
@@ -65,7 +80,7 @@ export async function DELETE(request, { params }) {
     const {id} = await params;
 
     try{
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         const[exist] = await pool.query(
             "SELECT * FROM equipamentos WHERE pk_equipamentoID = ?",
@@ -82,6 +97,16 @@ export async function DELETE(request, { params }) {
         )
 
          if(result.affectedRows > 0 ){
+
+            await registrarAuditoria(pool, {
+                usuarioID: usuario.id,
+                entidade: "equipamento",
+                entidadeID: id,
+                acao: "desativacao",
+                dadosAnteriores: { status: exist[0].status },
+                dadosNovos: { status: "Desativado" },
+                observacao: "Desativação do equipamento",
+            });
 
             return NextResponse.json(
                 { message: "Equipamento desativado com sucesso!" },
@@ -117,7 +142,7 @@ export async function PUT(request, { params }) {
     const {id} = await params;
 
     try{
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
         
          const[exist] = await pool.query(
             "SELECT * FROM equipamentos WHERE pk_equipamentoID = ?",
@@ -134,6 +159,16 @@ export async function PUT(request, { params }) {
         )
 
          if(result.affectedRows > 0 ){
+
+            await registrarAuditoria(pool, {
+                usuarioID: usuario.id,
+                entidade: "equipamento",
+                entidadeID: id,
+                acao: "ativacao",
+                dadosAnteriores: { status: exist[0].status },
+                dadosNovos: { status: "Ativo" },
+                observacao: "Reativação do equipamento",
+            });
 
             return NextResponse.json(
                 { message: "Equipamento ativado com sucesso!" },
