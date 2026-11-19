@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql";
 import { checkAuthPosition } from "../../../utils/authChecker";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -8,7 +9,7 @@ export async function PATCH(request, { params }) {
   const { totalProduzido, aprovadas, rejeitadas, observacoes } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM inspecoes WHERE pk_inspecaoID = ?",
@@ -78,6 +79,26 @@ export async function PATCH(request, { params }) {
       throw { status: 400, message: "Não foi possível atualizar a inspeção!" };
     }
 
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "inspecao",
+      entidadeID: id,
+      acao: "edicao",
+      dadosAnteriores: {
+        totalProduzido: atual.totalProduzido,
+        aprovadas: atual.aprovadas,
+        rejeitadas: atual.rejeitadas,
+        observacoes: atual.observacoes,
+      },
+      dadosNovos: {
+        totalProduzido: total,
+        aprovadas: aprov,
+        rejeitadas: rejeit,
+        observacoes: observacoes ?? atual.observacoes,
+      },
+      observacao: "Edição da inspeção",
+    });
+
     return NextResponse.json(
       { message: "Inspeção atualizada!" },
       { status: 200 },
@@ -103,7 +124,7 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM inspecoes WHERE pk_inspecaoID = ?",
@@ -128,6 +149,21 @@ export async function DELETE(request, { params }) {
     }
 
     await pool.query("DELETE FROM inspecoes WHERE pk_inspecaoID = ?", [id]);
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "inspecao",
+      entidadeID: id,
+      acao: "exclusao",
+      dadosAnteriores: {
+        ordem: exist[0].fk_ordemID,
+        totalProduzido: exist[0].totalProduzido,
+        aprovadas: exist[0].aprovadas,
+        rejeitadas: exist[0].rejeitadas,
+        observacoes: exist[0].observacoes,
+      },
+      observacao: "Exclusão da inspeção",
+    });
 
     return NextResponse.json(
       { message: "Inspeção excluída!" },

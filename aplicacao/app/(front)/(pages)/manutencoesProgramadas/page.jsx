@@ -380,6 +380,7 @@ export default function ManutencoesProgramadas() {
           podeIniciar={false}
           podeEditar={false}
           podeCancelar={false}
+          podeConcluir={!isGestor}
           onConcluir={(manutencao) => {
             setManutencaoSelecionada(manutencao);
             setModalConclusaoOpen(true);
@@ -497,6 +498,7 @@ function Section({
   podeIniciar,
   podeEditar,
   podeCancelar,
+  podeConcluir,
 }) {
   const [open, setOpen] = useState(true);
 
@@ -570,7 +572,7 @@ function Section({
                   </button>
                 )}
 
-                {onConcluir && (
+                {podeConcluir && onConcluir && (
                   <button
                     onClick={() => onConcluir(manutencao)}
                     className="bg-[#2E9B5E] text-white px-3 py-1 rounded font-semibold transition-colors hover:bg-[#27844F]"

@@ -4,13 +4,25 @@ import { checkAuthPosition } from "../../utils/authChecker";
 import { autorizarGestor } from "../../utils/authMiddleware";
 import { getDataBrasilia } from "../../utils/Datetime";
 import { ajustarEstoque } from "./estoque";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 // Lista o livro-razão do estoque com os nomes já resolvidos
 export async function GET(request) {
   try {
     await checkAuthPosition(request);
 
-    const [result] = await pool.query(`
+    const paginacao = lerPaginacao(request);
+
+    const [result] = await pool.query(
+      comPaginacao(
+        `
       SELECT
         mov.pk_movimentacaoID,
         mov.fk_materiaID,
@@ -29,9 +41,26 @@ export async function GET(request) {
       INNER JOIN usuarios usu ON mov.fk_usuarioID = usu.id
       LEFT JOIN ordensProducao op ON mov.fk_ordemID = op.pk_ordemID
       ORDER BY mov.dataMovimentacao DESC, mov.pk_movimentacaoID DESC
-    `);
+    `,
+        paginacao,
+      ),
+      paramsComPaginacao([], paginacao),
+    );
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          `SELECT COUNT(*) AS total
+             FROM movimentacoesEstoque mov
+             INNER JOIN materiasPrimas mat ON mov.fk_materiaID = mat.pk_materiaID
+             INNER JOIN usuarios usu ON mov.fk_usuarioID = usu.id
+             LEFT JOIN ordensProducao op ON mov.fk_ordemID = op.pk_ordemID`,
+        )
+      : null;
+
+    return NextResponse.json(respostaLista(result, paginacao, total), {
+      status: 200,
+    });
   } catch (err) {
     console.log("Movimentacoes GET : ", err);
 
@@ -144,6 +173,21 @@ export async function POST(request) {
       "UPDATE materiasPrimas SET dataUltimaCompra = ? WHERE pk_materiaID = ?",
       [getDataBrasilia().slice(0, 10), materia],
     );
+
+    await registrarAuditoria(connection, {
+      usuarioID: usuario.id,
+      entidade: "estoque",
+      entidadeID: result.insertId,
+      acao: "entrada",
+      dadosNovos: {
+        materia,
+        tipo,
+        quantidade,
+        unidadeMedida: unidadeMedida.trim(),
+        observacao: observacao || null,
+      },
+      observacao: "Entrada manual de estoque",
+    });
 
     await connection.commit();
 

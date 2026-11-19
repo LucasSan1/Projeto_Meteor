@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 // Lista as inspeções com a ordem e a peça
 export async function GET(request) {
   try {
     await checkAuthPosition(request);
 
-    const [result] = await pool.query(`
+    const paginacao = lerPaginacao(request);
+
+    const [result] = await pool.query(
+      comPaginacao(
+        `
       SELECT
         i.pk_inspecaoID,
         i.fk_ordemID,
@@ -25,9 +37,27 @@ export async function GET(request) {
       INNER JOIN profissionais prof ON op.fk_operadorID = prof.pk_profissionalID
       INNER JOIN usuarios u ON prof.fk_usuarioID = u.id
       ORDER BY i.dataInspecao DESC, i.pk_inspecaoID DESC
-    `);
+    `,
+        paginacao,
+      ),
+      paramsComPaginacao([], paginacao),
+    );
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          `SELECT COUNT(*) AS total
+             FROM inspecoes i
+             INNER JOIN ordensProducao op ON i.fk_ordemID = op.pk_ordemID
+             INNER JOIN pecas p ON op.fk_pecaID = p.pk_pecaID
+             INNER JOIN profissionais prof ON op.fk_operadorID = prof.pk_profissionalID
+             INNER JOIN usuarios u ON prof.fk_usuarioID = u.id`,
+        )
+      : null;
+
+    return NextResponse.json(respostaLista(result, paginacao, total), {
+      status: 200,
+    });
   } catch (err) {
     console.log("Inspecoes GET : ", err);
 
@@ -50,7 +80,7 @@ export async function POST(request) {
   const { ordem, totalProduzido, aprovadas, rejeitadas, observacoes } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     if (!ordem || totalProduzido === undefined || totalProduzido === "") {
       throw {
@@ -101,6 +131,21 @@ export async function POST(request) {
        VALUES (?, ?, ?, ?, ?)`,
       [ordem, total, aprov, rejeit, observacoes || null],
     );
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "inspecao",
+      entidadeID: result.insertId,
+      acao: "criacao",
+      dadosNovos: {
+        ordem,
+        totalProduzido: total,
+        aprovadas: aprov,
+        rejeitadas: rejeit,
+        observacoes: observacoes || null,
+      },
+      observacao: "Inspeção registrada",
+    });
 
     return NextResponse.json({
       message: "Inspeção registrada com sucesso!",

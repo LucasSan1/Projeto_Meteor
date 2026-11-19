@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql";
 import { checkAuthPosition } from "../../../utils/authChecker";
 import { ajustarEstoque } from "../estoque";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -13,7 +14,7 @@ export async function PATCH(request, { params }) {
   try {
     connection = await pool.getConnection();
 
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     await connection.beginTransaction();
 
@@ -117,6 +118,26 @@ export async function PATCH(request, { params }) {
       throw { status: 400, message: "Não foi possível atualizar a movimentação!" };
     }
 
+    await registrarAuditoria(connection, {
+      usuarioID: usuario.id,
+      entidade: "estoque",
+      entidadeID: id,
+      acao: "edicao",
+      dadosAnteriores: {
+        tipo: atual.tipo,
+        quantidade: atual.quantidade,
+        unidadeMedida: atual.unidadeMedida,
+        observacao: atual.observacao,
+      },
+      dadosNovos: {
+        tipo: tipoFinal,
+        quantidade: quantidadeFinal,
+        unidadeMedida: unidadeFinal,
+        observacao: observacao ?? atual.observacao,
+      },
+      observacao: "Edição da movimentação de estoque",
+    });
+
     await connection.commit();
 
     return NextResponse.json(
@@ -162,7 +183,7 @@ export async function DELETE(request, { params }) {
   try {
     connection = await pool.getConnection();
 
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     await connection.beginTransaction();
 
@@ -199,6 +220,21 @@ export async function DELETE(request, { params }) {
       "DELETE FROM movimentacoesEstoque WHERE pk_movimentacaoID = ?",
       [id],
     );
+
+    await registrarAuditoria(connection, {
+      usuarioID: usuario.id,
+      entidade: "estoque",
+      entidadeID: id,
+      acao: "exclusao",
+      dadosAnteriores: {
+        materia: movimentacao.fk_materiaID,
+        tipo: movimentacao.tipo,
+        quantidade: movimentacao.quantidade,
+        unidadeMedida: movimentacao.unidadeMedida,
+        observacao: movimentacao.observacao,
+      },
+      observacao: "Exclusão da movimentação de estoque",
+    });
 
     await connection.commit();
 

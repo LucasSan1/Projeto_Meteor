@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql"
 import { checkAuth, checkAuthPosition } from "../../../utils/authChecker"
+import { registrarAuditoria } from "../../../utils/auditoria"
 
 export async function PATCH(request, { params } ) {
     const { id } = await params;
@@ -8,7 +9,7 @@ export async function PATCH(request, { params } ) {
     let { peca, peso, dimensoes } = body;
 
     try{
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         const [exist] = await pool.query(
             "SELECT * FROM pecas WHERE pk_pecaID = ? AND status = 'Ativo'",
@@ -36,6 +37,20 @@ export async function PATCH(request, { params } ) {
                 { status: 400 }
             )
         }
+
+        await registrarAuditoria(pool, {
+            usuarioID: usuario.id,
+            entidade: "peca",
+            entidadeID: id,
+            acao: "edicao",
+            dadosAnteriores: {
+                peca: part.peca,
+                peso: part.peso,
+                dimensoes: part.dimensoes,
+            },
+            dadosNovos: { peca, peso, dimensoes },
+            observacao: "Edição do cadastro da peça",
+        });
 
         return NextResponse.json(
             { message: `Peça ${ peca } atualizada!`},
@@ -65,7 +80,7 @@ export async function DELETE(request, { params } ) {
     const { id } = await params;
 
     try{
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM pecas WHERE pk_pecaID = ?",
@@ -82,6 +97,16 @@ export async function DELETE(request, { params } ) {
         )
 
         if(result.affectedRows > 0 ){
+
+            await registrarAuditoria(pool, {
+                usuarioID: usuario.id,
+                entidade: "peca",
+                entidadeID: id,
+                acao: "desativacao",
+                dadosAnteriores: { status: exist[0].status },
+                dadosNovos: { status: "Desativado" },
+                observacao: "Desativação da peça",
+            });
 
             return NextResponse.json(
                 { message: "Peça desativada com sucesso!" },
@@ -119,7 +144,7 @@ export async function PUT(request, { params }) {
      const { id } = await params;
 
    try{
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM pecas WHERE pk_pecaID= ?",
@@ -136,6 +161,16 @@ export async function PUT(request, { params }) {
         )
 
         if(result.affectedRows > 0 ){
+
+            await registrarAuditoria(pool, {
+                usuarioID: usuario.id,
+                entidade: "peca",
+                entidadeID: id,
+                acao: "ativacao",
+                dadosAnteriores: { status: exist[0].status },
+                dadosNovos: { status: "Ativo" },
+                observacao: "Reativação da peça",
+            });
 
             return NextResponse.json(
                 { message: "Peça ativada com sucesso!" },

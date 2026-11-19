@@ -5,6 +5,7 @@ import { hashPass } from "../../../utils/hash";
 import { papeisDoCargo } from "../../../utils/papeisProfissional";
 import { normalizarTelefone } from "../../../utils/mascaras";
 import { ehDuplicadoDe } from "../../../utils/erroDuplicado";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 const CARGOS_VALIDOS = Object.values(CARGOS);
 
@@ -228,6 +229,46 @@ export async function PATCH(request, { params }) {
         );
       }
 
+      // Senha nunca entra na auditoria, só o fato de ter sido trocada
+      await registrarAuditoria(connection, {
+        usuarioID: usuarioLogado.id,
+        entidade: "usuario",
+        entidadeID: id,
+        acao: "edicao",
+        dadosAnteriores: {
+          nome: usuario.nome,
+          email: usuario.email,
+          cargo: usuario.cargo,
+          status: usuario.status,
+          profissional: profissional
+            ? {
+                ehOperador: profissional.ehOperador,
+                ehMecanico: profissional.ehMecanico,
+                especializacao: profissional.especializacao,
+                telefone: profissional.telefone,
+                status: profissional.status,
+              }
+            : null,
+        },
+        dadosNovos: {
+          nome: nomeFinal,
+          email: emailFinal,
+          cargo: cargoFinal,
+          status: statusFinal,
+          senhaAlterada: Boolean(senha?.trim()),
+          profissional: viraGestor
+            ? null
+            : {
+                ehOperador: papeis.operador,
+                ehMecanico: papeis.mecanico,
+                especializacao: espFinal,
+                telefone: telFinal,
+                status: perfilFicaAtivo ? "Ativo" : "Desativado",
+              },
+        },
+        observacao: "Edição do cadastro do usuário",
+      });
+
       await connection.commit();
 
       return NextResponse.json(
@@ -308,10 +349,22 @@ export async function DELETE(request, { params }) {
         [id],
       );
 
-      await connection.query(
+      const [perfil] = await connection.query(
         "UPDATE profissionais SET status = 'Desativado' WHERE fk_usuarioID = ? AND status = 'Ativo'",
         [id],
       );
+
+      if (result.affectedRows > 0 || perfil.affectedRows > 0) {
+        await registrarAuditoria(connection, {
+          usuarioID: usuarioLogado.id,
+          entidade: "usuario",
+          entidadeID: id,
+          acao: "desativacao",
+          dadosAnteriores: { status: exist[0].status },
+          dadosNovos: { status: "Desativado" },
+          observacao: "Desativação do usuário e do vínculo profissional",
+        });
+      }
 
       await connection.commit();
 
@@ -353,7 +406,7 @@ export async function PUT(request, { params }) {
   const { id } = await params;
 
   try {
-    await checkAuthPosition(request);
+    const usuarioLogado = await checkAuthPosition(request);
 
     const [exist] = await pool.query(
       "SELECT * FROM usuarios WHERE id = ?",
@@ -375,11 +428,25 @@ export async function PUT(request, { params }) {
       );
 
       // Só reativa o perfil de quem realmente é alocável
+      let perfil = { affectedRows: 0 };
+
       if (exist[0].cargo !== "gerente") {
-        await connection.query(
+        [perfil] = await connection.query(
           "UPDATE profissionais SET status = 'Ativo' WHERE fk_usuarioID = ? AND status = 'Desativado'",
           [id],
         );
+      }
+
+      if (result.affectedRows > 0 || perfil.affectedRows > 0) {
+        await registrarAuditoria(connection, {
+          usuarioID: usuarioLogado.id,
+          entidade: "usuario",
+          entidadeID: id,
+          acao: "ativacao",
+          dadosAnteriores: { status: exist[0].status },
+          dadosNovos: { status: "Ativo" },
+          observacao: "Reativação do usuário e do vínculo profissional",
+        });
       }
 
       await connection.commit();

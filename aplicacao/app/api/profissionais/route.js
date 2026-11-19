@@ -4,6 +4,14 @@ import { checkAuthPosition } from "../../utils/authChecker";
 import { autorizar, CARGOS } from "../../utils/authMiddleware";
 import { normalizarTelefone } from "../../utils/mascaras";
 import { ehDuplicadoDe } from "../../utils/erroDuplicado";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 // Lista os profissionais junto com os dados de login (nome, e-mail, cargo)
 // Gestor vê todo mundo; operador/mecânico só vê o próprio cadastro
@@ -19,8 +27,11 @@ export async function GET(request) {
     const filtro = soEleMesmo ? "WHERE p.pk_profissionalID = ?" : "";
     const params = soEleMesmo ? [usuario.profissionalID] : [];
 
+    const paginacao = lerPaginacao(request);
+
     const [result] = await pool.query(
-      `
+      comPaginacao(
+        `
       SELECT
         p.pk_profissionalID,
         p.fk_usuarioID,
@@ -37,10 +48,25 @@ export async function GET(request) {
       ${filtro}
       ORDER BY u.nome
     `,
-      params,
+        paginacao,
+      ),
+      paramsComPaginacao(params, paginacao),
     );
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          `SELECT COUNT(*) AS total
+             FROM profissionais p
+             INNER JOIN usuarios u ON p.fk_usuarioID = u.id
+             ${filtro}`,
+          params,
+        )
+      : null;
+
+    return NextResponse.json(respostaLista(result, paginacao, total), {
+      status: 200,
+    });
   } catch (err) {
     console.log("Profissionais GET : ", err);
 
@@ -64,7 +90,7 @@ export async function POST(request) {
   const { usuario, ehOperador, ehMecanico, especializacao, telefone } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuarioLogado = await checkAuthPosition(request);
 
     if (!usuario) {
       throw { status: 400, message: "Selecione um usuário!" };
@@ -116,6 +142,21 @@ export async function POST(request) {
         normalizarTelefone(telefone),
       ],
     );
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuarioLogado.id,
+      entidade: "profissional",
+      entidadeID: result.insertId,
+      acao: "criacao",
+      dadosNovos: {
+        usuario,
+        ehOperador: operador,
+        ehMecanico: mecanico,
+        especializacao,
+        telefone: normalizarTelefone(telefone),
+      },
+      observacao: "Vínculo profissional cadastrado",
+    });
 
     return NextResponse.json({
       message: "Profissional cadastrado com sucesso!",

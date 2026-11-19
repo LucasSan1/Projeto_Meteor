@@ -1,13 +1,24 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 // Consulta dos materiais previstos/consumidos por ordem
 export async function GET(request) {
   try {
     await checkAuthPosition(request);
 
-    const [result] = await pool.query(`
+    const paginacao = lerPaginacao(request);
+
+    const [result] = await pool.query(
+      comPaginacao(
+        `
       SELECT
         om.pk_ordemMaterialID,
         om.fk_ordemID,
@@ -23,9 +34,22 @@ export async function GET(request) {
       INNER JOIN pecas p ON op.fk_pecaID = p.pk_pecaID
       INNER JOIN materiasPrimas m ON om.fk_materiaID = m.pk_materiaID
       ORDER BY op.codigo, m.materia
-    `);
+    `,
+        paginacao,
+      ),
+      paramsComPaginacao([], paginacao),
+    );
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          "SELECT COUNT(*) AS total FROM ordemMateriais",
+        )
+      : null;
+
+    return NextResponse.json(respostaLista(result, paginacao, total), {
+      status: 200,
+    });
   } catch (err) {
     console.log("OrdemMateriais GET : ", err);
 

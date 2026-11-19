@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql"
 import { checkAuthPosition } from "../../utils/authChecker";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+    comPaginacao,
+    contarLinhas,
+    lerPaginacao,
+    paramsComPaginacao,
+    respostaLista,
+} from "../../utils/paginacao";
 
 // Função para salvar um novo fornecedor no banco
 export async function POST(request){
     try{
 
         // Verifica o token com base no cargo
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         // Extrai o json e valida os campos
         const body = await request.json();
@@ -47,6 +55,21 @@ export async function POST(request){
             [nome, cnpjLimpo, endereco, contato, aval]
         ) 
 
+        await registrarAuditoria(pool, {
+            usuarioID: usuario.id,
+            entidade: "fornecedor",
+            entidadeID: result.insertId,
+            acao: "criacao",
+            dadosNovos: {
+                nome,
+                cnpj: cnpjLimpo,
+                endereco,
+                contato,
+                avaliacao: aval,
+            },
+            observacao: "Fornecedor cadastrado",
+        });
+
         return NextResponse.json({
             message: "Fornecedor cadastrado com sucesso!",
             id: result.insertId
@@ -83,12 +106,23 @@ export async function GET(request){
         // Apenas verifica se o token é valido e não expirou, ignorando o cargo
         await checkAuthPosition(request)
 
+        const paginacao = lerPaginacao(request);
+
+        const consulta = paginacao
+            ? "SELECT * FROM fornecedores ORDER BY pk_fornecedorID"
+            : "SELECT * FROM fornecedores";
+
         const [result] = await pool.query(
-            "SELECT * FROM fornecedores"
+            comPaginacao(consulta, paginacao),
+            paramsComPaginacao([], paginacao),
         )
 
+        const total = paginacao
+            ? await contarLinhas(pool, "SELECT COUNT(*) AS total FROM fornecedores")
+            : null;
+
         return NextResponse.json(
-            { data: result },
+            respostaLista(result, paginacao, total),
             { status: 200 }
         )
 

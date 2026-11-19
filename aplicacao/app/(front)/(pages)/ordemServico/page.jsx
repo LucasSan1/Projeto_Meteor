@@ -55,10 +55,9 @@ export default function OrdemServico() {
   const isOperador = cargo === "operador";
 
   // O backend valida o fluxo; aqui só escondemos as opções inválidas
-  // Cancelar só existe a partir de Pendente
   const transicoesGestor = {
-    Pendente: ["Em Produção", "Cancelada"],
-    "Em Produção": ["Concluída"],
+    Pendente: ["Cancelada"],
+    "Em Produção": [],
     Concluída: [],
     Cancelada: [],
   };

@@ -3,11 +3,12 @@ import  pool  from "../../../lib/connSql";
 
 import { hashPass } from "../../../utils/hash"
 import { checkAuthPosition } from "../../../utils/authChecker"
+import { registrarAuditoria } from "../../../utils/auditoria"
 
 // Rota para adicionar novos usuarios
 export async function POST(request) {
   try {
-    await checkAuthPosition(request)
+    const usuarioLogado = await checkAuthPosition(request)
 
     const body = await request.json();
 
@@ -27,6 +28,15 @@ export async function POST(request) {
       "INSERT INTO usuarios (nome, email, cargo, senha) VALUES (?, ?, ?, ?)",
       [nome, email, cargo, senhaCript]
     );
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuarioLogado.id,
+      entidade: "usuario",
+      entidadeID: result.insertId,
+      acao: "criacao",
+      dadosNovos: { nome, email, cargo },
+      observacao: "Usuário cadastrado pela rota de registro",
+    });
 
     return NextResponse.json({
       message: "Usuário inserido com sucesso!",

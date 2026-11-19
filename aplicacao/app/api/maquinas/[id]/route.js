@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql"
 import { checkAuthPosition } from "../../../utils/authChecker";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 export async function PATCH(request, { params }) {
     const { id } = await params;
@@ -8,7 +9,7 @@ export async function PATCH(request, { params }) {
     let { equipamento, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao } = body;
 
     try{
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
            // Verifica se a maquina existe
         const [exist] = await pool.query(
@@ -51,6 +52,28 @@ export async function PATCH(request, { params }) {
             )
         }
 
+        await registrarAuditoria(pool, {
+            usuarioID: usuario.id,
+            entidade: "maquina",
+            entidadeID: id,
+            acao: "edicao",
+            dadosAnteriores: {
+                equipamento: maquina.fk_equipamentoID,
+                nomeMaquina: maquina.nomeMaquina,
+                descricao: maquina.descricao,
+                capacidadeMaxima: maquina.capacidadeMaxima,
+                ultimaManutencao: maquina.ultimaManutencao,
+            },
+            dadosNovos: {
+                equipamento: equipamentoFinal,
+                nomeMaquina,
+                descricao,
+                capacidadeMaxima,
+                ultimaManutencao,
+            },
+            observacao: "Edição do cadastro da máquina",
+        });
+
         return NextResponse.json(
             { message: `Maquina ${ nomeMaquina } atualizada!`},
             { status: 200 }
@@ -83,7 +106,19 @@ export async function PUT(request, { params }) {
     console.log("Das ", id)
     try {
 
-        await checkAuthPosition(request);
+        const usuario = await checkAuthPosition(request);
+
+        const [exist] = await pool.query(
+            "SELECT status FROM maquinas WHERE pk_maquinaID = ?",
+            [id]
+        );
+
+        if (exist.length === 0) {
+            throw {
+                status: 404,
+                message: "Maquina não encontrada!"
+            };
+        }
 
         const [result] = await pool.query(
             `
@@ -108,6 +143,21 @@ export async function PUT(request, { params }) {
             };
 
         }
+
+        const statusNovo = exist[0].status === "Ativo" ? "Desativado" : "Ativo";
+
+        await registrarAuditoria(pool, {
+            usuarioID: usuario.id,
+            entidade: "maquina",
+            entidadeID: id,
+            acao: statusNovo === "Ativo" ? "ativacao" : "desativacao",
+            dadosAnteriores: { status: exist[0].status },
+            dadosNovos: { status: statusNovo },
+            observacao:
+                statusNovo === "Ativo"
+                    ? "Reativação da máquina"
+                    : "Desativação da máquina",
+        });
 
         return NextResponse.json(
             { message: "Status alterado com sucesso!" },

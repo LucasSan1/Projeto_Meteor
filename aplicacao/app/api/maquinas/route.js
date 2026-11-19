@@ -2,13 +2,21 @@ import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
 import { autorizar, CARGOS } from "../../utils/authMiddleware";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 export async function POST(request){
     const body = await request.json();
     const { equipamento, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao } = body;
 
     try{
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         const equipamentoId = equipamento ? String(equipamento).trim() : "";
 
@@ -29,6 +37,21 @@ export async function POST(request){
             "INSERT INTO maquinas (fk_equipamentoID, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao) VALUES (?, ?, ?, ?, ?) ",
             [equipamentoId, nomeMaquina, descricao, capacidadeMaxima, ultimaManutencao || null],
         )
+
+        await registrarAuditoria(pool, {
+            usuarioID: usuario.id,
+            entidade: "maquina",
+            entidadeID: result.insertId,
+            acao: "criacao",
+            dadosNovos: {
+                equipamento: equipamentoId,
+                nomeMaquina,
+                descricao,
+                capacidadeMaxima,
+                ultimaManutencao: ultimaManutencao || null,
+            },
+            observacao: "Máquina cadastrada",
+        });
 
         return NextResponse.json({
             message: "Maquina cadastrada com sucesso!",
@@ -57,11 +80,18 @@ export async function GET(request) {
         // Gestor cadastra, mecânico precisa enxergar máquinas pra agendar manutenção
         await autorizar(request, [CARGOS.GERENTE, CARGOS.MECANICO])
 
+        const paginacao = lerPaginacao(request);
+
         const [result] = await pool.query(
-            "SELECT * FROM maquinas ORDER BY pk_maquinaID DESC"
+            comPaginacao("SELECT * FROM maquinas ORDER BY pk_maquinaID DESC", paginacao),
+            paramsComPaginacao([], paginacao),
         );
 
-        return NextResponse.json({ data: result }, { status: 200 })
+        const total = paginacao
+            ? await contarLinhas(pool, "SELECT COUNT(*) AS total FROM maquinas")
+            : null;
+
+        return NextResponse.json(respostaLista(result, paginacao, total), { status: 200 })
 
     } catch (err) {
         console.log("Maquinas GET: ", err);

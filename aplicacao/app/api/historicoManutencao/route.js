@@ -1,12 +1,23 @@
 import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 export async function GET(request) {
   try {
     await checkAuthPosition(request);
 
-    const [result] = await pool.query(`
+    const paginacao = lerPaginacao(request);
+
+    const [result] = await pool.query(
+      comPaginacao(
+        `
       SELECT
         h.historicoID,
         h.fk_manutencaoID,
@@ -25,9 +36,22 @@ export async function GET(request) {
       LEFT JOIN profissionais prof ON h.fk_mecanicoID = prof.pk_profissionalID
       LEFT JOIN usuarios u ON prof.fk_usuarioID = u.id
       ORDER BY h.dataManutencao DESC, h.historicoID DESC
-    `);
+    `,
+        paginacao,
+      ),
+      paramsComPaginacao([], paginacao),
+    );
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          "SELECT COUNT(*) AS total FROM historicoManutencao",
+        )
+      : null;
+
+    return NextResponse.json(respostaLista(result, paginacao, total), {
+      status: 200,
+    });
   } catch (err) {
     console.log("HistoricoManutencao GET : ", err);
 

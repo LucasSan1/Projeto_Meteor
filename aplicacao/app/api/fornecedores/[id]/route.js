@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "../../../lib/connSql"
 import { checkAuthPosition } from "../../../utils/authChecker";
+import { registrarAuditoria } from "../../../utils/auditoria";
 
 
 // Função para atualizar cadastro de um fornecedor
@@ -11,7 +12,7 @@ export async function PATCH(request, { params }){
     let { nome, cnpj, endereco, contato, avaliacao, status } = body;
 
     try{ 
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         // Verifica se o fornecedor existe
         const [exist] = await pool.query(
@@ -67,6 +68,23 @@ export async function PATCH(request, { params }){
             )
         }
 
+        await registrarAuditoria(pool, {
+            usuarioID: usuario.id,
+            entidade: "fornecedor",
+            entidadeID: id,
+            acao: "edicao",
+            dadosAnteriores: {
+                nome: fornecedor.nomeFornecedor,
+                cnpj: fornecedor.cnpj,
+                endereco: fornecedor.endereco,
+                contato: fornecedor.contato,
+                avaliacao: fornecedor.avaliacao,
+                status: fornecedor.status,
+            },
+            dadosNovos: { nome, cnpj, endereco, contato, avaliacao, status },
+            observacao: "Edição do cadastro do fornecedor",
+        });
+
         return NextResponse.json(
             { message: `Fornecedor ${ nome } atualizado!`},
             { status: 200 }
@@ -103,7 +121,7 @@ export async function DELETE(request, { params }) {
     const { id } = await params;
 
     try{
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM fornecedores WHERE pk_fornecedorID = ?",
@@ -124,6 +142,16 @@ export async function DELETE(request, { params }) {
         )
 
         if(result.affectedRows > 0 ){
+
+            await registrarAuditoria(pool, {
+                usuarioID: usuario.id,
+                entidade: "fornecedor",
+                entidadeID: id,
+                acao: "desativacao",
+                dadosAnteriores: { status: exist[0].status },
+                dadosNovos: { status: "Desativado" },
+                observacao: "Desativação do fornecedor",
+            });
 
             return NextResponse.json(
                 { message: "Fornecedor desativado com sucesso!" },
@@ -160,7 +188,7 @@ export async function PUT(request, { params }) {
      const { id } = await params;
 
    try{
-        await checkAuthPosition(request)
+        const usuario = await checkAuthPosition(request)
 
         const [exist] = await pool.query(
                 "SELECT * FROM fornecedores WHERE pk_fornecedorID = ?",
@@ -180,6 +208,16 @@ export async function PUT(request, { params }) {
         )
 
         if(result.affectedRows > 0 ){
+
+            await registrarAuditoria(pool, {
+                usuarioID: usuario.id,
+                entidade: "fornecedor",
+                entidadeID: id,
+                acao: "ativacao",
+                dadosAnteriores: { status: exist[0].status },
+                dadosNovos: { status: "Ativo" },
+                observacao: "Reativação do fornecedor",
+            });
 
             return NextResponse.json(
                 { message: "Fornecedor ativado com sucesso!" },

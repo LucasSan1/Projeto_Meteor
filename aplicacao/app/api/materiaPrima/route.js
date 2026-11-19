@@ -2,30 +2,57 @@ import { NextResponse } from "next/server";
 import pool from "../../lib/connSql";
 import { checkAuthPosition } from "../../utils/authChecker";
 import { validarQuantidade } from "../../utils/quantidade";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 // Lista as matérias-primas com o nome do fornecedor junto
 export async function GET(request) {
   try {
     await checkAuthPosition(request);
 
-    const [result] = await pool.query(`
-      SELECT
-        m.pk_materiaID,
-        m.materia,
-        m.fk_fornecedor,
-        m.unidadeMedida,
-        m.estoqueMinimo,
-        m.quantidadeEstoque,
-        m.dataUltimaCompra,
-        m.status,
-        f.nomeFornecedor AS fornecedor,
-        f.status AS fornecedorStatus
-      FROM materiasPrimas m
-      INNER JOIN fornecedores f ON m.fk_fornecedor = f.pk_fornecedorID
-      ORDER BY m.materia
-    `);
+    const paginacao = lerPaginacao(request);
 
-    return NextResponse.json({ data: result }, { status: 200 });
+    const [result] = await pool.query(
+      comPaginacao(
+        `
+        SELECT
+          m.pk_materiaID,
+          m.materia,
+          m.fk_fornecedor,
+          m.unidadeMedida,
+          m.estoqueMinimo,
+          m.quantidadeEstoque,
+          m.dataUltimaCompra,
+          m.status,
+          f.nomeFornecedor AS fornecedor,
+          f.status AS fornecedorStatus
+        FROM materiasPrimas m
+        INNER JOIN fornecedores f ON m.fk_fornecedor = f.pk_fornecedorID
+        ORDER BY m.materia
+      `,
+        paginacao,
+      ),
+      paramsComPaginacao([], paginacao),
+    );
+
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          `SELECT COUNT(*) AS total
+             FROM materiasPrimas m
+             INNER JOIN fornecedores f ON m.fk_fornecedor = f.pk_fornecedorID`,
+        )
+      : null;
+
+    return NextResponse.json(respostaLista(result, paginacao, total), {
+      status: 200,
+    });
   } catch (err) {
     console.log("Materia GET : ", err);
 
@@ -56,7 +83,7 @@ export async function POST(request) {
   } = body;
 
   try {
-    await checkAuthPosition(request);
+    const usuario = await checkAuthPosition(request);
 
     if (!materia?.trim() || !fornecedor || !unidadeMedida?.trim()) {
       throw {
@@ -94,6 +121,22 @@ export async function POST(request) {
         dataUltimaCompra || null,
       ],
     );
+
+    await registrarAuditoria(pool, {
+      usuarioID: usuario.id,
+      entidade: "materiaPrima",
+      entidadeID: result.insertId,
+      acao: "criacao",
+      dadosNovos: {
+        materia,
+        fornecedor,
+        unidadeMedida,
+        estoqueMinimo: minimoFinal,
+        quantidadeEstoque: quantidadeFinal,
+        dataUltimaCompra: dataUltimaCompra || null,
+      },
+      observacao: "Matéria-prima cadastrada",
+    });
 
     return NextResponse.json({
       message: "Matéria-prima cadastrada com sucesso!",

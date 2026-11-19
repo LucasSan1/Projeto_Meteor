@@ -12,6 +12,13 @@ import {
   validarAgendaOperador,
 } from "../../utils/agenda";
 import { validarMateriaisPlanejados } from "../../utils/producao";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 // Lista as ordens com peça, operador e materiais já resolvidos
 // Gestor vê tudo; operador vê só o que está atribuído a ele
@@ -29,8 +36,10 @@ export async function GET(request) {
     const filtro = soDoOperador ? "WHERE op.fk_operadorID = ?" : "";
     const params = soDoOperador ? [usuario.profissionalID] : [];
 
-    const [[result], [materiais]] = await Promise.all([
-      pool.query(
+    const paginacao = lerPaginacao(request);
+
+    const [result] = await pool.query(
+      comPaginacao(
         `
         SELECT
           op.pk_ordemID,
@@ -58,22 +67,46 @@ export async function GET(request) {
         ${filtro}
         ORDER BY op.inicioPlanejado
       `,
-        params,
+        paginacao,
       ),
-      pool.query(`
-        SELECT
-          om.fk_ordemID,
-          om.fk_materiaID,
-          om.quantidadePrevista,
-          om.quantidadeConsumida,
-          m.materia,
-          m.unidadeMedida,
-          m.quantidadeEstoque
-        FROM ordemMateriais om
-        INNER JOIN materiasPrimas m ON m.pk_materiaID = om.fk_materiaID
-        ORDER BY m.materia
-      `),
-    ]);
+      paramsComPaginacao(params, paginacao),
+    );
+
+    // Paginando, busca material só das ordens da página
+    // Sem paginação, mantém o comportamento antigo de trazer tudo de uma vez
+    const idsDaPagina = result.map((ordem) => ordem.pk_ordemID);
+
+    const [materiais] = paginacao
+      ? idsDaPagina.length > 0
+        ? await pool.query(
+            `SELECT
+               om.fk_ordemID,
+               om.fk_materiaID,
+               om.quantidadePrevista,
+               om.quantidadeConsumida,
+               m.materia,
+               m.unidadeMedida,
+               m.quantidadeEstoque
+             FROM ordemMateriais om
+             INNER JOIN materiasPrimas m ON m.pk_materiaID = om.fk_materiaID
+             WHERE om.fk_ordemID IN (?)
+             ORDER BY m.materia`,
+            [idsDaPagina],
+          )
+        : [[]]
+      : await pool.query(`
+          SELECT
+            om.fk_ordemID,
+            om.fk_materiaID,
+            om.quantidadePrevista,
+            om.quantidadeConsumida,
+            m.materia,
+            m.unidadeMedida,
+            m.quantidadeEstoque
+          FROM ordemMateriais om
+          INNER JOIN materiasPrimas m ON m.pk_materiaID = om.fk_materiaID
+          ORDER BY m.materia
+        `);
 
     const materiaisPorOrdem = new Map();
 
@@ -83,14 +116,29 @@ export async function GET(request) {
       materiaisPorOrdem.set(material.fk_ordemID, lista);
     }
 
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          `SELECT COUNT(*) AS total
+             FROM ordensProducao op
+             INNER JOIN pecas p ON op.fk_pecaID = p.pk_pecaID
+             INNER JOIN profissionais prof ON op.fk_operadorID = prof.pk_profissionalID
+             INNER JOIN usuarios u ON prof.fk_usuarioID = u.id
+             ${filtro}`,
+          params,
+        )
+      : null;
+
     return NextResponse.json(
-      {
-        data: result.map((ordem) => ({
+      respostaLista(
+        result.map((ordem) => ({
           ...ordem,
           atrasada: Boolean(ordem.atrasada),
           materiais: materiaisPorOrdem.get(ordem.pk_ordemID) || [],
         })),
-      },
+        paginacao,
+        total,
+      ),
       { status: 200 },
     );
   } catch (err) {

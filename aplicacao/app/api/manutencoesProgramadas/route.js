@@ -11,6 +11,14 @@ import {
   especializacaoCompativel,
   validarAgendaMecanico,
 } from "../../utils/agenda";
+import { registrarAuditoria } from "../../utils/auditoria";
+import {
+  comPaginacao,
+  contarLinhas,
+  lerPaginacao,
+  paramsComPaginacao,
+  respostaLista,
+} from "../../utils/paginacao";
 
 // Lista as manutenções programadas com equipamento, máquina e mecânico
 // Gestor vê tudo; mecânico vê só as intervenções dele
@@ -28,8 +36,11 @@ export async function GET(request) {
     const filtro = soDoMecanico ? "WHERE mp.fk_mecanicoID = ?" : "";
     const params = soDoMecanico ? [usuario.profissionalID] : [];
 
+    const paginacao = lerPaginacao(request);
+
     const [result] = await pool.query(
-      `
+      comPaginacao(
+        `
       SELECT
         mp.pk_manutencaoID,
         mp.fk_equipamentoID,
@@ -60,16 +71,34 @@ export async function GET(request) {
       ${filtro}
       ORDER BY mp.inicioPrevisto
     `,
-      params,
+        paginacao,
+      ),
+      paramsComPaginacao(params, paginacao),
     );
 
+    const total = paginacao
+      ? await contarLinhas(
+          pool,
+          `SELECT COUNT(*) AS total
+             FROM manutencoesProgramadas mp
+             INNER JOIN equipamentos e ON mp.fk_equipamentoID = e.pk_equipamentoID
+             LEFT JOIN maquinas mq ON mp.fk_maquinaID = mq.pk_maquinaID
+             INNER JOIN profissionais prof ON mp.fk_mecanicoID = prof.pk_profissionalID
+             INNER JOIN usuarios u ON prof.fk_usuarioID = u.id
+             ${filtro}`,
+          params,
+        )
+      : null;
+
     return NextResponse.json(
-      {
-        data: result.map((item) => ({
+      respostaLista(
+        result.map((item) => ({
           ...item,
           atrasada: Boolean(item.atrasada),
         })),
-      },
+        paginacao,
+        total,
+      ),
       { status: 200 },
     );
   } catch (err) {
@@ -212,6 +241,24 @@ export async function POST(request) {
         termino,
       ],
     );
+
+    await registrarAuditoria(connection, {
+      usuarioID: usuario.id,
+      entidade: "manutencao",
+      entidadeID: result.insertId,
+      acao: "agendamento",
+      dadosNovos: {
+        equipamento,
+        maquina: maquina || null,
+        tipoManutencao: tipoManutencao || null,
+        descricao,
+        especializacao,
+        mecanico,
+        inicioPrevisto: inicio,
+        terminoPrevisto: termino,
+      },
+      observacao: "Manutenção programada",
+    });
 
     await connection.commit();
 

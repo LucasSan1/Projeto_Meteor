@@ -5,6 +5,7 @@ import { generateToken } from "../../../utils/jwt"
 import { hashPass } from "../../../utils/hash"
 import { validarSenhaForte } from "../../../utils/senha"
 import { autenticar } from "../../../utils/authMiddleware"
+import { registrarAuditoria } from "../../../utils/auditoria"
 
 export async function POST(request) {
     try {
@@ -117,6 +118,18 @@ export async function PUT(request){
               WHERE email = ?`,
             [hashedPass, versaoNova, usuarioLogado.email]
         )
+
+        await registrarAuditoria(pool, {
+            usuarioID: usuarioLogado.id,
+            entidade: "usuario",
+            entidadeID: usuarioLogado.id,
+            acao: "trocaSenha",
+            dadosNovos: {
+                primeiroAcesso: false,
+                tokenVersao: versaoNova,
+            },
+            observacao: "Senha alterada pelo próprio usuário",
+        });
 
         const token = generateToken(
             usuarioLogado.email,
