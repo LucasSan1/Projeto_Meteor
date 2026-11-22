@@ -1,34 +1,51 @@
-# Meteor Usinagem - Banco de Dados
+# Cosmo — Sistema de Gestão para Usinagem
 
-Este repositório contém os scripts de criação de banco de dados, queries e inserts para o sistema de banco de dados da empresa fictícia **Meteor**, especializada em usinagem de peças.
+Sistema web de gestão industrial para o cenário fictício de uma empresa de usinagem. Integra fornecedores e matérias-primas, controle de estoque, ordens de produção, qualidade, agenda de profissionais e manutenção de equipamentos, com acesso por perfil (gestor, operador e mecânico).
 
-## Estrutura do Repositório
+> O repositório também é referenciado como **Projeto Meteor**; os scripts originais em MySQL mantêm esse nome.
 
-Os arquivos neste repositório estão organizados da seguinte forma:
+## Stack
 
-- **scripts**: Contém o script para criação do banco de dados e das tabelas.
-- **inserts**: Contém exemplos de inserts para preencher as tabelas com dados fictícios.
-- **queries**: Contém exemplos de consultas SQL que podem ser utilizadas para gerar relatórios e consultar dados no banco.
-- **Modelos**: Contém a modelagem do banco de dados (DER)
+- **Next.js 16 + React 19** — interface e API (App Router)
+- **PostgreSQL (Supabase)** — persistência
+- **JWT + bcrypt** — autenticação e senhas
+- **Tailwind CSS** — estilos
+- **Vitest** — testes
 
-## Descrição dos Arquivos
+## Estrutura
 
-### 1. **scripts**
+| Pasta | Conteúdo |
+| --- | --- |
+| `aplicacao/` | Aplicação Next.js: páginas, rotas de API, utilitários e testes |
+| `DataBase_Meteor/` | Scripts SQL, inserts, queries e modelagem (DER) |
 
-- **Meteor DDL.sql**: Contém o script para a criação das tabelas necessárias para o banco de dados da **Meteor Usinagem**. 
-  - Exemplos de tabelas: `clientes`, `pedidos`, `produtos`, entre outras.
-  
-### 2. **inserts**
+Os scripts atuais são de **PostgreSQL/Supabase** (`Cosmos DDL PostgreSQL.sql` e `Cosmos INSERTS PostgreSQL.sql`). Os arquivos `Meteor DDL.sql` e `Meteor INSERTS.sql` são a versão original em MySQL, mantida como referência.
 
-- **Meteor INSERTS.sql**: Contém exemplos de dados fictícios para inserir nas tabelas, como:
-  - Clientes (com nome, email, etc.)
-  - Produtos (com nome, descrição, preço, etc.)
-  - Pedidos (com dados de venda, data, status, etc.)
-  
-### 3. **queries**
+## Como rodar
 
-- **Meteor QUERIES.sql**: Contém consultas SQL úteis para gerar relatórios e consultar dados no banco. Exemplos:
-  - Relatórios de vendas por data.
-  - Consultas de estoque e produtos.
-  - Relatórios de clientes e seus pedidos.
+```bash
+cd aplicacao
+npm install
+npm run dev
+```
+
+Crie o `aplicacao/.env` com as credenciais do banco PostgreSQL/Supabase, o `JWT_SECRET` e, para rodar a integração, as variáveis `TESTE_*`.
+
+Depois aplique o DDL e os inserts de `DataBase_Meteor/`. A aplicação sobe em [http://localhost:3000](http://localhost:3000).
+
+## Testes
+
+Duas camadas:
+
+- **Unitária** — exercita as regras puras, sem banco
+- **Integração** — chama as rotas reais contra um PostgreSQL de teste
+
+```bash
+cd aplicacao
+npm test          # unitária
+npm run test:db   # integração (usa as variáveis TESTE_*)
+npm run test:all  # as duas
+```
+
+A integração recria o schema e aplica o seed antes de cada arquivo de teste. Os cenários CT01–CT06 cobrem estoque/fornecedores, ordens de produção, qualidade, agenda, manutenções e segurança/auditoria. Detalhes em [`aplicacao/tests/README.md`](aplicacao/tests/README.md).
 
